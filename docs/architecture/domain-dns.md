@@ -12,14 +12,14 @@
 - `app.petcura.app`
   - `CNAME cname.vercel-dns.com`
   - DNS-only
-  - production app target
+  - production app target, added to Vercel project `petcura`
 
 - `staging.petcura.app`
   - `CNAME cname.vercel-dns.com`
   - DNS-only
-  - staging app target
+  - staging app target, added to Vercel project `petcura`
 
-Root `petcura.app` and `www.petcura.app` still point at Namecheap parking until the production app deployment is ready to receive those hostnames.
+Root `petcura.app` and `www.petcura.app` still point at Namecheap parking. Keep them unchanged until the app experience is ready to become the public root site.
 
 ## Email DNS
 

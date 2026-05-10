@@ -14,3 +14,4 @@ secrets/
 config/credentials.json
 CLAUDE.local.md
 .claude/settings.local.json
+.vercel

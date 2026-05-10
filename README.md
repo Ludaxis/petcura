@@ -4,6 +4,8 @@ PetCura is the WhatsApp-native ClientOps inbox for veterinary clinics. It captur
 
 This repository contains the PetCura monorepo foundation: a Next.js web app scaffold, shared packages, hosted Supabase schema migration, CI, operating manuals, role boundaries, workflow playbooks, and contracts for Codex and Claude collaboration.
 
+Production is deployed at `https://app.petcura.app`.
+
 ## Quick Start
 
 ```bash
