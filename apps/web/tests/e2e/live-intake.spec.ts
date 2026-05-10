@@ -159,7 +159,10 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
       .getByRole("button", { name: "Save" })
       .click();
     await expect(
-      page.locator("[data-detail-head]").getByText("High").first()
+      page
+        .locator("[data-detail-head] span")
+        .filter({ hasText: /^High$/ })
+        .first()
     ).toBeVisible();
     if (showsSidePanel) {
       await expect(

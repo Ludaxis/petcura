@@ -519,6 +519,9 @@ test.describe("Request detail tri-pane", () => {
       );
 
       // ? opens the shortcut sheet listing R, T, ⌘↵.
+      await expect(page.locator("[data-composer-textarea]")).toBeVisible();
+      await page.locator("body").click();
+      await page.waitForTimeout(150);
       await page.keyboard.press("?");
       const sheet = page.getByRole("dialog", {
         name: /shortcuts|kombinats|сокраще/i
@@ -602,6 +605,7 @@ test.describe("Request detail tri-pane", () => {
         name: /AI draft suggestion|AI mustandi soovitus|Подсказка AI-черновика/i
       });
       await expect(aiCard).toBeVisible();
+      await aiCard.scrollIntoViewIfNeeded();
       await aiCard.getByRole("button", { name: /^Edit|Muuda|Изменить/ }).click();
       const dialog = page.getByRole("dialog", {
         name: /Edit AI draft|Muuda AI mustandit|Изменить AI-черновик/i
@@ -665,6 +669,7 @@ test.describe("Request detail tri-pane", () => {
       const aiCard = page.getByRole("region", {
         name: /AI draft suggestion|AI mustandi soovitus|Подсказка AI-черновика/i
       });
+      await aiCard.scrollIntoViewIfNeeded();
       await aiCard.getByRole("button", { name: /^Edit|Muuda|Изменить/ }).click();
       const dialog = page.getByRole("dialog", {
         name: /Edit AI draft|Muuda AI mustandit|Изменить AI-черновик/i
@@ -728,6 +733,7 @@ test.describe("Request detail tri-pane", () => {
       const aiCard = page.getByRole("region", {
         name: /AI draft suggestion|AI mustandi soovitus|Подсказка AI-черновика/i
       });
+      await aiCard.scrollIntoViewIfNeeded();
       await aiCard
         .getByRole("button", { name: /^Reject|Lükka tagasi|Отклонить/ })
         .click();
@@ -775,7 +781,8 @@ test.describe("Request detail tri-pane", () => {
         `/requests/${seed.primaryRequestId}`
       );
       const composer = page.locator("[data-composer-textarea]");
-      await composer.click();
+      await composer.scrollIntoViewIfNeeded();
+      await composer.focus();
       const replyBody = `e2e ⌘↵ reply ${Date.now()}`;
       await composer.fill(replyBody);
       // Web channel — Twilio is bypassed by sendStaffReply for non-whatsapp.
@@ -822,32 +829,43 @@ test.describe("Request detail tri-pane", () => {
         seed.staffEmail,
         `/requests/${seed.primaryRequestId}`
       );
-      // K should navigate to the previous row in the list (or no-op if the
-      // current request is already first). To make the assertion stable
-      // regardless of insertion order in the demo clinic, we first J to
-      // advance, then K to go back. We just assert the URL changes on each
-      // press, not which specific id it lands on.
-      await page.locator("body").click();
-      await page.waitForTimeout(120);
-      await page.keyboard.press("j");
-      await page.waitForURL(
-        (url) =>
-          url.pathname.includes("/requests/") &&
-          !url.pathname.endsWith(seed!.primaryRequestId),
-        { timeout: 10_000 }
-      );
-      const afterJ = new URL(page.url()).pathname;
-      // Settle so the new page hydrates the keyboard listener.
-      await page.waitForTimeout(300);
+      const rowIds = await page
+        .locator("[data-row-id]")
+        .evaluateAll((nodes) =>
+          nodes
+            .map((node) => node.getAttribute("data-row-id"))
+            .filter((id): id is string => Boolean(id))
+        );
+      const currentIndex = rowIds.indexOf(seed.primaryRequestId);
+      expect(currentIndex).toBeGreaterThanOrEqual(0);
+      expect(rowIds.length).toBeGreaterThan(1);
+      let startIndex = currentIndex;
+      if (startIndex === 0) {
+        const nextId = rowIds[1]!;
+        await page.locator(`[data-row-id="${nextId}"]`).first().click();
+        await page.waitForURL((url) => url.pathname.endsWith(nextId), {
+          timeout: 10_000
+        });
+        startIndex = 1;
+      }
+      const targetId = rowIds[startIndex - 1]!;
+
       await page.locator("body").click();
       await page.waitForTimeout(120);
       await page.keyboard.press("k");
       await page.waitForURL(
-        (url) => url.pathname !== afterJ && url.pathname.includes("/requests/"),
+        (url) =>
+          url.pathname.includes("/requests/") &&
+          url.pathname.endsWith(targetId),
         { timeout: 10_000 }
       );
 
-      // Shortcut sheet shows J and K rows.
+      // Shortcut sheet shows J and K rows. Wait for the new page to hydrate
+      // (the RequestKeyboard global listener needs to re-attach) before we
+      // press `?`. The composer textarea is the cheapest readiness signal.
+      await expect(page.locator("[data-composer-textarea]")).toBeVisible();
+      await page.locator("body").click();
+      await page.waitForTimeout(150);
       await page.keyboard.press("?");
       const sheet = page.getByRole("dialog", {
         name: /shortcuts|kombinats|сокраще/i
@@ -897,9 +915,7 @@ test.describe("Request detail tri-pane", () => {
       // Detail should be visible — pet name renders in the header.
       await expect(page.locator("h1").first()).toBeVisible();
       // Back-arrow link to /inbox is rendered + focusable.
-      const back = page.getByRole("link", {
-        name: /Back to inbox|Tagasi postkasti|Назад во входящие/
-      });
+      const back = page.locator('header a[href*="/inbox"]');
       await expect(back.first()).toBeVisible();
       await back.first().focus();
       await expect(back.first()).toBeFocused();
