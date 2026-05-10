@@ -116,3 +116,26 @@ export const requestAssignmentSchema = z.object({
   requestId: uuidSchema,
   staffMemberId: z.union([uuidSchema, z.literal("unassigned")])
 });
+
+export const aiDraftDecisionSchema = z.object({
+  requestId: uuidSchema,
+  aiOutputId: uuidSchema
+});
+
+export const aiDraftEditSchema = z.object({
+  requestId: uuidSchema,
+  aiOutputId: uuidSchema,
+  editedText: trimmedString.min(1).max(4000)
+});
+
+export const aiDraftRejectSchema = z.object({
+  requestId: uuidSchema,
+  aiOutputId: uuidSchema,
+  reason: trimmedString.max(280).optional()
+});
+
+export const translationRevealSchema = z.object({
+  requestId: uuidSchema,
+  messageId: uuidSchema,
+  targetLocale: supportedLocaleSchema
+});

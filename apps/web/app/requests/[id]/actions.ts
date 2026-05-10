@@ -8,11 +8,15 @@ import {
   type RequestStatus
 } from "@petcura/shared";
 import {
+  aiDraftDecisionSchema,
+  aiDraftEditSchema,
+  aiDraftRejectSchema,
   internalNoteSchema,
   requestAssignmentSchema,
   requestStatusUpdateSchema,
   requestUrgencyUpdateSchema,
-  staffReplySchema
+  staffReplySchema,
+  translationRevealSchema
 } from "@petcura/validation";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { sendWhatsAppStaffMessage } from "@/lib/twilio/outbound";
@@ -506,4 +510,249 @@ export async function assignRequest(formData: FormData) {
 
   refreshRequestViews(requestId);
   redirectToRequest(requestId, locale, { action_status: "assigned" });
+}
+
+type AiDraftActionResult = { ok: true } | { ok: false; error: string };
+
+type AiDraftRow = Pick<
+  Database["public"]["Tables"]["ai_outputs"]["Row"],
+  | "id"
+  | "request_id"
+  | "kind"
+  | "accepted"
+  | "output_json"
+  | "edited_output_json"
+>;
+
+async function loadDraftForAction(
+  supabase: Awaited<ReturnType<typeof requireStaffContext>>["supabase"],
+  clinicId: string,
+  requestId: string,
+  aiOutputId: string
+): Promise<{ draft: AiDraftRow | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from("ai_outputs")
+    .select(
+      "id, request_id, kind, accepted, output_json, edited_output_json"
+    )
+    .eq("clinic_id", clinicId)
+    .eq("id", aiOutputId)
+    .eq("request_id", requestId)
+    .eq("kind", "reply_draft")
+    .maybeSingle();
+
+  if (error) return { draft: null, error: error.message };
+  return { draft: (data as AiDraftRow | null) ?? null, error: null };
+}
+
+export async function acceptAiDraft(input: {
+  requestId: string;
+  aiOutputId: string;
+}): Promise<AiDraftActionResult> {
+  const parsed = aiDraftDecisionSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid_input" };
+  }
+
+  const { requestId, aiOutputId } = parsed.data;
+  const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+  const { draft, error: loadError } = await loadDraftForAction(
+    ctx.supabase,
+    ctx.clinic.id,
+    requestId,
+    aiOutputId
+  );
+
+  if (loadError) return { ok: false, error: loadError };
+  if (!draft) return { ok: false, error: "not_found" };
+  if (draft.accepted !== null) {
+    // Idempotent — already decided.
+    refreshRequestViews(requestId);
+    return { ok: true };
+  }
+
+  const { error: updateError } = await ctx.supabase
+    .from("ai_outputs")
+    .update({ accepted: true, reviewed_by: ctx.user.id })
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", aiOutputId);
+
+  if (updateError) return { ok: false, error: updateError.message };
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      event_type: "ai_draft_accepted",
+      payload_json: {
+        ai_output_id: aiOutputId,
+        staff_id: ctx.membership.id
+      }
+    });
+
+  if (eventError) return { ok: false, error: eventError.message };
+
+  refreshRequestViews(requestId);
+  return { ok: true };
+}
+
+export async function editAiDraft(input: {
+  requestId: string;
+  aiOutputId: string;
+  editedText: string;
+}): Promise<AiDraftActionResult> {
+  const parsed = aiDraftEditSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid_input" };
+  }
+
+  const { requestId, aiOutputId, editedText } = parsed.data;
+  const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+  const { draft, error: loadError } = await loadDraftForAction(
+    ctx.supabase,
+    ctx.clinic.id,
+    requestId,
+    aiOutputId
+  );
+
+  if (loadError) return { ok: false, error: loadError };
+  if (!draft) return { ok: false, error: "not_found" };
+  if (draft.accepted === false) {
+    // Already rejected — refuse to flip it.
+    return { ok: false, error: "already_rejected" };
+  }
+
+  const { error: updateError } = await ctx.supabase
+    .from("ai_outputs")
+    .update({
+      accepted: true,
+      reviewed_by: ctx.user.id,
+      edited_output_json: { text: editedText }
+    })
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", aiOutputId);
+
+  if (updateError) return { ok: false, error: updateError.message };
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      event_type: "ai_draft_edited",
+      payload_json: {
+        ai_output_id: aiOutputId,
+        staff_id: ctx.membership.id,
+        edited_length: editedText.length
+      }
+    });
+
+  if (eventError) return { ok: false, error: eventError.message };
+
+  refreshRequestViews(requestId);
+  return { ok: true };
+}
+
+export async function rejectAiDraft(input: {
+  requestId: string;
+  aiOutputId: string;
+  reason?: string;
+}): Promise<AiDraftActionResult> {
+  const parsed = aiDraftRejectSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid_input" };
+  }
+
+  const { requestId, aiOutputId, reason } = parsed.data;
+  const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+  const { draft, error: loadError } = await loadDraftForAction(
+    ctx.supabase,
+    ctx.clinic.id,
+    requestId,
+    aiOutputId
+  );
+
+  if (loadError) return { ok: false, error: loadError };
+  if (!draft) return { ok: false, error: "not_found" };
+  if (draft.accepted !== null) {
+    refreshRequestViews(requestId);
+    return { ok: true };
+  }
+
+  const { error: updateError } = await ctx.supabase
+    .from("ai_outputs")
+    .update({ accepted: false, reviewed_by: ctx.user.id })
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", aiOutputId);
+
+  if (updateError) return { ok: false, error: updateError.message };
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      event_type: "ai_draft_rejected",
+      payload_json: {
+        ai_output_id: aiOutputId,
+        staff_id: ctx.membership.id,
+        reason: reason ?? null
+      }
+    });
+
+  if (eventError) return { ok: false, error: eventError.message };
+
+  refreshRequestViews(requestId);
+  return { ok: true };
+}
+
+export async function logTranslationRevealed(input: {
+  requestId: string;
+  messageId: string;
+  targetLocale: string;
+}): Promise<AiDraftActionResult> {
+  const parsed = translationRevealSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid_input" };
+  }
+
+  const { requestId, messageId, targetLocale } = parsed.data;
+  const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+
+  // Confirm the message belongs to this clinic + request before we log.
+  const { data: message, error: messageError } = await ctx.supabase
+    .from("messages")
+    .select("id")
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("request_id", requestId)
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (messageError) return { ok: false, error: messageError.message };
+  if (!message) return { ok: false, error: "not_found" };
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      event_type: "translation_revealed",
+      payload_json: {
+        message_id: messageId,
+        target_locale: targetLocale,
+        staff_id: ctx.membership.id
+      }
+    });
+
+  if (eventError) return { ok: false, error: eventError.message };
+  return { ok: true };
 }

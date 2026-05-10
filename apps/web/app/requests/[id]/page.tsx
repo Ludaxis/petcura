@@ -1,44 +1,23 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft,
-  CalendarClock,
-  FileDown,
-  MessageCircleReply,
-  NotebookPen,
-  Save,
-  Send,
-  Settings2,
-  UserRoundCheck,
-  UserRound
-} from "lucide-react";
-import { Badge, Button, Panel } from "@petcura/ui";
-import {
   createTranslator,
-  getChannelLabel,
-  getRequestCategoryLabel,
-  getRequestStatusLabel,
-  getSenderLabel,
-  getUrgencyLabel,
-  requestStatusColumns,
-  withLocale
+  withLocale,
+  type SupportedLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { getRequestDetail } from "@/lib/requests";
-import {
-  addInternalNote,
-  assignRequest,
-  sendStaffReply,
-  updateRequestStatus,
-  updateRequestUrgency
-} from "./actions";
+import { listInboxRequests, type InboxStream } from "@/lib/inbox/queries";
+import { getThemePreference } from "@/lib/theme";
+import { RequestRail } from "./_components/RequestRail";
+import { RequestList } from "./_components/RequestList";
+import { RequestDetail } from "./_components/RequestDetail";
+import { RequestPaneShell } from "./_components/RequestPaneShell";
+import type { ThreadMessage } from "./_components/Thread";
+import type { DraftPayload } from "./_components/AiDraftCard";
 
 type RequestDetailPageProps = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
   searchParams?: Promise<{
     action_error?: string | string[];
     action_status?: string | string[];
@@ -46,407 +25,251 @@ type RequestDetailPageProps = {
   }>;
 };
 
-const urgencyOptions = ["low", "medium", "high"] as const;
-
-function getSearchParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
+function makeRelativeFormatter(locale: SupportedLocale) {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  return (iso: string) => {
+    const diffMs = new Date(iso).getTime() - Date.now();
+    const minutes = Math.round(diffMs / 60000);
+    if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute");
+    const hours = Math.round(minutes / 60);
+    if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
+    const days = Math.round(hours / 24);
+    return rtf.format(days, "day");
+  };
 }
+
+const STREAM_ORDER: InboxStream[] = [
+  "all",
+  "urgent",
+  "today",
+  "week",
+  "routine",
+  "mine",
+  "unassigned"
+];
 
 export default async function RequestDetailPage({
   params,
   searchParams
 }: RequestDetailPageProps) {
   const { id } = await params;
-  const resolvedSearchParams = await searchParams;
-  const locale = await getRequestLocale(resolvedSearchParams?.lang);
+  const sp = (await searchParams) ?? {};
+  const langParam = Array.isArray(sp.lang) ? sp.lang[0] : sp.lang;
+  const locale = await getRequestLocale(langParam);
   const t = createTranslator(locale);
+
   const staffContext = await requireStaffContext(
     locale,
     `/requests/${encodeURIComponent(id)}`
   );
-  const request = await getRequestDetail(
-    staffContext.supabase,
-    staffContext.clinic.id,
-    id
-  );
-  const dateFormatter = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
+
+  const [request, listRows, themePreference] = await Promise.all([
+    getRequestDetail(staffContext.supabase, staffContext.clinic.id, id),
+    listInboxRequests(staffContext.supabase, staffContext.clinic.id, {
+      stream: "all",
+      view: "list",
+      locale,
+      staffMembershipId: staffContext.membership.id
+    }),
+    getThemePreference()
+  ]);
 
   if (!request) {
     notFound();
   }
 
-  const actionStatus = getSearchParam(resolvedSearchParams?.action_status);
-  const actionError = getSearchParam(resolvedSearchParams?.action_error);
-  const currentAssignee = request.staffOptions.find(
-    (staff) => staff.id === request.assignedStaffId
+  const formatRelative = makeRelativeFormatter(locale);
+  const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+  const formatDateTime = (iso: string) =>
+    dateTimeFormatter.format(new Date(iso));
+
+  const hrefForRow = Object.fromEntries(
+    listRows.map((r) => [r.id, withLocale(`/requests/${r.id}`, locale)])
+  ) as Record<string, string>;
+  const rowIds = listRows.map((r) => r.id);
+
+  const messages: ThreadMessage[] = request.messages.map((m) => ({
+    id: m.id,
+    senderType: m.senderType,
+    body: m.body,
+    bodyTranslated: m.bodyTranslated,
+    sourceLocale: m.sourceLocale,
+    createdAt: m.createdAt
+  }));
+
+  const draft: DraftPayload | null = request.pendingDraft
+    ? {
+        id: request.pendingDraft.id,
+        text: request.pendingDraft.text,
+        confidence: request.pendingDraft.confidence,
+        sourceMessageId: request.pendingDraft.sourceMessageId,
+        sourceLocale: request.pendingDraft.sourceLocale,
+        targetLocale: request.pendingDraft.targetLocale,
+        createdAt: request.pendingDraft.createdAt
+      }
+    : null;
+
+  const themeLabels = {
+    light: t("inbox.theme.light"),
+    dark: t("inbox.theme.dark"),
+    system: t("inbox.theme.system"),
+    label: t("inbox.theme.label"),
+    announceLight: t("inbox.theme.announce.light"),
+    announceDark: t("inbox.theme.announce.dark"),
+    announceSystem: t("inbox.theme.announce.system")
+  } as const;
+
+  const streamLabels: Record<InboxStream, string> = {
+    all: t("inbox.streams.all"),
+    urgent: t("inbox.streams.urgent"),
+    today: t("inbox.streams.today"),
+    week: t("inbox.streams.week"),
+    routine: t("inbox.streams.routine"),
+    mine: t("inbox.streams.mine"),
+    unassigned: t("inbox.streams.unassigned")
+  };
+
+  const shortcuts = [
+    { keys: "J / K", description: t("inbox.kbd.navigate") },
+    { keys: "R", description: t("request.kbd.send") },
+    { keys: "T", description: t("request.kbd.translate") },
+    { keys: "E", description: t("inbox.kbd.resolve") },
+    { keys: "A", description: t("inbox.kbd.assign") },
+    { keys: "⌘↵", description: t("request.composer.send") },
+    { keys: "⌘K / Ctrl+K", description: t("inbox.kbd.command") },
+    { keys: "?", description: t("inbox.kbd.shortcuts") }
+  ];
+
+  const paletteLabels = {
+    dialogLabel: t("inbox.cmdk.dialogLabel"),
+    placeholder: t("inbox.cmdk.placeholder"),
+    empty: t("inbox.cmdk.empty"),
+    threadsHeading: t("inbox.cmdk.threads"),
+    streamsHeading: t("inbox.cmdk.streams"),
+    actionsHeading: t("inbox.cmdk.actions"),
+    appearanceHeading: t("inbox.cmdk.appearance"),
+    openThread: t("inbox.cmdk.openThread"),
+    filterStreamPrefix: t("inbox.cmdk.filterStream").replace(" {stream}", ""),
+    themeLight: t("inbox.cmdk.themeLight"),
+    themeDark: t("inbox.cmdk.themeDark"),
+    themeSystem: t("inbox.cmdk.themeSystem"),
+    themeAnnounceLight: t("inbox.cmdk.themeAnnounceLight"),
+    themeAnnounceDark: t("inbox.cmdk.themeAnnounceDark"),
+    themeAnnounceSystem: t("inbox.cmdk.themeAnnounceSystem"),
+    resolveCurrent: t("inbox.cmdk.resolveCurrent"),
+    assignCurrent: t("inbox.cmdk.assignCurrent"),
+    resolved: t("inbox.toast.resolved"),
+    assigned: t("inbox.toast.assigned")
+  };
+
+  const threadLabels = {
+    region: t("request.thread.region"),
+    showTranslation: t("request.translate.show"),
+    hideTranslation: t("request.translate.hide"),
+    error: t("request.translate.error"),
+    system: t("request.thread.system")
+  };
+
+  const draftLabels = {
+    region: t("request.aiDraft.region"),
+    eyebrow: t("request.aiDraft.eyebrow"),
+    from: t("request.aiDraft.from"),
+    confidence: t("request.aiDraft.confidence"),
+    locale: t("request.aiDraft.locale"),
+    accept: t("request.aiDraft.accept"),
+    edit: t("request.aiDraft.edit"),
+    reject: t("request.aiDraft.reject"),
+    cancel: t("request.aiDraft.cancel"),
+    save: t("request.aiDraft.save"),
+    editLabel: t("request.aiDraft.editLabel"),
+    accepted: t("request.aiDraft.accepted.toast"),
+    rejected: t("request.aiDraft.rejected.toast"),
+    edited: t("request.aiDraft.edited.toast"),
+    errorAccept: t("request.aiDraft.error.accept"),
+    errorEdit: t("request.aiDraft.error.edit"),
+    errorReject: t("request.aiDraft.error.reject")
+  };
+
+  const composerLabels = {
+    label: t("request.composer.label"),
+    placeholder: t("request.composer.placeholder"),
+    send: t("request.composer.send"),
+    shortcut: t("request.composer.shortcut")
+  };
+
+  const keyboardLabels = {
+    sheetTitle: t("inbox.kbdSheet.title"),
+    close: t("inbox.kbdSheet.close"),
+    resolved: t("inbox.toast.resolved"),
+    assigned: t("inbox.toast.assigned"),
+    errorResolve: t("inbox.toast.resolveError"),
+    errorAssign: t("inbox.toast.assignError")
+  };
+
+  const paneShell = (
+    <RequestPaneShell
+      requestId={request.id}
+      rowIds={rowIds}
+      hrefForRow={hrefForRow}
+      threads={listRows.map((r) => ({
+        id: r.id,
+        petName: r.petName,
+        ownerName: r.ownerName,
+        preview: r.preview,
+        href: hrefForRow[r.id] ?? `/requests/${r.id}`
+      }))}
+      streams={STREAM_ORDER.map((value) => ({
+        value,
+        label: streamLabels[value]
+      }))}
+      locale={locale}
+      messages={messages}
+      draft={draft}
+      paletteLabels={paletteLabels}
+      threadLabels={threadLabels}
+      draftLabels={draftLabels}
+      composerLabels={composerLabels}
+      keyboardLabels={keyboardLabels}
+      shortcuts={shortcuts}
+    />
   );
-  const getStaffLabel = (staff: (typeof request.staffOptions)[number]) =>
-    staff.userId === staffContext.user.id
-      ? `${staff.role} (${t("request.you")})`
-      : staff.role;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8">
-      <header className="flex flex-col gap-4 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button asChild variant="ghost">
-          <Link href={withLocale("/inbox", locale)}>
-            <ArrowLeft aria-hidden="true" size={16} />
-            {t("nav.inbox")}
-          </Link>
-        </Button>
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <LanguageSwitcher
-            currentPath={`/requests/${id}`}
-            label={t("language.label")}
-            locale={locale}
-          />
-          <Button variant="secondary">
-            <CalendarClock aria-hidden="true" size={16} />
-            {t("request.reminder")}
-          </Button>
-        </div>
-      </header>
+    <main className="flex h-screen w-full overflow-hidden bg-[var(--paper)]">
+      <RequestRail
+        locale={locale}
+        clinicName={staffContext.clinic.name}
+        staffLabel={staffContext.user.email ?? "staff"}
+        labels={{
+          cmdkHint: t("inbox.kbd.command"),
+          backToInbox: t("request.detail.openInbox"),
+          rail: t("inbox.title")
+        }}
+      />
 
-      {actionStatus ? (
-        <div className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]">
-          {t("request.actionSaved")}
-        </div>
-      ) : null}
+      <RequestList
+        rows={listRows}
+        currentRequestId={request.id}
+        locale={locale}
+        hrefForRow={hrefForRow}
+        formatRelative={formatRelative}
+        density="comfortable"
+        emptyLabel={t("inbox.empty")}
+        ariaLabel={t("request.detail.list")}
+      />
 
-      {actionError ? (
-        <div className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm font-medium text-[var(--red)]">
-          {t("request.actionError")}
-        </div>
-      ) : null}
-
-      <section className="grid min-w-0 gap-4 lg:grid-cols-[0.72fr_1.28fr]">
-        <div className="grid min-w-0 gap-4">
-          <Panel className="min-w-0 p-5">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary)]">
-                <UserRound aria-hidden="true" size={22} />
-              </div>
-              <div className="min-w-0">
-                <h1 className="break-words text-2xl font-semibold">
-                  {request.petName}
-                </h1>
-                <p className="mt-1 break-words text-sm text-[var(--muted)]">
-                  {request.species} · {request.ownerName}
-                </p>
-              </div>
-            </div>
-            <div className="mt-5 grid gap-2 text-sm">
-              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">
-                  {t("request.status")}
-                </span>
-                <span className="min-w-0 text-right font-medium">
-                  {getRequestStatusLabel(request.status, locale)}
-                </span>
-              </div>
-              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">
-                  {t("request.urgency")}
-                </span>
-                <Badge
-                  tone={
-                    request.urgency === "high"
-                      ? "red"
-                      : request.urgency === "medium"
-                        ? "amber"
-                        : "neutral"
-                  }
-                >
-                  {getUrgencyLabel(request.urgency, locale)}
-                </Badge>
-              </div>
-              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">
-                  {t("request.category")}
-                </span>
-                <span className="min-w-0 text-right font-medium">
-                  {getRequestCategoryLabel(request.category, locale)}
-                </span>
-              </div>
-              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">
-                  {t("request.channel")}
-                </span>
-                <span className="min-w-0 text-right font-medium">
-                  {getChannelLabel(request.channel, locale)}
-                </span>
-              </div>
-              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">
-                  {t("request.owner")}
-                </span>
-                <span className="min-w-0 break-words text-right font-medium">
-                  {request.ownerPhone}
-                </span>
-              </div>
-              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">
-                  {t("request.assigned")}
-                </span>
-                <span className="min-w-0 break-words text-right font-medium">
-                  {currentAssignee
-                    ? getStaffLabel(currentAssignee)
-                    : t("request.unassigned")}
-                </span>
-              </div>
-            </div>
-          </Panel>
-
-          <Panel className="min-w-0 p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Settings2
-                aria-hidden="true"
-                className="text-[var(--primary)]"
-                size={17}
-              />
-              <h2 className="font-semibold">{t("request.actions")}</h2>
-            </div>
-
-            <div className="grid gap-4">
-              <form action={updateRequestStatus} className="grid gap-2">
-                <input name="lang" type="hidden" value={locale} />
-                <input name="requestId" type="hidden" value={request.id} />
-                <label className="text-sm font-medium" htmlFor="status">
-                  {t("request.status")}
-                </label>
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                  <select
-                    className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
-                    defaultValue={request.status}
-                    id="status"
-                    name="status"
-                  >
-                    {requestStatusColumns.map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {getRequestStatusLabel(status.value, locale)}
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    className="w-full sm:w-auto"
-                    type="submit"
-                    variant="secondary"
-                  >
-                    <Save aria-hidden="true" size={15} />
-                    {t("request.save")}
-                  </Button>
-                </div>
-              </form>
-
-              <form action={updateRequestUrgency} className="grid gap-2">
-                <input name="lang" type="hidden" value={locale} />
-                <input name="requestId" type="hidden" value={request.id} />
-                <label className="text-sm font-medium" htmlFor="urgency">
-                  {t("request.urgency")}
-                </label>
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                  <select
-                    className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
-                    defaultValue={request.urgency}
-                    id="urgency"
-                    name="urgency"
-                  >
-                    {urgencyOptions.map((urgency) => (
-                      <option key={urgency} value={urgency}>
-                        {getUrgencyLabel(urgency, locale)}
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    className="w-full sm:w-auto"
-                    type="submit"
-                    variant="secondary"
-                  >
-                    <Save aria-hidden="true" size={15} />
-                    {t("request.save")}
-                  </Button>
-                </div>
-              </form>
-
-              <form action={assignRequest} className="grid gap-2">
-                <input name="lang" type="hidden" value={locale} />
-                <input name="requestId" type="hidden" value={request.id} />
-                <label className="text-sm font-medium" htmlFor="staffMemberId">
-                  {t("request.assigned")}
-                </label>
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                  <select
-                    className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
-                    defaultValue={request.assignedStaffId ?? "unassigned"}
-                    id="staffMemberId"
-                    name="staffMemberId"
-                  >
-                    <option value="unassigned">{t("request.unassigned")}</option>
-                    {request.staffOptions.map((staff) => (
-                      <option key={staff.id} value={staff.id}>
-                        {getStaffLabel(staff)}
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    className="w-full sm:w-auto"
-                    type="submit"
-                    variant="secondary"
-                  >
-                    <UserRoundCheck aria-hidden="true" size={15} />
-                    {t("request.assign")}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </Panel>
-
-          <Panel className="min-w-0 p-5">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold">{t("request.aiSummary")}</h2>
-              <Badge tone="neutral">{t("request.draft")}</Badge>
-            </div>
-            <p className="mt-3 break-words text-sm leading-6 text-[var(--muted)]">
-              {request.summary || t("request.noSummary")}
-            </p>
-            <div className="mt-4 rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-xs leading-5 text-[var(--muted)]">
-              {t("request.aiNotice")}
-            </div>
-          </Panel>
-
-          <Panel className="min-w-0 p-5">
-            <h2 className="font-semibold">{t("request.events")}</h2>
-            <div className="mt-4 grid gap-2">
-              {request.events.map((event) => (
-                <div
-                  className="grid gap-1 rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
-                  key={event.id}
-                >
-                  <span className="min-w-0 break-words font-medium">
-                    {event.eventType}
-                  </span>
-                  <span className="text-xs text-[var(--muted)]">
-                    {dateFormatter.format(new Date(event.createdAt))}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        </div>
-
-        <Panel className="min-w-0 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-[var(--primary)]">
-                {t("request.conversation")}
-              </p>
-              <h2 className="mt-1 text-xl font-semibold">
-                {t("request.timeline")}
-              </h2>
-            </div>
-            <Button className="w-full sm:w-auto" variant="secondary">
-              <FileDown aria-hidden="true" size={16} />
-              {t("request.export")}
-            </Button>
-          </div>
-
-          <div className="mt-5 grid gap-3">
-            {request.messages.map((message) => (
-              <div
-                className="rounded-[var(--radius)] border border-[var(--line)] bg-white p-4"
-                key={message.id}
-              >
-                <div className="mb-2 grid gap-1 sm:flex sm:items-center sm:justify-between sm:gap-3">
-                  <span className="text-sm font-semibold">
-                    {getSenderLabel(message.senderType, locale)}
-                  </span>
-                  <span className="text-xs text-[var(--muted)]">
-                    {dateFormatter.format(new Date(message.createdAt))}
-                  </span>
-                </div>
-                <p className="break-words text-sm leading-6 text-[var(--foreground)]">
-                  {message.body}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 grid gap-4 border-t border-[var(--line)] pt-5 xl:grid-cols-2">
-            <form action={sendStaffReply} className="grid gap-3">
-              <input name="lang" type="hidden" value={locale} />
-              <input name="requestId" type="hidden" value={request.id} />
-              <div className="flex items-center gap-2">
-                <MessageCircleReply
-                  aria-hidden="true"
-                  className="text-[var(--primary)]"
-                  size={17}
-                />
-                <label className="text-sm font-semibold" htmlFor="reply-body">
-                  {t("request.replyToOwner")}
-                </label>
-              </div>
-              <textarea
-                className="min-h-32 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm leading-6"
-                id="reply-body"
-                maxLength={4000}
-                name="body"
-                placeholder={t("request.replyPlaceholder")}
-                required
-              />
-              <Button type="submit">
-                <Send aria-hidden="true" size={15} />
-                {t("request.sendReply")}
-              </Button>
-            </form>
-
-            <form action={addInternalNote} className="grid gap-3">
-              <input name="lang" type="hidden" value={locale} />
-              <input name="requestId" type="hidden" value={request.id} />
-              <div className="flex items-center gap-2">
-                <NotebookPen
-                  aria-hidden="true"
-                  className="text-[var(--primary)]"
-                  size={17}
-                />
-                <label className="text-sm font-semibold" htmlFor="note-body">
-                  {t("request.addInternalNote")}
-                </label>
-              </div>
-              <textarea
-                className="min-h-32 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm leading-6"
-                id="note-body"
-                maxLength={4000}
-                name="body"
-                placeholder={t("request.notePlaceholder")}
-                required
-              />
-              <Button type="submit" variant="secondary">
-                <NotebookPen aria-hidden="true" size={15} />
-                {t("request.saveNote")}
-              </Button>
-            </form>
-          </div>
-
-          {request.notes.length > 0 ? (
-            <div className="mt-6 border-t border-[var(--line)] pt-5">
-              <h3 className="font-semibold">{t("request.internalNotes")}</h3>
-              <div className="mt-3 grid gap-2">
-                {request.notes.map((note) => (
-                  <div
-                    className="break-words rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]"
-                    key={note.id}
-                  >
-                    {note.body}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </Panel>
-      </section>
+      <RequestDetail
+        request={request}
+        locale={locale}
+        themePreference={themePreference}
+        themeLabels={themeLabels}
+        formatDateTime={formatDateTime}
+        currentStaffUserId={staffContext.user.id}
+        paneShell={paneShell}
+      />
     </main>
   );
 }

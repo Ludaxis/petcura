@@ -59,6 +59,18 @@ export type ClinicStaffOption = {
   role: Database["public"]["Enums"]["staff_role"];
 };
 
+export type PendingAiDraft = {
+  id: string;
+  text: string;
+  confidence: number | null;
+  sourceMessageId: string | null;
+  sourceLocale: string | null;
+  targetLocale: string | null;
+  model: string;
+  promptVersion: string;
+  createdAt: string;
+};
+
 export type RequestDetail = InboxRequest & {
   assignedStaffId: string | null;
   ownerPhone: string;
@@ -84,7 +96,28 @@ export type RequestDetail = InboxRequest & {
     createdAt: string;
   }>;
   staffOptions: ClinicStaffOption[];
+  pendingDraft: PendingAiDraft | null;
 };
+
+function pickDraftText(output: unknown): string {
+  if (typeof output === "string") return output;
+  if (output && typeof output === "object") {
+    const obj = output as Record<string, unknown>;
+    for (const key of ["text", "body", "draft", "reply", "message"]) {
+      const value = obj[key];
+      if (typeof value === "string" && value.trim().length > 0) return value;
+    }
+  }
+  return "";
+}
+
+function pickJsonString(json: unknown, key: string): string | null {
+  if (json && typeof json === "object") {
+    const value = (json as Record<string, unknown>)[key];
+    if (typeof value === "string") return value;
+  }
+  return null;
+}
 
 function fallbackSummary(row: RequestWithRelations) {
   return (
@@ -154,7 +187,7 @@ export async function getRequestDetail(
 
   const request = requestData as unknown as RequestWithRelations;
 
-  const [messagesResult, notesResult, eventsResult, staffResult] =
+  const [messagesResult, notesResult, eventsResult, staffResult, draftResult] =
     await Promise.all([
       supabase
         .from("messages")
@@ -181,7 +214,19 @@ export async function getRequestDetail(
         .select("id, user_id, role")
         .eq("clinic_id", clinicId)
         .eq("is_active", true)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("ai_outputs")
+        .select(
+          "id, output_json, input_json, confidence, model, prompt_version, created_at, accepted"
+        )
+        .eq("clinic_id", clinicId)
+        .eq("request_id", requestId)
+        .eq("kind", "reply_draft")
+        .is("accepted", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
     ]);
 
   if (messagesResult.error) {
@@ -198,6 +243,27 @@ export async function getRequestDetail(
 
   if (staffResult.error) {
     throw new Error(`Could not load staff: ${staffResult.error.message}`);
+  }
+
+  // ai_outputs is read-only here; tolerate missing rows or RLS-suppressed
+  // results without failing the page render.
+  let pendingDraft: PendingAiDraft | null = null;
+  if (!draftResult.error && draftResult.data) {
+    const row = draftResult.data;
+    const text = pickDraftText(row.output_json);
+    if (text.trim().length > 0) {
+      pendingDraft = {
+        id: row.id,
+        text,
+        confidence: row.confidence,
+        sourceMessageId: pickJsonString(row.input_json, "source_message_id"),
+        sourceLocale: pickJsonString(row.input_json, "source_locale"),
+        targetLocale: pickJsonString(row.input_json, "target_locale"),
+        model: row.model,
+        promptVersion: row.prompt_version,
+        createdAt: row.created_at
+      };
+    }
   }
 
   return {
@@ -229,6 +295,7 @@ export async function getRequestDetail(
       id: staff.id,
       userId: staff.user_id,
       role: staff.role
-    }))
+    })),
+    pendingDraft
   };
 }

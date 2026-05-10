@@ -119,22 +119,45 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     await expect(requestLink).toBeVisible();
     await requestLink.click();
     await expect(page.getByRole("heading", { name: petName })).toBeVisible();
-    await expect(page.getByText(ownerName).first()).toBeVisible();
+    await expect(
+      page.locator("[data-detail-head]").getByText(ownerName).first()
+    ).toBeVisible();
     await expect(page.getByText(message).first()).toBeVisible();
+
+    // The events / internal-notes side panel is `xl:block` per PR B
+    // (`docs/contracts` design + plan). Below the xl breakpoint it collapses;
+    // on mobile (<1024) it's hidden entirely until the PR C Details sheet
+    // ships. Skip its assertions on small viewports.
+    const showsSidePanel = (page.viewportSize()?.width ?? 0) >= 1280;
 
     await page.getByLabel("Reply to owner").fill(staffReply);
     await page.getByRole("button", { name: "Send reply" }).click();
     await expect(page.getByText(staffReply)).toBeVisible();
-    await expect(page.getByText("message_sent")).toBeVisible();
-    await expect(page.getByText("Waiting Owner").first()).toBeVisible();
+    if (showsSidePanel) {
+      await expect(
+        page.getByLabel("Request side panel").getByText("message_sent").first()
+      ).toBeVisible();
+    }
+    await expect(
+      page.locator("[data-detail-head]").getByText("Waiting Owner").first()
+    ).toBeVisible();
 
     await page.locator("#urgency").selectOption("high");
     await page
       .locator("form:has(#urgency)")
       .getByRole("button", { name: "Save" })
       .click();
-    await expect(page.getByText("High").first()).toBeVisible();
-    await expect(page.getByText("urgency_changed")).toBeVisible();
+    await expect(
+      page.locator("[data-detail-head]").getByText("High").first()
+    ).toBeVisible();
+    if (showsSidePanel) {
+      await expect(
+        page
+          .getByLabel("Request side panel")
+          .getByText("urgency_changed")
+          .first()
+      ).toBeVisible();
+    }
 
     const assigneeOption = page.locator("#staffMemberId option").nth(1);
     await expect(assigneeOption).toHaveCount(1);
@@ -142,21 +165,37 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
 
     await page.locator("#staffMemberId").selectOption({ index: 1 });
     await page.getByRole("button", { name: "Assign" }).click();
-    await expect(page.getByText(assigneeLabel).first()).toBeVisible();
-    await expect(page.getByText(/^assigned$/)).toBeVisible();
+    await expect(
+      page.locator("[data-current-assignee]").getByText(assigneeLabel)
+    ).toBeVisible();
+    if (showsSidePanel) {
+      await expect(
+        page.getByLabel("Request side panel").getByText(/^assigned$/).first()
+      ).toBeVisible();
+    }
 
-    await page.getByLabel("Add internal note").fill(internalNote);
-    await page.getByRole("button", { name: "Save note" }).click();
-    await expect(page.getByText(internalNote)).toBeVisible();
-    await expect(page.getByText("note_created")).toBeVisible();
+    if (showsSidePanel) {
+      await page.getByLabel("Add internal note").fill(internalNote);
+      await page.getByRole("button", { name: "Save note" }).click();
+      await expect(page.getByText(internalNote)).toBeVisible();
+      await expect(
+        page.getByLabel("Request side panel").getByText("note_created").first()
+      ).toBeVisible();
+    }
 
     await page.locator("#status").selectOption("resolved");
     await page
       .locator("form:has(#status)")
       .getByRole("button", { name: "Save" })
       .click();
-    await expect(page.getByText("Resolved").first()).toBeVisible();
-    await expect(page.getByText(/^resolved$/)).toBeVisible();
+    await expect(
+      page.locator("[data-detail-head]").getByText("Resolved").first()
+    ).toBeVisible();
+    if (showsSidePanel) {
+      await expect(
+        page.getByLabel("Request side panel").getByText(/^resolved$/).first()
+      ).toBeVisible();
+    }
   } finally {
     if (clinicId) {
       const { data: owners } = await admin
