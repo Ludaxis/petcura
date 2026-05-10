@@ -26,14 +26,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const nextPath = getSearchParam(params?.next) ?? "/inbox";
   const error = getSearchParam(params?.error);
   const sent = getSearchParam(params?.sent) === "1";
-  const errorCopy =
-    error === "no_membership"
-      ? t("auth.noMembership")
-      : error === "invalid_email"
-        ? t("auth.invalidEmail")
-        : error
-          ? t("auth.loginError")
-          : null;
+  let errorCopy: string | null = null;
+
+  if (error === "no_membership") {
+    errorCopy = t("auth.noMembership");
+  } else if (error === "invalid_email") {
+    errorCopy = t("auth.invalidEmail");
+  } else if (error === "rate_limited") {
+    errorCopy = t("auth.rateLimited");
+  } else if (error === "email_not_authorized") {
+    errorCopy = t("auth.emailNotAuthorized");
+  } else if (error) {
+    errorCopy = t("auth.loginError");
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-5 px-4 py-5 sm:px-6">

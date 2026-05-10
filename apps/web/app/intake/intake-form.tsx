@@ -14,6 +14,7 @@ type IntakeFormProps = {
     value: string;
     label: string;
   }>;
+  clinicSlug?: string;
   locale: SupportedLocale;
 };
 
@@ -35,7 +36,7 @@ function FieldError({
   return <p className="text-xs text-[var(--red)]">{firstError}</p>;
 }
 
-export function IntakeForm({ categories, locale }: IntakeFormProps) {
+export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) {
   const t = createTranslator(locale);
   const [state, formAction, isPending] = useActionState(
     submitOwnerIntake,
@@ -72,6 +73,7 @@ export function IntakeForm({ categories, locale }: IntakeFormProps) {
   return (
     <form action={formAction} className="grid gap-4">
       <input name="preferredLanguage" type="hidden" value={locale} />
+      <input name="clinicSlug" type="hidden" value={clinicSlug ?? ""} />
 
       {state.message && state.message !== "validation_error" ? (
         <div className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm leading-6 text-[var(--red)]">
