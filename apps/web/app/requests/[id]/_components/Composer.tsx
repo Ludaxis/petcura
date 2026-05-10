@@ -4,6 +4,7 @@ import {
   forwardRef,
   useImperativeHandle,
   useRef,
+  useTransition,
   type FormEvent
 } from "react";
 import { Send } from "lucide-react";
@@ -42,6 +43,16 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
   ) {
     const formRef = useRef<HTMLFormElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [pending, startTransition] = useTransition();
+
+    // Wrap the server action so we can flip aria-busy + disabled on the
+    // form during submission. The action itself redirects on completion, so
+    // the transition resolves on the navigation that follows.
+    const submitAction = (formData: FormData) => {
+      startTransition(async () => {
+        await sendStaffReply(formData);
+      });
+    };
 
     useImperativeHandle(
       ref,
@@ -74,13 +85,14 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
     const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
+        if (pending) return;
         formRef.current?.requestSubmit();
       }
     };
 
     const onSubmit = (e: FormEvent<HTMLFormElement>) => {
       const value = textareaRef.current?.value.trim() ?? "";
-      if (value.length === 0) {
+      if (value.length === 0 || pending) {
         e.preventDefault();
       }
     };
@@ -88,9 +100,10 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
     return (
       <form
         ref={formRef}
-        action={sendStaffReply}
+        action={submitAction}
         onSubmit={onSubmit}
         data-composer-form
+        aria-busy={pending}
         className="sticky bottom-0 z-10 flex flex-col gap-2 border-t border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
       >
         <input name="lang" type="hidden" value={locale} />
@@ -109,6 +122,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
           rows={2}
           maxLength={4000}
           required
+          disabled={pending}
           defaultValue={initialText ?? ""}
           placeholder={labels.placeholder}
           aria-label={labels.label}
@@ -126,7 +140,13 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
             {labels.shortcut}
           </span>
           <div className="flex-1" />
-          <Button type="submit" size="sm" data-composer-send>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={pending}
+            aria-disabled={pending}
+            data-composer-send
+          >
             <Send aria-hidden="true" size={13} />
             {labels.send}
           </Button>

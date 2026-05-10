@@ -233,131 +233,63 @@ export function RequestDetail({
               <CalendarClock aria-hidden="true" size={14} />
               {t("request.reminder")}
             </Button>
-            <button
-              type="button"
+            {/* PR C wires the actual sheet. For PR B the trigger is disabled
+                so it's not a misleading enabled no-op for keyboard / SR users.
+                Tablet users still reach the same content via the inline
+                accordion blocks below the thread (md–xl). */}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled
+              aria-disabled="true"
               data-details-sheet
-              aria-label={t("request.detail.detailsSheet")}
-              // PR C wires the sheet itself; for PR B this stub is a no-op.
-              onClick={undefined}
-              className="inline-flex h-7 items-center gap-1 rounded-[5px] border border-[var(--line)] bg-[var(--paper)] px-2 text-[11.5px] text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)] xl:hidden"
+              className="md:hidden"
             >
-              {t("request.detail.detailsSheet")}
+              {t("request.detail.detailsSheetSoon")}
               <ChevronDown aria-hidden="true" size={12} />
-            </button>
+            </Button>
           </div>
         </div>
       </header>
 
-      {/* Body: thread+composer (left flex), side blocks (right 280px) */}
+      {/* Body: thread+composer (left flex), side blocks (right 280px on xl,
+          inline accordions on md–xl, hidden on <md where the Details sheet
+          stub stands in until PR C wires it). */}
       <div
         data-detail-body
         className="flex min-h-0 flex-1 overflow-hidden"
       >
-        <div className="flex min-w-0 flex-1 flex-col">{paneShell}</div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {paneShell}
+          {/* Tablet (md–xl): inline accordions below the thread so users
+              don't lose the side blocks when the right column is hidden. */}
+          <aside
+            aria-label={t("request.detail.sidePanel")}
+            data-side-panel="inline"
+            className="hidden border-t border-[var(--line)] bg-[var(--paper)] md:block xl:hidden"
+          >
+            <SideBlocks
+              request={request}
+              locale={locale}
+              formatDateTime={formatDateTime}
+              t={t}
+              idSuffix="inline"
+            />
+          </aside>
+        </div>
 
         <aside
-          aria-label="Request side panel"
+          aria-label={t("request.detail.sidePanel")}
+          data-side-panel="rail"
           className="hidden w-[280px] shrink-0 overflow-y-auto border-l border-[var(--line)] bg-[var(--paper)] xl:block"
         >
-          <details
-            open
-            className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
-          >
-            <summary className="flex cursor-pointer items-center justify-between font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]">
-              {t("request.pet")}
-              <ChevronDown size={12} />
-            </summary>
-            <div className="mt-2.5 flex items-start gap-2.5">
-              <div
-                aria-hidden="true"
-                className="h-14 w-14 shrink-0 rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary-strong)]"
-              />
-              <div className="min-w-0">
-                <p className="break-words text-[13.5px] font-medium text-[var(--ink)]">
-                  {request.petName}
-                </p>
-                <p className="text-[12px] text-[var(--muted)]">
-                  {request.species}
-                  {request.petBreed ? ` · ${request.petBreed}` : ""}
-                </p>
-              </div>
-            </div>
-          </details>
-
-          <details
-            open
-            className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
-          >
-            <summary className="flex cursor-pointer items-center justify-between font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]">
-              {t("request.events")}
-              <ChevronDown size={12} />
-            </summary>
-            <ol className="mt-2.5 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
-              {request.events.map((event) => (
-                <li
-                  key={event.id}
-                  className="flex items-center justify-between gap-2 font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]"
-                >
-                  <span className="truncate">{event.eventType}</span>
-                  <span className="text-[var(--muted-2)]">
-                    {formatDateTime(event.createdAt)}
-                  </span>
-                </li>
-              ))}
-              {request.events.length === 0 ? (
-                <li className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
-                  —
-                </li>
-              ) : null}
-            </ol>
-          </details>
-
-          <details
-            open
-            className="px-4 py-3 [&[open]>summary>svg]:rotate-180"
-          >
-            <summary className="flex cursor-pointer items-center justify-between font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]">
-              {t("request.internalNotes")}
-              <ChevronDown size={12} />
-            </summary>
-
-            <form
-              action={addInternalNote}
-              className="mt-2 flex flex-col gap-2"
-              data-action="note"
-            >
-              <input name="lang" type="hidden" value={locale} />
-              <input name="requestId" type="hidden" value={request.id} />
-              <label htmlFor="note-body" className="sr-only">
-                {t("request.addInternalNote")}
-              </label>
-              <textarea
-                id="note-body"
-                name="body"
-                rows={2}
-                maxLength={4000}
-                placeholder={t("request.notePlaceholder")}
-                required
-                className="min-h-[60px] w-full resize-y rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-2 text-[12.5px] leading-5 text-[var(--ink)]"
-              />
-              <Button size="sm" variant="secondary" type="submit">
-                {t("request.saveNote")}
-              </Button>
-            </form>
-
-            {request.notes.length > 0 ? (
-              <ul className="mt-3 flex flex-col gap-2">
-                {request.notes.map((note) => (
-                  <li
-                    key={note.id}
-                    className="rounded-[var(--radius)] bg-[var(--amber-soft)] p-2 text-[12.5px] leading-5 text-[var(--ink-2)]"
-                  >
-                    {note.body}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </details>
+          <SideBlocks
+            request={request}
+            locale={locale}
+            formatDateTime={formatDateTime}
+            t={t}
+            idSuffix="rail"
+          />
         </aside>
       </div>
 
@@ -367,5 +299,136 @@ export function RequestDetail({
         <Languages aria-hidden="true" size={1} />
       </span>
     </section>
+  );
+}
+
+type SideBlocksProps = {
+  request: RequestDetailModel;
+  locale: SupportedLocale;
+  formatDateTime: (iso: string) => string;
+  t: ReturnType<typeof createTranslator>;
+  /** Disambiguates form/textarea IDs because the side panel renders twice
+   *  (rail + inline tablet accordion) so both copies stay in the SSR DOM. */
+  idSuffix: string;
+};
+
+/**
+ * Pet card / Events / Notes side blocks. Rendered twice in the layout:
+ *   - xl+: as a 280px right rail.
+ *   - md–xl: inline below the thread (tablet escape hatch from W5).
+ * Each block uses an `<h2>` inside `<summary>` so heading nav (JAWS/NVDA)
+ * works without changing the visual mono-uppercase styling.
+ */
+function SideBlocks({
+  request,
+  locale,
+  formatDateTime,
+  t,
+  idSuffix
+}: SideBlocksProps) {
+  const headingClass =
+    "font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]";
+  return (
+    <>
+      <details
+        open
+        className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+      >
+        <summary className="flex cursor-pointer items-center justify-between">
+          <h2 className={headingClass}>{t("request.pet")}</h2>
+          <ChevronDown aria-hidden="true" size={12} />
+        </summary>
+        <div className="mt-2.5 flex items-start gap-2.5">
+          <div
+            aria-hidden="true"
+            className="h-14 w-14 shrink-0 rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary-strong)]"
+          />
+          <div className="min-w-0">
+            <p className="break-words text-[13.5px] font-medium text-[var(--ink)]">
+              {request.petName}
+            </p>
+            <p className="text-[12px] text-[var(--muted)]">
+              {request.species}
+              {request.petBreed ? ` · ${request.petBreed}` : ""}
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <details
+        open
+        className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+      >
+        <summary className="flex cursor-pointer items-center justify-between">
+          <h2 className={headingClass}>{t("request.events")}</h2>
+          <ChevronDown aria-hidden="true" size={12} />
+        </summary>
+        <ol className="mt-2.5 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
+          {request.events.map((event) => (
+            <li
+              key={event.id}
+              className="flex items-center justify-between gap-2 font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]"
+            >
+              <span className="truncate">{event.eventType}</span>
+              <span className="text-[var(--muted-2)]">
+                {formatDateTime(event.createdAt)}
+              </span>
+            </li>
+          ))}
+          {request.events.length === 0 ? (
+            <li className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+              —
+            </li>
+          ) : null}
+        </ol>
+      </details>
+
+      <details open className="px-4 py-3 [&[open]>summary>svg]:rotate-180">
+        <summary className="flex cursor-pointer items-center justify-between">
+          <h2 className={headingClass}>{t("request.internalNotes")}</h2>
+          <ChevronDown aria-hidden="true" size={12} />
+        </summary>
+
+        <form
+          action={addInternalNote}
+          className="mt-2 flex flex-col gap-2"
+          data-action="note"
+        >
+          <input name="lang" type="hidden" value={locale} />
+          <input name="requestId" type="hidden" value={request.id} />
+          <label
+            htmlFor={`note-body-${idSuffix}-${request.id}`}
+            className="sr-only"
+          >
+            {t("request.addInternalNote")}
+          </label>
+          <textarea
+            id={`note-body-${idSuffix}-${request.id}`}
+            name="body"
+            rows={2}
+            maxLength={4000}
+            placeholder={t("request.notePlaceholder")}
+            required
+            className="min-h-[60px] w-full resize-y rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-2 text-[12.5px] leading-5 text-[var(--ink)]"
+          />
+          <Button size="sm" variant="secondary" type="submit">
+            {t("request.saveNote")}
+          </Button>
+        </form>
+
+        {request.notes.length > 0 ? (
+          <ul className="mt-3 flex flex-col gap-2">
+            {request.notes.map((note) => (
+              <li
+                key={note.id}
+                className="rounded-[var(--radius)] bg-[var(--amber-soft)] p-2 text-[12.5px] leading-5 text-[var(--ink-2)]"
+              >
+                {note.body}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </details>
+    </>
   );
 }

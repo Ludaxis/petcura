@@ -10,6 +10,8 @@ type RequestRailProps = {
     cmdkHint: string;
     backToInbox: string;
     rail: string;
+    /** Localized template "Signed in as {staff} at {clinic}". */
+    signedIn: string;
   };
 };
 
@@ -52,9 +54,11 @@ export function RequestRail({
       >
         ⌘K
       </span>
-      <span
-        className="sr-only"
-      >{`Signed in as ${staffLabel} at ${clinicName}`}</span>
+      <span className="sr-only">
+        {labels.signedIn
+          .replace("{staff}", staffLabel)
+          .replace("{clinic}", clinicName)}
+      </span>
     </aside>
   );
 }

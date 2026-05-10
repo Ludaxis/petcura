@@ -7,6 +7,7 @@ import {
   getSenderLabel,
   type SupportedLocale
 } from "@petcura/shared";
+import type { MessageDeliveryStatus } from "@/lib/delivery";
 import { logTranslationRevealed } from "../actions";
 
 export type ThreadMessage = {
@@ -16,12 +17,21 @@ export type ThreadMessage = {
   bodyTranslated: string | null;
   sourceLocale: string | null;
   createdAt: string;
+  deliveryStatus: MessageDeliveryStatus | null;
+  deliveryProvider: string | null;
+  deliveryUpdatedAt: string | null;
 };
 
 type ThreadProps = {
   requestId: string;
   messages: ThreadMessage[];
   locale: SupportedLocale;
+  /**
+   * Notifies the parent shell when an article bubble receives focus, so the
+   * keyboard model's `T` shortcut can target the right bubble. The shell
+   * tracks this via a ref so React state churn doesn't fight roving focus.
+   */
+  onBubbleFocus?: (messageId: string) => void;
   labels: {
     region: string;
     /** Template "Show in {locale}" — client substitutes {locale}. */
@@ -29,19 +39,47 @@ type ThreadProps = {
     hideTranslation: string;
     error: string;
     system: string;
+    deliveryStatus: string;
+    delivery: Record<MessageDeliveryStatus, string>;
   };
 };
+
+function deliveryTone(status: MessageDeliveryStatus) {
+  if (status === "failed") {
+    return "border-[var(--red-soft)] bg-[var(--red-soft)] text-[var(--red)]";
+  }
+
+  if (status === "read" || status === "acknowledged") {
+    return "border-[var(--green-soft)] bg-[var(--green-soft)] text-[var(--green)]";
+  }
+
+  if (status === "delivered") {
+    return "border-[var(--primary-soft)] bg-[var(--primary-soft)] text-[var(--primary-strong)]";
+  }
+
+  return "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]";
+}
 
 export function Thread({
   requestId,
   messages,
   locale,
+  onBubbleFocus,
   labels
 }: ThreadProps) {
   const timeFormatter = new Intl.DateTimeFormat(locale, { timeStyle: "short" });
   const formatTime = (iso: string) => timeFormatter.format(new Date(iso));
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [errorId, setErrorId] = useState<string | null>(null);
+  // Roving tabindex: only the focused (or first translatable owner) bubble is
+  // tab-reachable. Defaults to the most recent translatable owner bubble, so
+  // `T` from cold-start lands on the bubble Liis is most likely to want.
+  const lastTranslatableOwner = [...messages]
+    .reverse()
+    .find((m) => m.senderType === "owner" && Boolean(m.bodyTranslated));
+  const [focusedBubbleId, setFocusedBubbleId] = useState<string | null>(
+    lastTranslatableOwner?.id ?? null
+  );
 
   const toggleTranslation = useCallback(
     (msg: ThreadMessage) => {
@@ -109,11 +147,16 @@ export function Thread({
             >
               <article
                 role="article"
+                tabIndex={focusedBubbleId === msg.id ? 0 : -1}
+                onFocus={() => {
+                  setFocusedBubbleId(msg.id);
+                  onBubbleFocus?.(msg.id);
+                }}
                 aria-label={`${senderLabel} · ${formatTime(msg.createdAt)}${
                   msg.sourceLocale ? ` · ${msg.sourceLocale.toUpperCase()}` : ""
                 }`}
                 className={cn(
-                  "max-w-[480px] rounded-[10px] border px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)]",
+                  "max-w-[480px] rounded-[10px] border px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
                   isStaff
                     ? "border-transparent bg-[var(--primary-soft)]"
                     : "border-[var(--line-2)] bg-[var(--soft)]"
@@ -133,6 +176,26 @@ export function Thread({
                   <span>{formatTime(msg.createdAt)}</span>
                   {msg.sourceLocale ? (
                     <span aria-hidden="true">{msg.sourceLocale.toUpperCase()}</span>
+                  ) : null}
+                  {isStaff && msg.deliveryStatus ? (
+                    <span
+                      aria-label={`${labels.deliveryStatus}: ${
+                        labels.delivery[msg.deliveryStatus]
+                      }`}
+                      className={cn(
+                        "inline-flex rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                        deliveryTone(msg.deliveryStatus)
+                      )}
+                      title={
+                        msg.deliveryUpdatedAt
+                          ? `${labels.deliveryStatus}: ${
+                              labels.delivery[msg.deliveryStatus]
+                            } · ${formatTime(msg.deliveryUpdatedAt)}`
+                          : labels.delivery[msg.deliveryStatus]
+                      }
+                    >
+                      {labels.delivery[msg.deliveryStatus]}
+                    </span>
                   ) : null}
                 </div>
                 {showTranslate ? (

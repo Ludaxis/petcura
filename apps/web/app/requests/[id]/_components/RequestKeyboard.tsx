@@ -7,6 +7,7 @@ import {
   useState
 } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@petcura/ui";
 import {
   resolveInboxRequest,
   assignInboxRequestToMe
@@ -60,7 +61,6 @@ export function RequestKeyboard({
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -86,13 +86,28 @@ export function RequestKeyboard({
   useEffect(() => {
     if (!showSheet) return;
     const id = window.setTimeout(() => {
-      closeButtonRef.current?.focus();
+      const close = sheetRef.current?.querySelector<HTMLButtonElement>(
+        "[data-sheet-close]"
+      );
+      close?.focus();
     }, 0);
     return () => window.clearTimeout(id);
   }, [showSheet]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Block global hotkeys when ANOTHER modal dialog is open (e.g. the AI
+      // draft Edit modal). The shortcut sheet itself owns its keys via the
+      // showSheet branches below.
+      if (typeof document !== "undefined") {
+        const openDialog = document.querySelector(
+          '[role="dialog"][aria-modal="true"]'
+        );
+        if (openDialog && openDialog !== sheetRef.current?.parentElement) {
+          return;
+        }
+      }
+
       if (showSheet && e.key === "Tab") {
         trapTabKey(e, sheetRef.current);
         return;
@@ -103,23 +118,18 @@ export function RequestKeyboard({
         return;
       }
 
-      // ⌘↵ when focus is in the composer is handled by the Composer itself
-      // (so the form submits with FormData). Outside the composer, ⌘↵ tells
-      // the shell to programmatically submit.
+      // ⌘↵ contract:
+      // - composer textarea: let the textarea's own onKeyDown win (no-op here)
+      // - other editables (e.g. modal textarea): no-op (modal owns ⌘↵)
+      // - non-editable: shortcut sheet promises "send reply" → submit composer
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        if (!isEditableTarget(e.target)) {
-          // No-op if focus isn't in a textarea/input; the composer owns its
-          // own ⌘↵ in that case.
+        const target = e.target as HTMLElement | null;
+        if (isEditableTarget(target)) {
+          // Composer or modal — owners handle their own ⌘↵.
           return;
         }
-        // Composer's own onKeyDown will run too — but `requestSubmit` is
-        // idempotent at the form level only when called once per tick, so
-        // delegate to the composer ref.
-        const target = e.target as HTMLElement;
-        if (target.matches("[data-composer-textarea]")) {
-          e.preventDefault();
-          onSendComposer();
-        }
+        e.preventDefault();
+        onSendComposer();
         return;
       }
 
@@ -238,14 +248,15 @@ export function RequestKeyboard({
               <h2 className="text-sm font-semibold text-[var(--ink)]">
                 {labels.sheetTitle}
               </h2>
-              <button
-                ref={closeButtonRef}
-                type="button"
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={closeSheet}
-                className="rounded-[var(--radius)] px-2 py-1 text-[12px] text-[var(--muted)] hover:bg-[var(--soft)]"
+                aria-label={labels.close}
+                data-sheet-close
               >
                 {labels.close}
-              </button>
+              </Button>
             </div>
             <ul className="flex flex-col gap-1.5">
               {shortcuts.map((s) => (

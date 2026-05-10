@@ -603,13 +603,14 @@ export async function editAiDraft(input: {
   requestId: string;
   aiOutputId: string;
   editedText: string;
+  saveOnly?: boolean;
 }): Promise<AiDraftActionResult> {
   const parsed = aiDraftEditSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "invalid_input" };
   }
 
-  const { requestId, aiOutputId, editedText } = parsed.data;
+  const { requestId, aiOutputId, editedText, saveOnly } = parsed.data;
   const ctx = await requireStaffContext("en", `/requests/${requestId}`);
   const { draft, error: loadError } = await loadDraftForAction(
     ctx.supabase,
@@ -625,13 +626,20 @@ export async function editAiDraft(input: {
     return { ok: false, error: "already_rejected" };
   }
 
+  // saveOnly = true  → write edit, keep accepted=null, log ai_draft_edited.
+  // saveOnly = false → write edit, set accepted=true, log ai_draft_accepted_with_edits.
+  const updatePayload: Database["public"]["Tables"]["ai_outputs"]["Update"] =
+    saveOnly
+      ? { edited_output_json: { text: editedText } }
+      : {
+          accepted: true,
+          reviewed_by: ctx.user.id,
+          edited_output_json: { text: editedText }
+        };
+
   const { error: updateError } = await ctx.supabase
     .from("ai_outputs")
-    .update({
-      accepted: true,
-      reviewed_by: ctx.user.id,
-      edited_output_json: { text: editedText }
-    })
+    .update(updatePayload)
     .eq("clinic_id", ctx.clinic.id)
     .eq("id", aiOutputId);
 
@@ -644,7 +652,7 @@ export async function editAiDraft(input: {
       request_id: requestId,
       actor_type: "staff",
       actor_id: ctx.user.id,
-      event_type: "ai_draft_edited",
+      event_type: saveOnly ? "ai_draft_edited" : "ai_draft_accepted_with_edits",
       payload_json: {
         ai_output_id: aiOutputId,
         staff_id: ctx.membership.id,

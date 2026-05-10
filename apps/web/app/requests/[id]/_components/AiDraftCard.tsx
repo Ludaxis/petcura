@@ -37,6 +37,7 @@ type AiDraftCardProps = {
     reject: string;
     cancel: string;
     save: string;
+    saveAndAccept: string;
     editLabel: string;
     accepted: string;
     rejected: string;
@@ -113,7 +114,7 @@ export function AiDraftCard({
         onAnnounce(labels.errorAccept);
         return;
       }
-      onAccept(draft.text);
+      onAccept(draftText);
       onAnnounce(labels.accepted);
       setHidden(true);
     });
@@ -134,22 +135,29 @@ export function AiDraftCard({
     });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = (mode: "saveOnly" | "saveAndAccept") => {
     if (draftText.trim().length === 0) return;
     startTransition(async () => {
       const result = await editAiDraft({
         requestId,
         aiOutputId: draft.id,
-        editedText: draftText
+        editedText: draftText,
+        saveOnly: mode === "saveOnly"
       });
       if (!result.ok) {
         onAnnounce(labels.errorEdit);
         return;
       }
-      onEditAccepted(draftText);
       onAnnounce(labels.edited);
-      setEditing(false);
-      setHidden(true);
+      if (mode === "saveAndAccept") {
+        onEditAccepted(draftText);
+        setEditing(false);
+        setHidden(true);
+      } else {
+        // saveOnly: keep card visible so staff can review again or finalize.
+        // The card now reflects the edited text (rendered from local state).
+        setEditing(false);
+      }
     });
   };
 
@@ -183,7 +191,7 @@ export function AiDraftCard({
         className="mt-2 break-words text-[13.5px] leading-[1.55] text-[var(--ink-2)] whitespace-pre-wrap"
         data-ai-draft-text
       >
-        {draft.text}
+        {draftText}
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         <Button
@@ -209,6 +217,10 @@ export function AiDraftCard({
           onClick={handleReject}
           disabled={pending}
           data-ai-draft-action="reject"
+          /* Override ghost's --muted text color so Reject hits AA in dark mode
+             (--muted is too low against dark --paper). Keeps disabled
+             default which dims via opacity-50. */
+          className="text-[var(--ink-2)] aria-disabled:text-[var(--muted)]"
         >
           {labels.reject}
         </Button>
@@ -233,7 +245,9 @@ export function AiDraftCard({
             }
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
               e.preventDefault();
-              handleSaveEdit();
+              // Default to the conservative path: save the edit and keep the
+              // card visible. Shift+⌘↵ commits + accepts.
+              handleSaveEdit(e.shiftKey ? "saveAndAccept" : "saveOnly");
             }
           }}
         >
@@ -246,13 +260,14 @@ export function AiDraftCard({
               <h2 className="text-[13px] font-semibold text-[var(--ink)]">
                 {labels.editLabel}
               </h2>
-              <button
-                type="button"
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={closeEdit}
-                className="rounded-[var(--radius)] px-2 py-1 text-[12px] text-[var(--muted)] hover:bg-[var(--soft)]"
+                aria-label={labels.cancel}
               >
                 {labels.cancel}
-              </button>
+              </Button>
             </div>
             <textarea
               ref={editTextareaRef}
@@ -264,7 +279,7 @@ export function AiDraftCard({
                 "focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               )}
             />
-            <div className="mt-3 flex items-center justify-end gap-2">
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
               <Button
                 size="sm"
                 variant="secondary"
@@ -275,10 +290,20 @@ export function AiDraftCard({
               </Button>
               <Button
                 size="sm"
-                onClick={handleSaveEdit}
+                variant="secondary"
+                onClick={() => handleSaveEdit("saveOnly")}
                 disabled={pending || draftText.trim().length === 0}
+                data-ai-draft-action="save"
               >
                 {labels.save}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleSaveEdit("saveAndAccept")}
+                disabled={pending || draftText.trim().length === 0}
+                data-ai-draft-action="save-accept"
+              >
+                {labels.saveAndAccept}
               </Button>
             </div>
           </div>

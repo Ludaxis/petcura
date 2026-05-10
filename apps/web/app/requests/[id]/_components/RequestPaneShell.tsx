@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CommandPalette, type CommandPaletteRef } from "@/app/inbox/_components/CommandPalette";
 import type { InboxStream } from "@/lib/inbox/queries";
 import type { SupportedLocale } from "@petcura/shared";
@@ -24,8 +24,11 @@ type RequestPaneShellProps = {
   locale: SupportedLocale;
   messages: ThreadMessage[];
   draft: DraftPayload | null;
+  /** Initial server-action toast (from `?action_status=` searchParam). */
+  initialAnnouncement?: string | null;
   paletteLabels: React.ComponentProps<typeof CommandPalette>["labels"];
   threadLabels: React.ComponentProps<typeof Thread>["labels"];
+  translateAnnounce: { shown: string; hidden: string };
   draftLabels: React.ComponentProps<typeof AiDraftCard>["labels"];
   composerLabels: React.ComponentProps<typeof Composer>["labels"];
   keyboardLabels: React.ComponentProps<typeof RequestKeyboard>["labels"];
@@ -46,8 +49,10 @@ export function RequestPaneShell({
   locale,
   messages,
   draft,
+  initialAnnouncement,
   paletteLabels,
   threadLabels,
+  translateAnnounce,
   draftLabels,
   composerLabels,
   keyboardLabels,
@@ -56,16 +61,33 @@ export function RequestPaneShell({
   const composerRef = useRef<ComposerRef>(null);
   const paletteRef = useRef<CommandPaletteRef>(null);
   const liveRef = useRef<HTMLDivElement>(null);
+  const focusedBubbleIdRef = useRef<string | null>(null);
+  // Token guards a stale setTimeout from clearing a newer announcement.
+  const announceTokenRef = useRef(0);
   const [announce, setAnnounce] = useState("");
 
   const announceMessage = useCallback((msg: string) => {
+    const token = ++announceTokenRef.current;
     setAnnounce(msg);
     if (liveRef.current) {
       liveRef.current.textContent = "";
       liveRef.current.textContent = msg;
     }
-    window.setTimeout(() => setAnnounce((cur) => (cur === msg ? "" : cur)), 2000);
+    window.setTimeout(() => {
+      if (announceTokenRef.current === token) setAnnounce("");
+    }, 2000);
   }, []);
+
+  // Route a server-action toast (status / urgency / assign / send / note)
+  // through the same single live region so SR users hear it. The token guard
+  // above prevents an older toast clearing a newer one. We schedule via
+  // queueMicrotask so the announcement runs after commit (no cascading
+  // setState during the effect body).
+  useEffect(() => {
+    if (!initialAnnouncement) return;
+    const msg = initialAnnouncement;
+    queueMicrotask(() => announceMessage(msg));
+  }, [initialAnnouncement, announceMessage]);
 
   const handleAccept = useCallback((text: string) => {
     composerRef.current?.setText(text);
@@ -82,21 +104,39 @@ export function RequestPaneShell({
     composerRef.current?.submit();
   }, []);
 
-  const toggleTranslationOnFocused = useCallback(() => {
-    // Pick the first translatable owner bubble in the visible thread, or
-    // the bubble closest to focus. The Thread component renders each
-    // toggle as `[data-translate-toggle][data-message-id]`, so we just
-    // click whichever one is in/near focus.
-    const active =
-      typeof document !== "undefined"
-        ? (document.activeElement as HTMLElement | null)
-        : null;
-    const fromFocus = active?.closest<HTMLElement>("[data-message-id]");
-    const target =
-      fromFocus?.querySelector<HTMLElement>("[data-translate-toggle]") ??
-      document.querySelector<HTMLElement>("[data-translate-toggle]");
-    target?.click();
+  const handleBubbleFocus = useCallback((id: string) => {
+    focusedBubbleIdRef.current = id;
   }, []);
+
+  const toggleTranslationOnFocused = useCallback(() => {
+    // 1) explicit cursor (last article bubble that received focus)
+    // 2) bubble closest to current DOM focus (e.g. from Tab nav into Thread)
+    // 3) the most recent translatable owner bubble in the DOM
+    let bubble: HTMLElement | null = null;
+    if (focusedBubbleIdRef.current) {
+      bubble = document.querySelector<HTMLElement>(
+        `[data-message-id="${focusedBubbleIdRef.current}"]`
+      );
+    }
+    if (!bubble && typeof document !== "undefined") {
+      const active = document.activeElement as HTMLElement | null;
+      bubble = active?.closest<HTMLElement>("[data-message-id]") ?? null;
+    }
+    if (!bubble) {
+      const all = document.querySelectorAll<HTMLElement>(
+        '[data-message-id][data-translatable="true"]'
+      );
+      bubble = all.length > 0 ? all[all.length - 1] ?? null : null;
+    }
+    const toggle =
+      bubble?.querySelector<HTMLElement>("[data-translate-toggle]") ?? null;
+    if (!toggle) return;
+    const wasPressed = toggle.getAttribute("aria-pressed") === "true";
+    toggle.click();
+    announceMessage(
+      wasPressed ? translateAnnounce.hidden : translateAnnounce.shown
+    );
+  }, [announceMessage, translateAnnounce.hidden, translateAnnounce.shown]);
 
   return (
     <>
@@ -114,6 +154,7 @@ export function RequestPaneShell({
           requestId={requestId}
           messages={messages}
           locale={locale}
+          onBubbleFocus={handleBubbleFocus}
           labels={threadLabels}
         />
 

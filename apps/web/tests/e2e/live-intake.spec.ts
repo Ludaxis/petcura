@@ -124,18 +124,29 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     ).toBeVisible();
     await expect(page.getByText(message).first()).toBeVisible();
 
-    // The events / internal-notes side panel is `xl:block` per PR B
-    // (`docs/contracts` design + plan). Below the xl breakpoint it collapses;
-    // on mobile (<1024) it's hidden entirely until the PR C Details sheet
-    // ships. Skip its assertions on small viewports.
-    const showsSidePanel = (page.viewportSize()?.width ?? 0) >= 1280;
+    // The events / internal-notes side panel is responsive and may be hidden
+    // by layout changes at narrower desktop widths. Probe the rendered panel
+    // instead of assuming a breakpoint. Two side-panel asides ship with the
+    // tri-pane (rail at xl+, inline tablet accordion below the thread); we
+    // probe the visible one.
+    const sidePanelCandidates = page.getByLabel("Request side panel");
+    const candidateCount = await sidePanelCandidates.count();
+    let sidePanel = sidePanelCandidates.first();
+    for (let i = 0; i < candidateCount; i++) {
+      const candidate = sidePanelCandidates.nth(i);
+      if (await candidate.isVisible().catch(() => false)) {
+        sidePanel = candidate;
+        break;
+      }
+    }
+    const showsSidePanel = await sidePanel.isVisible().catch(() => false);
 
     await page.getByLabel("Reply to owner").fill(staffReply);
     await page.getByRole("button", { name: "Send reply" }).click();
     await expect(page.getByText(staffReply)).toBeVisible();
     if (showsSidePanel) {
       await expect(
-        page.getByLabel("Request side panel").getByText("message_sent").first()
+        sidePanel.getByText("message_sent").first()
       ).toBeVisible();
     }
     await expect(
@@ -152,10 +163,7 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     ).toBeVisible();
     if (showsSidePanel) {
       await expect(
-        page
-          .getByLabel("Request side panel")
-          .getByText("urgency_changed")
-          .first()
+        sidePanel.getByText("urgency_changed").first()
       ).toBeVisible();
     }
 
@@ -170,16 +178,16 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     ).toBeVisible();
     if (showsSidePanel) {
       await expect(
-        page.getByLabel("Request side panel").getByText(/^assigned$/).first()
+        sidePanel.getByText(/^assigned$/).first()
       ).toBeVisible();
     }
 
     if (showsSidePanel) {
-      await page.getByLabel("Add internal note").fill(internalNote);
-      await page.getByRole("button", { name: "Save note" }).click();
-      await expect(page.getByText(internalNote)).toBeVisible();
+      await sidePanel.locator('textarea[name="body"]').first().fill(internalNote);
+      await sidePanel.getByRole("button", { name: "Save note" }).click();
+      await expect(sidePanel.getByText(internalNote).first()).toBeVisible();
       await expect(
-        page.getByLabel("Request side panel").getByText("note_created").first()
+        sidePanel.getByText("note_created").first()
       ).toBeVisible();
     }
 
@@ -193,7 +201,7 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     ).toBeVisible();
     if (showsSidePanel) {
       await expect(
-        page.getByLabel("Request side panel").getByText(/^resolved$/).first()
+        sidePanel.getByText(/^resolved$/).first()
       ).toBeVisible();
     }
   } finally {

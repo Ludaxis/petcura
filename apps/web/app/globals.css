@@ -11,6 +11,10 @@
   --paper: #f6f4ef;
   --soft: #ede9df;
   --line: #e2dccc;
+  /* --line-2: one tonal step darker than --line. Used for owner-bubble outlines
+     and tablet side-block dividers where --line was reading too soft. Stays
+     well below text contrast (decorative). */
+  --line-2: #d6cfb8;
   --primary: #4a6b3f;
   --primary-strong: #3a5530;
   --primary-soft: #e2ead6;
@@ -47,6 +51,9 @@
   --paper: #1c1a16;
   --soft: #221f19;
   --line: #2a2620;
+  /* --line-2 in dark: one step lighter than --line so divider/outlines remain
+     visible on near-black --paper without crossing into text contrast. */
+  --line-2: #3a342a;
   --primary: #87a87f;
   --primary-strong: #9bb892;
   --primary-soft: #1f2a1d;

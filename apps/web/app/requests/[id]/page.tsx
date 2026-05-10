@@ -58,6 +58,36 @@ export default async function RequestDetailPage({
   const locale = await getRequestLocale(langParam);
   const t = createTranslator(locale);
 
+  const actionStatus = Array.isArray(sp.action_status)
+    ? sp.action_status[0]
+    : sp.action_status;
+  const actionError = Array.isArray(sp.action_error)
+    ? sp.action_error[0]
+    : sp.action_error;
+  // Map server-action redirect tokens to localized toast strings. We resolve
+  // here (server) so the Pane shell's single aria-live region announces them
+  // to SR users on the next render.
+  const toastForStatus: Record<string, string> = {
+    reply_sent: t("request.toast.replySent"),
+    note_added: t("request.toast.noteAdded"),
+    status_updated: t("request.toast.statusUpdated"),
+    urgency_updated: t("request.toast.urgencyUpdated"),
+    assigned: t("request.toast.assigned")
+  };
+  const toastForError: Record<string, string> = {
+    reply: t("request.toast.error.reply"),
+    note: t("request.toast.error.note"),
+    status: t("request.toast.error.status"),
+    urgency: t("request.toast.error.urgency"),
+    assignment: t("request.toast.error.assignment"),
+    delivery: t("request.toast.error.delivery"),
+    not_found: t("request.toast.error.notFound")
+  };
+  const initialAnnouncement =
+    (actionError && (toastForError[actionError] ?? t("request.toast.error.generic"))) ||
+    (actionStatus && toastForStatus[actionStatus]) ||
+    null;
+
   const staffContext = await requireStaffContext(
     locale,
     `/requests/${encodeURIComponent(id)}`
@@ -97,7 +127,10 @@ export default async function RequestDetailPage({
     body: m.body,
     bodyTranslated: m.bodyTranslated,
     sourceLocale: m.sourceLocale,
-    createdAt: m.createdAt
+    createdAt: m.createdAt,
+    deliveryStatus: m.deliveryStatus,
+    deliveryProvider: m.deliveryProvider,
+    deliveryUpdatedAt: m.deliveryUpdatedAt
   }));
 
   const draft: DraftPayload | null = request.pendingDraft
@@ -170,7 +203,16 @@ export default async function RequestDetailPage({
     showTranslation: t("request.translate.show"),
     hideTranslation: t("request.translate.hide"),
     error: t("request.translate.error"),
-    system: t("request.thread.system")
+    system: t("request.thread.system"),
+    deliveryStatus: t("request.delivery.status"),
+    delivery: {
+      queued: t("request.delivery.queued"),
+      sent: t("request.delivery.sent"),
+      delivered: t("request.delivery.delivered"),
+      read: t("request.delivery.read"),
+      acknowledged: t("request.delivery.acknowledged"),
+      failed: t("request.delivery.failed")
+    }
   };
 
   const draftLabels = {
@@ -184,6 +226,7 @@ export default async function RequestDetailPage({
     reject: t("request.aiDraft.reject"),
     cancel: t("request.aiDraft.cancel"),
     save: t("request.aiDraft.save"),
+    saveAndAccept: t("request.aiDraft.saveAndAccept"),
     editLabel: t("request.aiDraft.editLabel"),
     accepted: t("request.aiDraft.accepted.toast"),
     rejected: t("request.aiDraft.rejected.toast"),
@@ -228,8 +271,13 @@ export default async function RequestDetailPage({
       locale={locale}
       messages={messages}
       draft={draft}
+      initialAnnouncement={initialAnnouncement}
       paletteLabels={paletteLabels}
       threadLabels={threadLabels}
+      translateAnnounce={{
+        shown: t("request.translate.announce.shown"),
+        hidden: t("request.translate.announce.hidden")
+      }}
       draftLabels={draftLabels}
       composerLabels={composerLabels}
       keyboardLabels={keyboardLabels}
@@ -246,7 +294,8 @@ export default async function RequestDetailPage({
         labels={{
           cmdkHint: t("inbox.kbd.command"),
           backToInbox: t("request.detail.openInbox"),
-          rail: t("inbox.title")
+          rail: t("inbox.title"),
+          signedIn: t("inbox.rail.signedIn")
         }}
       />
 

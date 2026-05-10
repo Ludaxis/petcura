@@ -125,7 +125,13 @@ export const aiDraftDecisionSchema = z.object({
 export const aiDraftEditSchema = z.object({
   requestId: uuidSchema,
   aiOutputId: uuidSchema,
-  editedText: trimmedString.min(1).max(4000)
+  editedText: trimmedString.min(1).max(4000),
+  /**
+   * Discriminator. `true` (default) writes the edit but leaves
+   * `accepted=null`, so staff can review again or finalize. `false` writes
+   * the edit and sets `accepted=true` (the legacy "Save & accept" path).
+   */
+  saveOnly: z.boolean().default(true)
 });
 
 export const aiDraftRejectSchema = z.object({

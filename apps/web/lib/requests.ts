@@ -8,6 +8,11 @@ import type {
   RequestUrgency
 } from "@petcura/shared";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getLatestDeliveryEvent,
+  normalizeDeliveryStatus,
+  type MessageDeliveryStatus
+} from "@/lib/delivery";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -83,6 +88,9 @@ export type RequestDetail = InboxRequest & {
     bodyTranslated: string | null;
     sourceLocale: string | null;
     createdAt: string;
+    deliveryStatus: MessageDeliveryStatus | null;
+    deliveryProvider: string | null;
+    deliveryUpdatedAt: string | null;
   }>;
   notes: Array<{
     id: string;
@@ -245,6 +253,38 @@ export async function getRequestDetail(
     throw new Error(`Could not load staff: ${staffResult.error.message}`);
   }
 
+  const messageIds = (messagesResult.data ?? []).map((message) => message.id);
+  const deliveryEventsByMessage = new Map<
+    string,
+    Array<{
+      id: string;
+      status: string;
+      provider: string | null;
+      created_at: string;
+    }>
+  >();
+
+  if (messageIds.length > 0) {
+    const { data: deliveryEvents, error: deliveryError } = await supabase
+      .from("message_delivery_events")
+      .select("id, message_id, status, provider, created_at")
+      .eq("clinic_id", clinicId)
+      .in("message_id", messageIds)
+      .order("created_at", { ascending: true });
+
+    if (deliveryError) {
+      throw new Error(
+        `Could not load delivery events: ${deliveryError.message}`
+      );
+    }
+
+    for (const event of deliveryEvents ?? []) {
+      const events = deliveryEventsByMessage.get(event.message_id) ?? [];
+      events.push(event);
+      deliveryEventsByMessage.set(event.message_id, events);
+    }
+  }
+
   // ai_outputs is read-only here; tolerate missing rows or RLS-suppressed
   // results without failing the page render.
   let pendingDraft: PendingAiDraft | null = null;
@@ -272,14 +312,24 @@ export async function getRequestDetail(
     ownerPhone: request.owners?.phone ?? "",
     petBreed: request.pets?.breed ?? null,
     createdAt: request.created_at,
-    messages: (messagesResult.data ?? []).map((message) => ({
-      id: message.id,
-      senderType: message.sender_type,
-      body: message.body,
-      bodyTranslated: message.body_translated,
-      sourceLocale: message.source_locale,
-      createdAt: message.created_at
-    })),
+    messages: (messagesResult.data ?? []).map((message) => {
+      const latestDelivery = getLatestDeliveryEvent(
+        deliveryEventsByMessage.get(message.id) ?? []
+      );
+      const deliveryStatus = normalizeDeliveryStatus(latestDelivery?.status);
+
+      return {
+        id: message.id,
+        senderType: message.sender_type,
+        body: message.body,
+        bodyTranslated: message.body_translated,
+        sourceLocale: message.source_locale,
+        createdAt: message.created_at,
+        deliveryStatus,
+        deliveryProvider: latestDelivery?.provider ?? null,
+        deliveryUpdatedAt: latestDelivery?.created_at ?? null
+      };
+    }),
     notes: (notesResult.data ?? []).map((note) => ({
       id: note.id,
       body: note.body,
