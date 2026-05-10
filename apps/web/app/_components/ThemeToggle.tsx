@@ -6,6 +6,8 @@ import { cn } from "@petcura/ui";
 
 export type ThemePreference = "light" | "dark" | "system";
 
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
+
 type ThemeToggleProps = {
   initial: ThemePreference;
   labels: {
@@ -25,7 +27,12 @@ function readCookie(): ThemePreference | null {
   return (match?.[1] as ThemePreference | undefined) ?? null;
 }
 
-function applyTheme(pref: ThemePreference) {
+export function persistThemePreference(pref: ThemePreference) {
+  if (typeof document === "undefined") return;
+  document.cookie = `petcura-theme=${pref}; Path=/; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
+}
+
+export function applyThemePreference(pref: ThemePreference) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   let resolved: "light" | "dark" = "light";
@@ -58,14 +65,15 @@ export function ThemeToggle({
   useEffect(() => {
     if (pref !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => applyTheme("system");
+    const onChange = () => applyThemePreference("system");
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, [pref]);
 
   const setTheme = (next: ThemePreference) => {
     setPref(next);
-    applyTheme(next);
+    persistThemePreference(next);
+    applyThemePreference(next);
     startTransition(() => {
       void fetch("/api/theme", {
         method: "POST",

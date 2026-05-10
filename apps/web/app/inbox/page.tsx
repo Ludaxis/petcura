@@ -214,9 +214,7 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
           <InboxEmptyState message={t("inbox.empty")} />
         ) : (
           <div
-            role="grid"
             aria-label={t("inbox.title")}
-            aria-rowcount={rows.length}
             className="overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)]"
           >
             {rows.map((row, i) => (

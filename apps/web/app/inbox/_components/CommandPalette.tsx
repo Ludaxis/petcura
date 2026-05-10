@@ -18,21 +18,11 @@ import {
   assignInboxRequestToMe
 } from "../_actions";
 import type { InboxStream } from "@/lib/inbox/queries";
-import type { ThemePreference } from "@/app/_components/ThemeToggle";
-
-function applyTheme(pref: ThemePreference) {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  let resolved: "light" | "dark" = "light";
-  if (pref === "dark") resolved = "dark";
-  else if (pref === "system") {
-    resolved = window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }
-  if (resolved === "dark") root.setAttribute("data-theme", "dark");
-  else root.removeAttribute("data-theme");
-}
+import {
+  applyThemePreference,
+  persistThemePreference,
+  type ThemePreference
+} from "@/app/_components/ThemeToggle";
 
 type ThreadItem = {
   id: string;
@@ -136,7 +126,8 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
     );
 
     const setTheme = useCallback((pref: ThemePreference) => {
-      applyTheme(pref);
+      persistThemePreference(pref);
+      applyThemePreference(pref);
       void fetch("/api/theme", {
         method: "POST",
         headers: { "content-type": "application/json" },

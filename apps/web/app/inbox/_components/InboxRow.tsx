@@ -64,11 +64,11 @@ export function InboxRow({
   return (
     <Link
       href={href}
-      role="row"
-      aria-rowindex={index + 1}
-      aria-selected={selected}
+      aria-label={`${row.petName} ${row.ownerName} ${row.preview}`}
       data-inbox-row
       data-row-id={row.id}
+      data-row-index={index}
+      data-selected={selected ? "true" : undefined}
       data-tier={row.tier}
       tabIndex={selected ? 0 : -1}
       className={cn(
