@@ -7,10 +7,10 @@ import {
   getRequestCategoryLabel,
   getRequestStatusLabel,
   getUrgencyLabel,
-  normalizeLocale,
   requestStatusColumns,
   withLocale
 } from "@petcura/shared";
+import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 type InboxPageProps = {
@@ -20,7 +20,7 @@ type InboxPageProps = {
 };
 
 export default async function InboxPage({ searchParams }: InboxPageProps) {
-  const locale = normalizeLocale((await searchParams)?.lang);
+  const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
 
   return (

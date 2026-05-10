@@ -28,13 +28,20 @@ Shared localization utilities live in:
 
 - `packages/shared/src/i18n.ts`
 
-The current web app reads the locale from the `lang` query parameter:
+The current web app resolves locale in this order:
+
+1. `lang` query parameter
+2. `petcura_locale` cookie
+3. `Accept-Language` browser header
+4. English fallback
+
+Supported explicit query values:
 
 - `?lang=en`
 - `?lang=et`
 - `?lang=ru`
 
-Use `normalizeLocale()` for incoming values and `createTranslator()` for UI copy.
+Use `normalizeLocale()` for incoming values and `createTranslator()` for UI copy. Use `getRequestLocale()` inside the web app so pages and document metadata agree.
 
 Use typed label helpers for domain enums:
 
@@ -52,7 +59,7 @@ AI translation is a product feature, not a replacement for localized UI. Interfa
 
 ## Next Upgrade
 
-Before pilot, replace query-string locale selection with persisted preference:
+Before pilot, connect persisted preference to database records:
 
 - owner preferred language from `owners.preferred_language`
 - staff preferred language from `users.locale`

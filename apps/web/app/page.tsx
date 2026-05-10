@@ -12,11 +12,11 @@ import { Badge, Button, Panel, Metric } from "@petcura/ui";
 import {
   createTranslator,
   demoRequests,
-  normalizeLocale,
   pilotMetrics,
   withLocale
 } from "@petcura/shared";
 import { getPublicEnvStatus } from "@/lib/env";
+import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 type HomePageProps = {
@@ -26,7 +26,7 @@ type HomePageProps = {
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const locale = normalizeLocale((await searchParams)?.lang);
+  const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
   const envStatus = getPublicEnvStatus();
   const workflow = [

@@ -4,9 +4,9 @@ import { Badge, Button, Panel } from "@petcura/ui";
 import {
   createTranslator,
   getLocalizedRequestCategories,
-  normalizeLocale,
   withLocale
 } from "@petcura/shared";
+import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 type IntakePageProps = {
@@ -16,7 +16,7 @@ type IntakePageProps = {
 };
 
 export default async function IntakePage({ searchParams }: IntakePageProps) {
-  const locale = normalizeLocale((await searchParams)?.lang);
+  const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
   const localizedCategories = getLocalizedRequestCategories(locale);
 

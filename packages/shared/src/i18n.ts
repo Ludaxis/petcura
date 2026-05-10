@@ -21,7 +21,12 @@ export function normalizeLocale(input: unknown): SupportedLocale {
     return defaultLocale;
   }
 
-  const normalized = value.toLowerCase().split("-")[0];
+  const normalized = value
+    .toLowerCase()
+    .split(",")[0]
+    ?.split(";")[0]
+    ?.trim()
+    .split("-")[0];
 
   return supportedLocales.includes(normalized as SupportedLocale)
     ? (normalized as SupportedLocale)

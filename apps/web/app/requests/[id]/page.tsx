@@ -16,9 +16,9 @@ import {
   getRequestCategoryLabel,
   getSenderLabel,
   getUrgencyLabel,
-  normalizeLocale,
   withLocale
 } from "@petcura/shared";
+import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 type RequestDetailPageProps = {
@@ -35,7 +35,7 @@ export default async function RequestDetailPage({
   searchParams
 }: RequestDetailPageProps) {
   const { id } = await params;
-  const locale = normalizeLocale((await searchParams)?.lang);
+  const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
   const request = demoRequests.find((item) => item.id === id);
 
