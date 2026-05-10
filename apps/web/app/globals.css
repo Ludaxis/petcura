@@ -2,20 +2,56 @@
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 :root {
-  --background: #f6f8f7;
-  --foreground: #12201c;
-  --muted: #617069;
-  --line: #dce5e1;
-  --surface: #ffffff;
-  --surface-soft: #eef4f1;
-  --primary: #0f766e;
-  --primary-strong: #115e59;
-  --primary-soft: #ccfbf1;
-  --amber: #b45309;
-  --amber-soft: #fef3c7;
-  --red: #b91c1c;
-  --red-soft: #fee2e2;
+  --ink: #29261b;
+  --ink-2: #4d4738;
+  --muted: #847e6b;
+  --muted-2: #a39b86;
+  --paper: #f6f4ef;
+  --soft: #ede9df;
+  --line: #e2dccc;
+  --primary: #4a6b3f;
+  --primary-strong: #3a5530;
+  --primary-soft: #e2ead6;
+  --amber: #b07d2c;
+  --amber-soft: #f5e7c8;
+  --red: #a64a3c;
+  --red-soft: #f3dfd8;
+  --green: #4a6b3f;
+  --green-soft: #d9e6cc;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --surface: var(--paper);
+  --surface-soft: var(--soft);
+
   --radius: 8px;
+
+  --font-sans:
+    var(--font-montserrat), "Montserrat", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, SFMono-Regular,
+    Menlo, monospace;
+}
+
+.dark,
+[data-theme="dark"] {
+  --ink: #ece8de;
+  --ink-2: #c9c4b6;
+  --muted: #8a8270;
+  --muted-2: #6e6757;
+  --paper: #1c1a16;
+  --soft: #221f19;
+  --line: #2a2620;
+  --primary: #87a87f;
+  --primary-strong: #9bb892;
+  --primary-soft: #1f2a1d;
+  --amber: #d4a872;
+  --amber-soft: #2a2218;
+  --red: #d49080;
+  --red-soft: #2a1c18;
+  --green: #9bb892;
+  --green-soft: #1f2a1d;
 }
 
 * {
@@ -31,18 +67,11 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(15, 118, 110, 0.08), transparent 260px),
+    linear-gradient(180deg, rgba(74, 107, 63, 0.06), transparent 260px),
     var(--background);
   color: var(--foreground);
-  font-family:
-    "Aptos",
-    "Segoe UI",
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-  letter-spacing: 0;
+  font-family: var(--font-sans);
+  letter-spacing: -0.005em;
 }
 
 a {
@@ -58,6 +87,6 @@ textarea {
 }
 
 :focus-visible {
-  outline: 3px solid rgba(15, 118, 110, 0.32);
+  outline: 3px solid rgba(74, 107, 63, 0.32);
   outline-offset: 2px;
 }

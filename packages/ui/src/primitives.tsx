@@ -10,15 +10,21 @@ export function cn(...inputs: Array<string | false | null | undefined>) {
 type ButtonProps = ComponentPropsWithoutRef<"button"> & {
   asChild?: boolean;
   variant?: "primary" | "secondary" | "ghost";
+  size?: "sm" | "md";
 };
 
 const buttonVariants = {
   primary:
-    "bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] border-transparent",
+    "bg-[var(--primary)] text-[var(--paper)] hover:bg-[var(--primary-strong)] border-transparent",
   secondary:
-    "bg-white text-[var(--foreground)] hover:bg-[var(--surface-soft)] border-[var(--line)]",
+    "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--soft)] border-[var(--line)]",
   ghost:
-    "bg-transparent text-[var(--foreground)] hover:bg-[var(--surface-soft)] border-transparent"
+    "bg-transparent text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)] border-transparent"
+};
+
+const buttonSizes = {
+  sm: "h-7 px-2.5 text-[11.5px] rounded-[5px]",
+  md: "h-10 px-3 text-sm rounded-[var(--radius)]"
 };
 
 export function Button({
@@ -26,10 +32,12 @@ export function Button({
   className,
   children,
   variant = "primary",
+  size = "md",
   ...props
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius)] border px-3 text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center gap-2 border font-medium transition disabled:pointer-events-none disabled:opacity-50",
+    buttonSizes[size],
     buttonVariants[variant],
     className
   );
@@ -54,8 +62,8 @@ type BadgeProps = {
 };
 
 const badgeTones = {
-  neutral: "bg-[var(--surface-soft)] text-[var(--muted)]",
-  teal: "bg-[var(--primary-soft)] text-[var(--primary)]",
+  neutral: "bg-[var(--soft)] text-[var(--muted)]",
+  teal: "bg-[var(--primary-soft)] text-[var(--primary-strong)]",
   amber: "bg-[var(--amber-soft)] text-[var(--amber)]",
   red: "bg-[var(--red-soft)] text-[var(--red)]"
 };
@@ -73,13 +81,79 @@ export function Badge({ children, tone = "neutral" }: BadgeProps) {
   );
 }
 
+type StatusPillStatus =
+  | "new"
+  | "waiting-staff"
+  | "waiting-owner"
+  | "resolved"
+  | "urgent";
+
+type StatusPillProps = {
+  status: StatusPillStatus;
+  children?: ReactNode;
+};
+
+const statusPillTones: Record<StatusPillStatus, string> = {
+  new: "bg-[var(--primary-soft)] text-[var(--primary-strong)]",
+  "waiting-staff": "bg-[var(--amber-soft)] text-[var(--amber)]",
+  "waiting-owner": "bg-[var(--soft)] text-[var(--muted)]",
+  resolved: "bg-[var(--green-soft)] text-[var(--primary-strong)]",
+  urgent: "bg-[var(--red-soft)] text-[var(--red)]"
+};
+
+const statusPillLabels: Record<StatusPillStatus, string> = {
+  new: "new",
+  "waiting-staff": "waiting · staff",
+  "waiting-owner": "waiting · owner",
+  resolved: "resolved",
+  urgent: "urgent"
+};
+
+export function StatusPill({ status, children }: StatusPillProps) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded px-2 py-[3px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.02em]",
+        statusPillTones[status]
+      )}
+      style={{ fontFamily: "var(--font-mono)" }}
+    >
+      {children ?? statusPillLabels[status]}
+    </span>
+  );
+}
+
+type UrgencyDotProps = {
+  level: "urgent" | "today" | "week" | "routine";
+  label?: string;
+};
+
+const urgencyDotColors: Record<UrgencyDotProps["level"], string> = {
+  urgent: "var(--red)",
+  today: "var(--amber)",
+  week: "var(--muted)",
+  routine: "var(--muted-2)"
+};
+
+export function UrgencyDot({ level, label }: UrgencyDotProps) {
+  return (
+    <span
+      className="inline-block h-2.5 w-2.5 rounded-full"
+      style={{ backgroundColor: urgencyDotColors[level] }}
+      role="img"
+      aria-label={label ?? level}
+      title={label ?? level}
+    />
+  );
+}
+
 type PanelProps = ComponentPropsWithoutRef<"section">;
 
 export function Panel({ className, ...props }: PanelProps) {
   return (
     <section
       className={cn(
-        "rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] shadow-sm",
+        "rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] shadow-sm",
         className
       )}
       {...props}
@@ -95,9 +169,9 @@ type MetricProps = {
 
 export function Metric({ icon, label, value }: MetricProps) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-[var(--radius)] border border-[var(--line)] bg-white p-3">
+    <div className="flex items-center justify-between gap-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-3">
       <div className="flex items-center gap-3">
-        <span className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] bg-[var(--surface-soft)] text-[var(--primary)]">
+        <span className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] bg-[var(--soft)] text-[var(--primary)]">
           {icon}
         </span>
         <span className="text-sm text-[var(--muted)]">{label}</span>

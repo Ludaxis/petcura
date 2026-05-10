@@ -158,6 +158,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </Panel>
       </section>
+      <footer className="mx-auto mt-12 flex max-w-6xl items-center justify-between gap-4 border-t border-[var(--line)] px-6 py-6 text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+        <span style={{ fontFamily: "var(--font-mono)" }}>
+          PetCura · v1.0
+        </span>
+        <Link
+          href="/design"
+          className="hover:text-[var(--primary-strong)]"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
+          Design system →
+        </Link>
+      </footer>
     </main>
   );
 }
