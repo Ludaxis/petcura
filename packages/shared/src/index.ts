@@ -124,3 +124,5 @@ export const demoRequests = [
     body: string;
   }>;
 }>;
+
+export type { Database } from "./database.types";
