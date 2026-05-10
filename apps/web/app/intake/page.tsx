@@ -12,13 +12,21 @@ import { IntakeForm } from "./intake-form";
 
 type IntakePageProps = {
   searchParams?: Promise<{
+    clinic?: string | string[];
     lang?: string | string[];
   }>;
 };
 
 export default async function IntakePage({ searchParams }: IntakePageProps) {
-  const locale = await getRequestLocale((await searchParams)?.lang);
+  const params = await searchParams;
+  const locale = await getRequestLocale(params?.lang);
   const t = createTranslator(locale);
+  const clinicSlug = Array.isArray(params?.clinic)
+    ? params.clinic[0]
+    : params?.clinic;
+  const currentPath = clinicSlug
+    ? `/intake?clinic=${encodeURIComponent(clinicSlug)}`
+    : "/intake";
   const localizedCategories = getLocalizedRequestCategories(locale);
 
   return (
@@ -32,7 +40,7 @@ export default async function IntakePage({ searchParams }: IntakePageProps) {
         </Button>
         <div className="flex items-center gap-2">
           <LanguageSwitcher
-            currentPath="/intake"
+            currentPath={currentPath}
             label={t("language.label")}
             locale={locale}
           />
@@ -69,7 +77,11 @@ export default async function IntakePage({ searchParams }: IntakePageProps) {
           {t("intake.disclaimer")}
         </div>
 
-        <IntakeForm categories={localizedCategories} locale={locale} />
+        <IntakeForm
+          categories={localizedCategories}
+          {...(clinicSlug ? { clinicSlug } : {})}
+          locale={locale}
+        />
       </Panel>
     </main>
   );

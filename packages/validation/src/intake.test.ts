@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  clinicSlugSchema,
+  createClinicSchema,
+  createClinicStaffSchema,
   intakeRequestSchema,
   internalNoteSchema,
   requestAssignmentSchema,
@@ -21,6 +24,7 @@ describe("intakeRequestSchema", () => {
       petSpecies: " Cat ",
       category: "medical_question",
       message: "Luna has not eaten since yesterday morning.",
+      clinicSlug: "alex-vet-demo",
       preferredLanguage: "et"
     });
 
@@ -29,12 +33,51 @@ describe("intakeRequestSchema", () => {
       phone: "+372 5555 0000",
       petName: "Luna",
       petSpecies: "Cat",
+      clinicSlug: "alex-vet-demo",
       preferredLanguage: "et"
     });
   });
 
   it("rejects urgent as a persisted status", () => {
     expect(requestStatusSchema.safeParse("urgent").success).toBe(false);
+  });
+});
+
+describe("admin bootstrap schemas", () => {
+  it("normalizes clinic setup inputs", () => {
+    expect(clinicSlugSchema.parse(" Alex-Vet-Demo ")).toBe("alex-vet-demo");
+    expect(
+      createClinicSchema.parse({
+        name: " Alex Veterinary Clinic ",
+        slug: "Alex-Vet-Demo",
+        country: "ee",
+        timezone: "Europe/Tallinn",
+        locale: "et"
+      })
+    ).toMatchObject({
+      name: "Alex Veterinary Clinic",
+      slug: "alex-vet-demo",
+      country: "EE",
+      locale: "et"
+    });
+  });
+
+  it("validates staff provisioning inputs", () => {
+    expect(
+      createClinicStaffSchema.parse({
+        clinicId: "33333333-3333-4333-8333-333333333333",
+        email: " Staff@Clinic.ee ",
+        role: "vet"
+      })
+    ).toMatchObject({
+      email: "staff@clinic.ee",
+      role: "vet"
+    });
+  });
+
+  it("rejects unsafe clinic slugs", () => {
+    expect(clinicSlugSchema.safeParse("../admin").success).toBe(false);
+    expect(clinicSlugSchema.safeParse("clinic--name").success).toBe(false);
   });
 });
 
