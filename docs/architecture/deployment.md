@@ -2,7 +2,7 @@
 
 ## Vercel Project
 
-- Team: `Ludaxis`
+- Team: `Joyixir`
 - Project: `petcura`
 - Project ID: `prj_NMBdyjd3ds86DWZsCiFzJvmngzwa`
 - Framework: Next.js
@@ -35,29 +35,27 @@ Do not commit Vercel environment values or `.vercel/`. The local project link li
 Deploy production manually:
 
 ```bash
-npx --yes vercel@latest deploy --prod --yes --scope ludaxis --logs
+npx --yes vercel@latest deploy --prod --yes --scope joyixir-games --logs
 ```
 
 Inspect a deployment:
 
 ```bash
-npx --yes vercel@latest inspect <deployment-url> --logs --scope ludaxis
+npx --yes vercel@latest inspect <deployment-url> --logs --scope joyixir-games
 ```
 
 List environment variable keys:
 
 ```bash
-npx --yes vercel@latest env list --scope ludaxis
+npx --yes vercel@latest env list --scope joyixir-games
 ```
 
 ## Git Integration Status
 
-Vercel Git auto-deploy is not active yet. Attempting to connect `Ludaxis/petcura` failed because the repository is private and organization-owned, which is not supported on the current Hobby plan.
+Vercel Git auto-deploy is active for:
 
-To enable automatic deployments, either upgrade the Ludaxis Vercel team to Pro or make the repository public, then run:
+- Repository: `Ludaxis/petcura`
+- Production branch: `main`
+- Vercel team: `Joyixir`
 
-```bash
-npx --yes vercel@latest git connect git@github.com:Ludaxis/petcura.git --scope ludaxis --non-interactive
-```
-
-Until then, production deploys are manual through the Vercel CLI.
+Pushes to `main` should create production deployments. Manual CLI deploy remains available when an explicit deployment is needed.

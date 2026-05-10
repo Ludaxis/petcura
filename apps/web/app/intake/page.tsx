@@ -1,19 +1,42 @@
 import Link from "next/link";
 import { ArrowLeft, Camera, MessageSquareText, ShieldCheck } from "lucide-react";
 import { Badge, Button, Panel } from "@petcura/ui";
-import { requestCategories } from "@petcura/shared";
+import {
+  createTranslator,
+  getLocalizedRequestCategories,
+  normalizeLocale,
+  withLocale
+} from "@petcura/shared";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
-export default function IntakePage() {
+type IntakePageProps = {
+  searchParams?: Promise<{
+    lang?: string | string[];
+  }>;
+};
+
+export default async function IntakePage({ searchParams }: IntakePageProps) {
+  const locale = normalizeLocale((await searchParams)?.lang);
+  const t = createTranslator(locale);
+  const localizedCategories = getLocalizedRequestCategories(locale);
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:px-6">
       <header className="flex items-center justify-between gap-4 border-b border-[var(--line)] pb-4">
         <Button asChild variant="ghost">
-          <Link href="/">
+          <Link href={withLocale("/", locale)}>
             <ArrowLeft aria-hidden="true" size={16} />
-            Back
+            {t("nav.back")}
           </Link>
         </Button>
-        <Badge tone="teal">Owner web fallback</Badge>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher
+            currentPath="/intake"
+            label={t("language.label")}
+            locale={locale}
+          />
+          <Badge tone="teal">{t("intake.badge")}</Badge>
+        </div>
       </header>
 
       <Panel className="p-5 sm:p-6">
@@ -22,10 +45,9 @@ export default function IntakePage() {
             <MessageSquareText aria-hidden="true" size={22} />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold">Create a request</h1>
+            <h1 className="text-2xl font-semibold">{t("intake.title")}</h1>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              This is the web fallback for owners who are not using WhatsApp.
-              The next backend slice will submit this form to Supabase.
+              {t("intake.description")}
             </p>
           </div>
         </div>
@@ -33,7 +55,7 @@ export default function IntakePage() {
         <form className="grid gap-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium" htmlFor="owner-name">
-              Your name
+              {t("intake.ownerName")}
             </label>
             <input
               className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
@@ -45,7 +67,7 @@ export default function IntakePage() {
 
           <div className="grid gap-2">
             <label className="text-sm font-medium" htmlFor="phone">
-              Phone number
+              {t("intake.phone")}
             </label>
             <input
               className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
@@ -58,7 +80,7 @@ export default function IntakePage() {
 
           <div className="grid gap-2">
             <label className="text-sm font-medium" htmlFor="pet-name">
-              Pet name
+              {t("intake.petName")}
             </label>
             <input
               className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
@@ -70,7 +92,7 @@ export default function IntakePage() {
 
           <div className="grid gap-2">
             <label className="text-sm font-medium" htmlFor="category">
-              Request type
+              {t("intake.category")}
             </label>
             <select
               className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
@@ -78,7 +100,7 @@ export default function IntakePage() {
               name="category"
               defaultValue="medical_question"
             >
-              {requestCategories.map((category) => (
+              {localizedCategories.map((category) => (
                 <option key={category.value} value={category.value}>
                   {category.label}
                 </option>
@@ -88,20 +110,20 @@ export default function IntakePage() {
 
           <div className="grid gap-2">
             <label className="text-sm font-medium" htmlFor="message">
-              What is happening?
+              {t("intake.message")}
             </label>
             <textarea
               className="min-h-36 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 py-3"
               id="message"
               name="message"
-              placeholder="Tell the clinic what changed, when it started, and what you have already tried."
+              placeholder={t("intake.messagePlaceholder")}
             />
           </div>
 
           <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-4">
             <div className="flex items-center gap-3 text-sm text-[var(--muted)]">
               <Camera aria-hidden="true" size={18} />
-              Photo/video attachments will be enabled with Supabase Storage.
+              {t("intake.attachments")}
             </div>
           </div>
 
@@ -112,11 +134,10 @@ export default function IntakePage() {
                 className="mt-0.5 shrink-0"
                 size={15}
               />
-              PetCura structures requests for clinic staff. It does not provide
-              diagnosis or emergency medical advice.
+              {t("intake.disclaimer")}
             </p>
             <Button type="button" aria-disabled="true">
-              Submit once Supabase is connected
+              {t("intake.submitDisabled")}
             </Button>
           </div>
         </form>

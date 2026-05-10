@@ -1,3 +1,11 @@
+import {
+  getRequestCategoryLabel,
+  type MessageSender,
+  type RequestCategory,
+  type RequestChannel,
+  type SupportedLocale
+} from "./i18n";
+
 export type RequestStatus =
   | "new"
   | "urgent"
@@ -8,20 +16,27 @@ export type RequestStatus =
 export type RequestUrgency = "low" | "medium" | "high";
 
 export const requestStatusColumns = [
-  { value: "new", label: "New" },
-  { value: "urgent", label: "Urgent" },
-  { value: "waiting_staff", label: "Waiting Staff" },
-  { value: "waiting_owner", label: "Waiting Owner" },
-  { value: "resolved", label: "Resolved" }
+  { value: "new", labelKey: "new" },
+  { value: "urgent", labelKey: "urgent" },
+  { value: "waiting_staff", labelKey: "waiting_staff" },
+  { value: "waiting_owner", labelKey: "waiting_owner" },
+  { value: "resolved", labelKey: "resolved" }
 ] as const;
 
 export const requestCategories = [
-  { value: "medical_question", label: "Medical question" },
-  { value: "refill", label: "Refill" },
-  { value: "appointment", label: "Appointment" },
-  { value: "follow_up", label: "Follow-up" },
-  { value: "admin", label: "Admin" }
+  { value: "medical_question" },
+  { value: "refill" },
+  { value: "appointment" },
+  { value: "follow_up" },
+  { value: "admin" }
 ] as const;
+
+export function getLocalizedRequestCategories(locale: SupportedLocale) {
+  return requestCategories.map((category) => ({
+    value: category.value,
+    label: getRequestCategoryLabel(category.value, locale)
+  }));
+}
 
 export const pilotMetrics = {
   callReductionTarget: "25%",
@@ -110,8 +125,8 @@ export const demoRequests = [
   id: string;
   status: RequestStatus;
   urgency: RequestUrgency;
-  category: string;
-  channel: string;
+  category: RequestCategory;
+  channel: RequestChannel;
   petName: string;
   species: string;
   ownerName: string;
@@ -119,10 +134,11 @@ export const demoRequests = [
   summary: string;
   messages: Array<{
     id: string;
-    sender: string;
+    sender: MessageSender;
     time: string;
     body: string;
   }>;
 }>;
 
 export type { Database } from "./database.types";
+export * from "./i18n";

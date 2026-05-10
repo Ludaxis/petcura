@@ -9,18 +9,32 @@ import {
   Stethoscope
 } from "lucide-react";
 import { Badge, Button, Panel, Metric } from "@petcura/ui";
-import { demoRequests, pilotMetrics } from "@petcura/shared";
+import {
+  createTranslator,
+  demoRequests,
+  normalizeLocale,
+  pilotMetrics,
+  withLocale
+} from "@petcura/shared";
 import { getPublicEnvStatus } from "@/lib/env";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
-const workflow = [
-  "Owner sends WhatsApp or web intake",
-  "AI suggests category, summary, and risk flags",
-  "Staff confirms urgency and replies",
-  "Reminder or PMS export closes the loop"
-];
+type HomePageProps = {
+  searchParams?: Promise<{
+    lang?: string | string[];
+  }>;
+};
 
-export default function HomePage() {
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const locale = normalizeLocale((await searchParams)?.lang);
+  const t = createTranslator(locale);
   const envStatus = getPublicEnvStatus();
+  const workflow = [
+    t("home.workflow.1"),
+    t("home.workflow.2"),
+    t("home.workflow.3"),
+    t("home.workflow.4")
+  ];
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
@@ -31,20 +45,27 @@ export default function HomePage() {
           </div>
           <div>
             <p className="text-sm font-semibold text-[var(--primary)]">
-              PetCura
+              {t("home.kicker")}
             </p>
             <h1 className="text-2xl font-semibold tracking-normal text-[var(--foreground)]">
-              Clinic ClientOps foundation
+              {t("home.title")}
             </h1>
           </div>
         </div>
-        <nav className="flex flex-wrap gap-2" aria-label="Primary">
+        <nav className="flex flex-wrap items-center gap-2" aria-label="Primary">
+          <LanguageSwitcher
+            currentPath="/"
+            label={t("language.label")}
+            locale={locale}
+          />
           <Button asChild variant="secondary">
-            <Link href="/intake">Owner intake</Link>
+            <Link href={withLocale("/intake", locale)}>
+              {t("nav.ownerIntake")}
+            </Link>
           </Button>
           <Button asChild>
-            <Link href="/inbox">
-              Clinic inbox
+            <Link href={withLocale("/inbox", locale)}>
+              {t("nav.clinicInbox")}
               <ArrowRight aria-hidden="true" size={16} />
             </Link>
           </Button>
@@ -55,18 +76,16 @@ export default function HomePage() {
         <Panel className="p-5 sm:p-6">
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="teal">WhatsApp-native</Badge>
-              <Badge tone="neutral">Staff-approved AI</Badge>
-              <Badge tone="neutral">PMS-friendly exports</Badge>
+              <Badge tone="teal">{t("home.badge.whatsapp")}</Badge>
+              <Badge tone="neutral">{t("home.badge.ai")}</Badge>
+              <Badge tone="neutral">{t("home.badge.exports")}</Badge>
             </div>
             <div className="max-w-3xl">
               <h2 className="text-3xl font-semibold leading-tight text-[var(--foreground)] sm:text-4xl">
-                One operational layer for owner requests, replies, and follow-ups.
+                {t("home.hero.title")}
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)]">
-                This scaffold proves the first PetCura path: owner intake,
-                clinic inbox, request detail, Supabase-ready data contracts, and
-                AI safety boundaries.
+                {t("home.hero.body")}
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -91,34 +110,38 @@ export default function HomePage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-[var(--muted)]">
-                Foundation status
+                {t("home.status.kicker")}
               </p>
-              <h2 className="mt-1 text-xl font-semibold">Ready for Sprint 0</h2>
+              <h2 className="mt-1 text-xl font-semibold">
+                {t("home.status.title")}
+              </h2>
             </div>
             <Badge tone={envStatus.success ? "teal" : "amber"}>
-              {envStatus.success ? "Supabase env set" : "Env pending"}
+              {envStatus.success
+                ? t("home.status.supabaseReady")
+                : t("home.status.envPending")}
             </Badge>
           </div>
           <div className="mt-5 grid gap-3">
             <Metric
               icon={<Inbox aria-hidden="true" size={18} />}
-              label="Demo requests"
+              label={t("home.metric.demoRequests")}
               value={String(demoRequests.length)}
             />
             <Metric
               icon={<Clock3 aria-hidden="true" size={18} />}
-              label="Pilot response target"
+              label={t("home.metric.responseTarget")}
               value={pilotMetrics.responseTimeTarget}
             />
             <Metric
               icon={<Activity aria-hidden="true" size={18} />}
-              label="Call reduction target"
+              label={t("home.metric.callReduction")}
               value={pilotMetrics.callReductionTarget}
             />
             <Metric
               icon={<ShieldCheck aria-hidden="true" size={18} />}
-              label="Safety target"
-              value="0 incidents"
+              label={t("home.metric.safety")}
+              value={t("home.metric.zeroIncidents")}
             />
           </div>
           <div className="mt-5 rounded-[var(--radius)] border border-[var(--line)] bg-white p-4">
@@ -129,9 +152,7 @@ export default function HomePage() {
                 size={18}
               />
               <p className="text-sm leading-6 text-[var(--muted)]">
-                Add hosted Supabase values to `.env.local`, run migrations, then
-                replace demo data with live requests through the shared
-                contracts.
+                {t("home.next")}
               </p>
             </div>
           </div>

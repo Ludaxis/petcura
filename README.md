@@ -37,6 +37,10 @@ Fill `.env.local` with the hosted Supabase project values before wiring live dat
 - `.claude/agents/` contains project-specific Claude subagents.
 - `.claude/rules/` contains scoped frontend, design, accessibility, and QA rules.
 
+## Language Support
+
+PetCura supports English, Estonian, and Russian for owner and clinic surfaces. Shared locale helpers and copy live in `packages/shared/src/i18n.ts`; see `docs/architecture/localization.md`.
+
 ## Build Scope
 
 PetCura v1 is limited to:

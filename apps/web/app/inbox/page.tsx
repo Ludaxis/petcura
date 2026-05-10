@@ -1,27 +1,53 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Inbox, Languages } from "lucide-react";
 import { Badge, Button, Panel } from "@petcura/ui";
-import { demoRequests, requestStatusColumns } from "@petcura/shared";
+import {
+  createTranslator,
+  demoRequests,
+  getRequestCategoryLabel,
+  getRequestStatusLabel,
+  getUrgencyLabel,
+  normalizeLocale,
+  requestStatusColumns,
+  withLocale
+} from "@petcura/shared";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
-export default function InboxPage() {
+type InboxPageProps = {
+  searchParams?: Promise<{
+    lang?: string | string[];
+  }>;
+};
+
+export default async function InboxPage({ searchParams }: InboxPageProps) {
+  const locale = normalizeLocale((await searchParams)?.lang);
+  const t = createTranslator(locale);
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-4 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button asChild variant="ghost">
-            <Link href="/">
+            <Link href={withLocale("/", locale)}>
               <ArrowLeft aria-hidden="true" size={16} />
-              Back
+              {t("nav.back")}
             </Link>
           </Button>
           <div>
             <p className="text-sm font-semibold text-[var(--primary)]">
-              Clinic dashboard
+              {t("inbox.kicker")}
             </p>
-            <h1 className="text-2xl font-semibold">ClientOps inbox</h1>
+            <h1 className="text-2xl font-semibold">{t("inbox.title")}</h1>
           </div>
         </div>
-        <Badge tone="neutral">Demo data until Supabase migration is applied</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <LanguageSwitcher
+            currentPath="/inbox"
+            label={t("language.label")}
+            locale={locale}
+          />
+          <Badge tone="neutral">{t("inbox.demoBadge")}</Badge>
+        </div>
       </header>
 
       <section className="grid gap-4 lg:grid-cols-5">
@@ -35,7 +61,9 @@ export default function InboxPage() {
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Inbox aria-hidden="true" size={16} />
-                  <h2 className="text-sm font-semibold">{column.label}</h2>
+                  <h2 className="text-sm font-semibold">
+                    {getRequestStatusLabel(column.labelKey, locale)}
+                  </h2>
                 </div>
                 <span className="rounded-full bg-[var(--surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--muted)]">
                   {columnRequests.length}
@@ -46,7 +74,7 @@ export default function InboxPage() {
                 {columnRequests.map((request) => (
                   <Link
                     className="group rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 transition hover:border-[var(--primary)]"
-                    href={`/requests/${request.id}`}
+                    href={withLocale(`/requests/${request.id}`, locale)}
                     key={request.id}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -75,13 +103,15 @@ export default function InboxPage() {
                               : "neutral"
                         }
                       >
-                        {request.urgency}
+                        {getUrgencyLabel(request.urgency, locale)}
                       </Badge>
-                      <Badge tone="neutral">{request.category}</Badge>
+                      <Badge tone="neutral">
+                        {getRequestCategoryLabel(request.category, locale)}
+                      </Badge>
                       {request.translationAvailable ? (
                         <Badge tone="teal">
                           <Languages aria-hidden="true" size={12} />
-                          translation
+                          {t("inbox.translation")}
                         </Badge>
                       ) : null}
                     </div>

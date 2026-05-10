@@ -9,18 +9,34 @@ import {
   UserRound
 } from "lucide-react";
 import { Badge, Button, Panel } from "@petcura/ui";
-import { demoRequests } from "@petcura/shared";
+import {
+  createTranslator,
+  demoRequests,
+  getChannelLabel,
+  getRequestCategoryLabel,
+  getSenderLabel,
+  getUrgencyLabel,
+  normalizeLocale,
+  withLocale
+} from "@petcura/shared";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 type RequestDetailPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    lang?: string | string[];
+  }>;
 };
 
 export default async function RequestDetailPage({
-  params
+  params,
+  searchParams
 }: RequestDetailPageProps) {
   const { id } = await params;
+  const locale = normalizeLocale((await searchParams)?.lang);
+  const t = createTranslator(locale);
   const request = demoRequests.find((item) => item.id === id);
 
   if (!request) {
@@ -31,23 +47,28 @@ export default async function RequestDetailPage({
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-4 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
         <Button asChild variant="ghost">
-          <Link href="/inbox">
+          <Link href={withLocale("/inbox", locale)}>
             <ArrowLeft aria-hidden="true" size={16} />
-            Inbox
+            {t("nav.inbox")}
           </Link>
         </Button>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <LanguageSwitcher
+            currentPath={`/requests/${id}`}
+            label={t("language.label")}
+            locale={locale}
+          />
           <Button variant="secondary">
             <NotebookPen aria-hidden="true" size={16} />
-            Note
+            {t("request.note")}
           </Button>
           <Button variant="secondary">
             <CalendarClock aria-hidden="true" size={16} />
-            Reminder
+            {t("request.reminder")}
           </Button>
           <Button>
             <MessageCircleReply aria-hidden="true" size={16} />
-            Reply
+            {t("request.reply")}
           </Button>
         </div>
       </header>
@@ -68,7 +89,9 @@ export default async function RequestDetailPage({
             </div>
             <div className="mt-5 grid gap-2 text-sm">
               <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">Urgency</span>
+                <span className="text-[var(--muted)]">
+                  {t("request.urgency")}
+                </span>
                 <Badge
                   tone={
                     request.urgency === "high"
@@ -78,31 +101,38 @@ export default async function RequestDetailPage({
                         : "neutral"
                   }
                 >
-                  {request.urgency}
+                  {getUrgencyLabel(request.urgency, locale)}
                 </Badge>
               </div>
               <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">Category</span>
-                <span className="font-medium">{request.category}</span>
+                <span className="text-[var(--muted)]">
+                  {t("request.category")}
+                </span>
+                <span className="font-medium">
+                  {getRequestCategoryLabel(request.category, locale)}
+                </span>
               </div>
               <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
-                <span className="text-[var(--muted)]">Channel</span>
-                <span className="font-medium">{request.channel}</span>
+                <span className="text-[var(--muted)]">
+                  {t("request.channel")}
+                </span>
+                <span className="font-medium">
+                  {getChannelLabel(request.channel, locale)}
+                </span>
               </div>
             </div>
           </Panel>
 
           <Panel className="p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold">AI summary</h2>
-              <Badge tone="neutral">draft</Badge>
+              <h2 className="font-semibold">{t("request.aiSummary")}</h2>
+              <Badge tone="neutral">{t("request.draft")}</Badge>
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
               {request.summary}
             </p>
             <div className="mt-4 rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-xs leading-5 text-[var(--muted)]">
-              AI output is advisory until staff review is stored in
-              `ai_outputs`.
+              {t("request.aiNotice")}
             </div>
           </Panel>
         </div>
@@ -111,13 +141,15 @@ export default async function RequestDetailPage({
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-[var(--primary)]">
-                Conversation
+                {t("request.conversation")}
               </p>
-              <h2 className="mt-1 text-xl font-semibold">Request timeline</h2>
+              <h2 className="mt-1 text-xl font-semibold">
+                {t("request.timeline")}
+              </h2>
             </div>
             <Button variant="secondary">
               <FileDown aria-hidden="true" size={16} />
-              Export
+              {t("request.export")}
             </Button>
           </div>
 
@@ -129,7 +161,7 @@ export default async function RequestDetailPage({
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="text-sm font-semibold">
-                    {message.sender}
+                    {getSenderLabel(message.sender, locale)}
                   </span>
                   <span className="text-xs text-[var(--muted)]">
                     {message.time}
