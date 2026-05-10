@@ -41,6 +41,8 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
   const ownerName = `E2E Owner ${unique}`;
   const petName = `Luna ${unique}`;
   const message = "Luna has not eaten since yesterday and seems tired.";
+  const staffReply = "Please bring Luna in tomorrow morning for a check.";
+  const internalNote = "E2E note: owner prefers a morning appointment.";
   let clinicId: string | undefined;
   let staffUserId: string | undefined;
 
@@ -119,6 +121,42 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     await expect(page.getByRole("heading", { name: petName })).toBeVisible();
     await expect(page.getByText(ownerName).first()).toBeVisible();
     await expect(page.getByText(message).first()).toBeVisible();
+
+    await page.getByLabel("Reply to owner").fill(staffReply);
+    await page.getByRole("button", { name: "Send reply" }).click();
+    await expect(page.getByText(staffReply)).toBeVisible();
+    await expect(page.getByText("message_sent")).toBeVisible();
+    await expect(page.getByText("Waiting Owner").first()).toBeVisible();
+
+    await page.locator("#urgency").selectOption("high");
+    await page
+      .locator("form:has(#urgency)")
+      .getByRole("button", { name: "Save" })
+      .click();
+    await expect(page.getByText("High").first()).toBeVisible();
+    await expect(page.getByText("urgency_changed")).toBeVisible();
+
+    const assigneeOption = page.locator("#staffMemberId option").nth(1);
+    await expect(assigneeOption).toHaveCount(1);
+    const assigneeLabel = (await assigneeOption.textContent())?.trim() ?? "";
+
+    await page.locator("#staffMemberId").selectOption({ index: 1 });
+    await page.getByRole("button", { name: "Assign" }).click();
+    await expect(page.getByText(assigneeLabel).first()).toBeVisible();
+    await expect(page.getByText(/^assigned$/)).toBeVisible();
+
+    await page.getByLabel("Add internal note").fill(internalNote);
+    await page.getByRole("button", { name: "Save note" }).click();
+    await expect(page.getByText(internalNote)).toBeVisible();
+    await expect(page.getByText("note_created")).toBeVisible();
+
+    await page.locator("#status").selectOption("resolved");
+    await page
+      .locator("form:has(#status)")
+      .getByRole("button", { name: "Save" })
+      .click();
+    await expect(page.getByText("Resolved").first()).toBeVisible();
+    await expect(page.getByText(/^resolved$/)).toBeVisible();
   } finally {
     if (clinicId) {
       const { data: owners } = await admin

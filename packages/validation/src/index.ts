@@ -30,6 +30,8 @@ export const urgencySchema = z.enum(["low", "medium", "high"]);
 
 export const supportedLocaleSchema = z.enum(["en", "et", "ru"]);
 
+const uuidSchema = z.uuid();
+
 const trimmedString = z.string().trim();
 
 export const intakeRequestSchema = z.object({
@@ -43,3 +45,28 @@ export const intakeRequestSchema = z.object({
 });
 
 export type IntakeRequestInput = z.infer<typeof intakeRequestSchema>;
+
+export const staffReplySchema = z.object({
+  requestId: uuidSchema,
+  body: trimmedString.min(1).max(4000)
+});
+
+export const internalNoteSchema = z.object({
+  requestId: uuidSchema,
+  body: trimmedString.min(1).max(4000)
+});
+
+export const requestStatusUpdateSchema = z.object({
+  requestId: uuidSchema,
+  status: requestStatusSchema
+});
+
+export const requestUrgencyUpdateSchema = z.object({
+  requestId: uuidSchema,
+  urgency: urgencySchema
+});
+
+export const requestAssignmentSchema = z.object({
+  requestId: uuidSchema,
+  staffMemberId: z.union([uuidSchema, z.literal("unassigned")])
+});

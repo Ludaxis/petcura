@@ -1,0 +1,448 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import {
+  normalizeLocale,
+  type Database,
+  type RequestStatus
+} from "@petcura/shared";
+import {
+  internalNoteSchema,
+  requestAssignmentSchema,
+  requestStatusUpdateSchema,
+  requestUrgencyUpdateSchema,
+  staffReplySchema
+} from "@petcura/validation";
+import { requireStaffContext } from "@/lib/auth/staff";
+
+function requestPath(
+  requestId: string,
+  locale: string,
+  params?: Record<string, string>
+) {
+  const searchParams = new URLSearchParams({
+    lang: locale,
+    ...(params ?? {})
+  });
+
+  return `/requests/${encodeURIComponent(requestId)}?${searchParams.toString()}`;
+}
+
+function redirectToRequest(
+  requestId: string,
+  locale: string,
+  params?: Record<string, string>
+): never {
+  redirect(requestPath(requestId, locale, params));
+}
+
+function getString(formData: FormData, key: string) {
+  const value = formData.get(key);
+
+  return typeof value === "string" ? value : "";
+}
+
+function eventTypeForStatusChange(
+  fromStatus: RequestStatus,
+  toStatus: RequestStatus
+) {
+  if (toStatus === "resolved") return "resolved";
+  if (fromStatus === "resolved") return "reopened";
+
+  return "status_changed";
+}
+
+async function loadRequestForAction(
+  supabase: Awaited<ReturnType<typeof requireStaffContext>>["supabase"],
+  clinicId: string,
+  requestId: string
+) {
+  const { data, error } = await supabase
+    .from("requests")
+    .select("id, status, urgency, assigned_staff_id")
+    .eq("clinic_id", clinicId)
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Could not load request for action: ${error.message}`);
+  }
+
+  return data;
+}
+
+type RequestEventInsert =
+  Database["public"]["Tables"]["request_events"]["Insert"];
+
+function refreshRequestViews(requestId: string) {
+  revalidatePath("/inbox");
+  revalidatePath(`/requests/${requestId}`);
+}
+
+export async function sendStaffReply(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const parsed = staffReplySchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    body: getString(formData, "body")
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(getString(formData, "requestId"), locale, {
+      action_error: "reply"
+    });
+  }
+
+  const { requestId, body } = parsed.data;
+  const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  const request = await loadRequestForAction(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    requestId
+  );
+
+  if (!request) {
+    redirectToRequest(requestId, locale, { action_error: "not_found" });
+  }
+
+  const { data: message, error: messageError } = await staffContext.supabase
+    .from("messages")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      sender_type: "staff",
+      sender_id: staffContext.user.id,
+      body,
+      source_locale: locale
+    })
+    .select("id")
+    .single();
+
+  if (messageError) {
+    throw new Error(`Could not save staff reply: ${messageError.message}`);
+  }
+
+  const nextStatus: RequestStatus = "waiting_owner";
+  const { error: updateError } = await staffContext.supabase
+    .from("requests")
+    .update({
+      status: nextStatus,
+      resolved_at: null
+    })
+    .eq("clinic_id", staffContext.clinic.id)
+    .eq("id", requestId);
+
+  if (updateError) {
+    throw new Error(`Could not update request after reply: ${updateError.message}`);
+  }
+
+  const events: RequestEventInsert[] = [
+    {
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: staffContext.user.id,
+      event_type: "message_sent",
+      payload_json: {
+        message_id: message.id,
+        staff_id: staffContext.membership.id
+      }
+    }
+  ];
+
+  if (request.status !== nextStatus) {
+    events.push({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: staffContext.user.id,
+      event_type: eventTypeForStatusChange(request.status, nextStatus),
+      payload_json: {
+        from: request.status,
+        to: nextStatus
+      }
+    });
+  }
+
+  const { error: eventError } = await staffContext.supabase
+    .from("request_events")
+    .insert(events);
+
+  if (eventError) {
+    throw new Error(`Could not write reply event: ${eventError.message}`);
+  }
+
+  refreshRequestViews(requestId);
+  redirectToRequest(requestId, locale, { action_status: "reply_sent" });
+}
+
+export async function addInternalNote(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const parsed = internalNoteSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    body: getString(formData, "body")
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(getString(formData, "requestId"), locale, {
+      action_error: "note"
+    });
+  }
+
+  const { requestId, body } = parsed.data;
+  const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  const request = await loadRequestForAction(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    requestId
+  );
+
+  if (!request) {
+    redirectToRequest(requestId, locale, { action_error: "not_found" });
+  }
+
+  const { data: note, error: noteError } = await staffContext.supabase
+    .from("internal_notes")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      author_id: staffContext.user.id,
+      body
+    })
+    .select("id")
+    .single();
+
+  if (noteError) {
+    throw new Error(`Could not save internal note: ${noteError.message}`);
+  }
+
+  const { error: eventError } = await staffContext.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: staffContext.user.id,
+      event_type: "note_created",
+      payload_json: {
+        note_id: note.id,
+        staff_id: staffContext.membership.id
+      }
+    });
+
+  if (eventError) {
+    throw new Error(`Could not write note event: ${eventError.message}`);
+  }
+
+  refreshRequestViews(requestId);
+  redirectToRequest(requestId, locale, { action_status: "note_added" });
+}
+
+export async function updateRequestStatus(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const parsed = requestStatusUpdateSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    status: getString(formData, "status")
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(getString(formData, "requestId"), locale, {
+      action_error: "status"
+    });
+  }
+
+  const { requestId, status } = parsed.data;
+  const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  const request = await loadRequestForAction(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    requestId
+  );
+
+  if (!request) {
+    redirectToRequest(requestId, locale, { action_error: "not_found" });
+  }
+
+  if (request.status === status) {
+    redirectToRequest(requestId, locale);
+  }
+
+  const { error: updateError } = await staffContext.supabase
+    .from("requests")
+    .update({
+      status,
+      resolved_at: status === "resolved" ? new Date().toISOString() : null
+    })
+    .eq("clinic_id", staffContext.clinic.id)
+    .eq("id", requestId);
+
+  if (updateError) {
+    throw new Error(`Could not update request status: ${updateError.message}`);
+  }
+
+  const { error: eventError } = await staffContext.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: staffContext.user.id,
+      event_type: eventTypeForStatusChange(request.status, status),
+      payload_json: {
+        from: request.status,
+        to: status,
+        staff_id: staffContext.membership.id
+      }
+    });
+
+  if (eventError) {
+    throw new Error(`Could not write status event: ${eventError.message}`);
+  }
+
+  refreshRequestViews(requestId);
+  redirectToRequest(requestId, locale, { action_status: "status_updated" });
+}
+
+export async function updateRequestUrgency(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const parsed = requestUrgencyUpdateSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    urgency: getString(formData, "urgency")
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(getString(formData, "requestId"), locale, {
+      action_error: "urgency"
+    });
+  }
+
+  const { requestId, urgency } = parsed.data;
+  const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  const request = await loadRequestForAction(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    requestId
+  );
+
+  if (!request) {
+    redirectToRequest(requestId, locale, { action_error: "not_found" });
+  }
+
+  if (request.urgency === urgency) {
+    redirectToRequest(requestId, locale);
+  }
+
+  const { error: updateError } = await staffContext.supabase
+    .from("requests")
+    .update({ urgency })
+    .eq("clinic_id", staffContext.clinic.id)
+    .eq("id", requestId);
+
+  if (updateError) {
+    throw new Error(`Could not update request urgency: ${updateError.message}`);
+  }
+
+  const { error: eventError } = await staffContext.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: staffContext.user.id,
+      event_type: "urgency_changed",
+      payload_json: {
+        from: request.urgency,
+        to: urgency,
+        staff_id: staffContext.membership.id
+      }
+    });
+
+  if (eventError) {
+    throw new Error(`Could not write urgency event: ${eventError.message}`);
+  }
+
+  refreshRequestViews(requestId);
+  redirectToRequest(requestId, locale, { action_status: "urgency_updated" });
+}
+
+export async function assignRequest(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const parsed = requestAssignmentSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    staffMemberId: getString(formData, "staffMemberId")
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(getString(formData, "requestId"), locale, {
+      action_error: "assignment"
+    });
+  }
+
+  const { requestId, staffMemberId } = parsed.data;
+  const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  const request = await loadRequestForAction(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    requestId
+  );
+
+  if (!request) {
+    redirectToRequest(requestId, locale, { action_error: "not_found" });
+  }
+
+  const nextStaffId = staffMemberId === "unassigned" ? null : staffMemberId;
+
+  if (nextStaffId) {
+    const { data: staffMember, error: staffError } = await staffContext.supabase
+      .from("clinic_staff")
+      .select("id")
+      .eq("clinic_id", staffContext.clinic.id)
+      .eq("id", nextStaffId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (staffError) {
+      throw new Error(`Could not verify assignee: ${staffError.message}`);
+    }
+
+    if (!staffMember) {
+      redirectToRequest(requestId, locale, { action_error: "assignment" });
+    }
+  }
+
+  if (request.assigned_staff_id === nextStaffId) {
+    redirectToRequest(requestId, locale);
+  }
+
+  const { error: updateError } = await staffContext.supabase
+    .from("requests")
+    .update({ assigned_staff_id: nextStaffId })
+    .eq("clinic_id", staffContext.clinic.id)
+    .eq("id", requestId);
+
+  if (updateError) {
+    throw new Error(`Could not assign request: ${updateError.message}`);
+  }
+
+  const { error: eventError } = await staffContext.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: staffContext.user.id,
+      event_type: "assigned",
+      payload_json: {
+        from: request.assigned_staff_id,
+        to: nextStaffId,
+        staff_id: staffContext.membership.id
+      }
+    });
+
+  if (eventError) {
+    throw new Error(`Could not write assignment event: ${eventError.message}`);
+  }
+
+  refreshRequestViews(requestId);
+  redirectToRequest(requestId, locale, { action_status: "assigned" });
+}

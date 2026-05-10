@@ -6,6 +6,10 @@ import {
   FileDown,
   MessageCircleReply,
   NotebookPen,
+  Save,
+  Send,
+  Settings2,
+  UserRoundCheck,
   UserRound
 } from "lucide-react";
 import { Badge, Button, Panel } from "@petcura/ui";
@@ -16,28 +20,45 @@ import {
   getRequestStatusLabel,
   getSenderLabel,
   getUrgencyLabel,
+  requestStatusColumns,
   withLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { getRequestDetail } from "@/lib/requests";
+import {
+  addInternalNote,
+  assignRequest,
+  sendStaffReply,
+  updateRequestStatus,
+  updateRequestUrgency
+} from "./actions";
 
 type RequestDetailPageProps = {
   params: Promise<{
     id: string;
   }>;
   searchParams?: Promise<{
+    action_error?: string | string[];
+    action_status?: string | string[];
     lang?: string | string[];
   }>;
 };
+
+const urgencyOptions = ["low", "medium", "high"] as const;
+
+function getSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export default async function RequestDetailPage({
   params,
   searchParams
 }: RequestDetailPageProps) {
   const { id } = await params;
-  const locale = await getRequestLocale((await searchParams)?.lang);
+  const resolvedSearchParams = await searchParams;
+  const locale = await getRequestLocale(resolvedSearchParams?.lang);
   const t = createTranslator(locale);
   const staffContext = await requireStaffContext(
     locale,
@@ -57,6 +78,16 @@ export default async function RequestDetailPage({
     notFound();
   }
 
+  const actionStatus = getSearchParam(resolvedSearchParams?.action_status);
+  const actionError = getSearchParam(resolvedSearchParams?.action_error);
+  const currentAssignee = request.staffOptions.find(
+    (staff) => staff.id === request.assignedStaffId
+  );
+  const getStaffLabel = (staff: (typeof request.staffOptions)[number]) =>
+    staff.userId === staffContext.user.id
+      ? `${staff.role} (${t("request.you")})`
+      : staff.role;
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-4 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -73,19 +104,23 @@ export default async function RequestDetailPage({
             locale={locale}
           />
           <Button variant="secondary">
-            <NotebookPen aria-hidden="true" size={16} />
-            {t("request.note")}
-          </Button>
-          <Button variant="secondary">
             <CalendarClock aria-hidden="true" size={16} />
             {t("request.reminder")}
           </Button>
-          <Button>
-            <MessageCircleReply aria-hidden="true" size={16} />
-            {t("request.reply")}
-          </Button>
         </div>
       </header>
+
+      {actionStatus ? (
+        <div className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]">
+          {t("request.actionSaved")}
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <div className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm font-medium text-[var(--red)]">
+          {t("request.actionError")}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
         <div className="grid gap-4">
@@ -150,6 +185,108 @@ export default async function RequestDetailPage({
                   {request.ownerPhone}
                 </span>
               </div>
+              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
+                <span className="text-[var(--muted)]">
+                  {t("request.assigned")}
+                </span>
+                <span className="text-right font-medium">
+                  {currentAssignee
+                    ? getStaffLabel(currentAssignee)
+                    : t("request.unassigned")}
+                </span>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel className="p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Settings2
+                aria-hidden="true"
+                className="text-[var(--primary)]"
+                size={17}
+              />
+              <h2 className="font-semibold">{t("request.actions")}</h2>
+            </div>
+
+            <div className="grid gap-4">
+              <form action={updateRequestStatus} className="grid gap-2">
+                <input name="lang" type="hidden" value={locale} />
+                <input name="requestId" type="hidden" value={request.id} />
+                <label className="text-sm font-medium" htmlFor="status">
+                  {t("request.status")}
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                    defaultValue={request.status}
+                    id="status"
+                    name="status"
+                  >
+                    {requestStatusColumns.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {getRequestStatusLabel(status.value, locale)}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" variant="secondary">
+                    <Save aria-hidden="true" size={15} />
+                    {t("request.save")}
+                  </Button>
+                </div>
+              </form>
+
+              <form action={updateRequestUrgency} className="grid gap-2">
+                <input name="lang" type="hidden" value={locale} />
+                <input name="requestId" type="hidden" value={request.id} />
+                <label className="text-sm font-medium" htmlFor="urgency">
+                  {t("request.urgency")}
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                    defaultValue={request.urgency}
+                    id="urgency"
+                    name="urgency"
+                  >
+                    {urgencyOptions.map((urgency) => (
+                      <option key={urgency} value={urgency}>
+                        {getUrgencyLabel(urgency, locale)}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" variant="secondary">
+                    <Save aria-hidden="true" size={15} />
+                    {t("request.save")}
+                  </Button>
+                </div>
+              </form>
+
+              <form action={assignRequest} className="grid gap-2">
+                <input name="lang" type="hidden" value={locale} />
+                <input name="requestId" type="hidden" value={request.id} />
+                <label className="text-sm font-medium" htmlFor="staffMemberId">
+                  {t("request.assigned")}
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                    defaultValue={request.assignedStaffId ?? "unassigned"}
+                    id="staffMemberId"
+                    name="staffMemberId"
+                  >
+                    <option value="unassigned">{t("request.unassigned")}</option>
+                    {request.staffOptions.map((staff) => (
+                      <option key={staff.id} value={staff.id}>
+                        {getStaffLabel(staff)}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" variant="secondary">
+                    <UserRoundCheck aria-hidden="true" size={15} />
+                    {t("request.assign")}
+                  </Button>
+                </div>
+              </form>
             </div>
           </Panel>
 
@@ -219,6 +356,62 @@ export default async function RequestDetailPage({
                 </p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 border-t border-[var(--line)] pt-5 xl:grid-cols-2">
+            <form action={sendStaffReply} className="grid gap-3">
+              <input name="lang" type="hidden" value={locale} />
+              <input name="requestId" type="hidden" value={request.id} />
+              <div className="flex items-center gap-2">
+                <MessageCircleReply
+                  aria-hidden="true"
+                  className="text-[var(--primary)]"
+                  size={17}
+                />
+                <label className="text-sm font-semibold" htmlFor="reply-body">
+                  {t("request.replyToOwner")}
+                </label>
+              </div>
+              <textarea
+                className="min-h-32 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm leading-6"
+                id="reply-body"
+                maxLength={4000}
+                name="body"
+                placeholder={t("request.replyPlaceholder")}
+                required
+              />
+              <Button type="submit">
+                <Send aria-hidden="true" size={15} />
+                {t("request.sendReply")}
+              </Button>
+            </form>
+
+            <form action={addInternalNote} className="grid gap-3">
+              <input name="lang" type="hidden" value={locale} />
+              <input name="requestId" type="hidden" value={request.id} />
+              <div className="flex items-center gap-2">
+                <NotebookPen
+                  aria-hidden="true"
+                  className="text-[var(--primary)]"
+                  size={17}
+                />
+                <label className="text-sm font-semibold" htmlFor="note-body">
+                  {t("request.addInternalNote")}
+                </label>
+              </div>
+              <textarea
+                className="min-h-32 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm leading-6"
+                id="note-body"
+                maxLength={4000}
+                name="body"
+                placeholder={t("request.notePlaceholder")}
+                required
+              />
+              <Button type="submit" variant="secondary">
+                <NotebookPen aria-hidden="true" size={15} />
+                {t("request.saveNote")}
+              </Button>
+            </form>
           </div>
 
           {request.notes.length > 0 ? (

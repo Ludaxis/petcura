@@ -24,6 +24,7 @@ type PetRow = Pick<
 type RequestBaseRow = Pick<
   Database["public"]["Tables"]["requests"]["Row"],
   | "id"
+  | "assigned_staff_id"
   | "category"
   | "channel"
   | "status"
@@ -52,7 +53,14 @@ export type InboxRequest = {
   updatedAt: string;
 };
 
+export type ClinicStaffOption = {
+  id: string;
+  userId: string;
+  role: Database["public"]["Enums"]["staff_role"];
+};
+
 export type RequestDetail = InboxRequest & {
+  assignedStaffId: string | null;
   ownerPhone: string;
   petBreed: string | null;
   createdAt: string;
@@ -75,6 +83,7 @@ export type RequestDetail = InboxRequest & {
     actorType: string;
     createdAt: string;
   }>;
+  staffOptions: ClinicStaffOption[];
 };
 
 function fallbackSummary(row: RequestWithRelations) {
@@ -107,7 +116,7 @@ export async function listInboxRequests(
   const { data, error } = await supabase
     .from("requests")
     .select(
-      "id, category, channel, status, urgency, ai_summary, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
+      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
     )
     .eq("clinic_id", clinicId)
     .order("updated_at", { ascending: false });
@@ -129,7 +138,7 @@ export async function getRequestDetail(
   const { data: requestData, error: requestError } = await supabase
     .from("requests")
     .select(
-      "id, category, channel, status, urgency, ai_summary, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
+      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
     )
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
@@ -145,28 +154,35 @@ export async function getRequestDetail(
 
   const request = requestData as unknown as RequestWithRelations;
 
-  const [messagesResult, notesResult, eventsResult] = await Promise.all([
-    supabase
-      .from("messages")
-      .select(
-        "id, sender_type, body, body_translated, source_locale, created_at"
-      )
-      .eq("clinic_id", clinicId)
-      .eq("request_id", requestId)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("internal_notes")
-      .select("id, body, created_at")
-      .eq("clinic_id", clinicId)
-      .eq("request_id", requestId)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("request_events")
-      .select("id, event_type, actor_type, created_at")
-      .eq("clinic_id", clinicId)
-      .eq("request_id", requestId)
-      .order("created_at", { ascending: true })
-  ]);
+  const [messagesResult, notesResult, eventsResult, staffResult] =
+    await Promise.all([
+      supabase
+        .from("messages")
+        .select(
+          "id, sender_type, body, body_translated, source_locale, created_at"
+        )
+        .eq("clinic_id", clinicId)
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("internal_notes")
+        .select("id, body, created_at")
+        .eq("clinic_id", clinicId)
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("request_events")
+        .select("id, event_type, actor_type, created_at")
+        .eq("clinic_id", clinicId)
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("clinic_staff")
+        .select("id, user_id, role")
+        .eq("clinic_id", clinicId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true })
+    ]);
 
   if (messagesResult.error) {
     throw new Error(`Could not load messages: ${messagesResult.error.message}`);
@@ -180,8 +196,13 @@ export async function getRequestDetail(
     throw new Error(`Could not load events: ${eventsResult.error.message}`);
   }
 
+  if (staffResult.error) {
+    throw new Error(`Could not load staff: ${staffResult.error.message}`);
+  }
+
   return {
     ...toInboxRequest(request),
+    assignedStaffId: request.assigned_staff_id,
     ownerPhone: request.owners?.phone ?? "",
     petBreed: request.pets?.breed ?? null,
     createdAt: request.created_at,
@@ -203,6 +224,11 @@ export async function getRequestDetail(
       eventType: event.event_type,
       actorType: event.actor_type,
       createdAt: event.created_at
+    })),
+    staffOptions: (staffResult.data ?? []).map((staff) => ({
+      id: staff.id,
+      userId: staff.user_id,
+      role: staff.role
     }))
   };
 }

@@ -234,7 +234,21 @@ export const uiCopy = {
     "request.internalNotes": "Internal notes",
     "request.events": "Events",
     "request.noSummary": "No AI summary has been generated yet.",
-    "request.export": "Export"
+    "request.export": "Export",
+    "request.actions": "Staff actions",
+    "request.assigned": "Assigned",
+    "request.unassigned": "Unassigned",
+    "request.you": "you",
+    "request.save": "Save",
+    "request.assign": "Assign",
+    "request.replyToOwner": "Reply to owner",
+    "request.replyPlaceholder": "Write the message the owner should receive.",
+    "request.sendReply": "Send reply",
+    "request.addInternalNote": "Add internal note",
+    "request.notePlaceholder": "Add context that only clinic staff can see.",
+    "request.saveNote": "Save note",
+    "request.actionSaved": "Action saved.",
+    "request.actionError": "Could not save the action. Check the fields and try again."
   },
   et: {
     "nav.back": "Tagasi",
@@ -320,7 +334,21 @@ export const uiCopy = {
     "request.internalNotes": "Sisemärkmed",
     "request.events": "Sündmused",
     "request.noSummary": "AI kokkuvõtet ei ole veel loodud.",
-    "request.export": "Ekspordi"
+    "request.export": "Ekspordi",
+    "request.actions": "Töötaja tegevused",
+    "request.assigned": "Määratud",
+    "request.unassigned": "Määramata",
+    "request.you": "sina",
+    "request.save": "Salvesta",
+    "request.assign": "Määra",
+    "request.replyToOwner": "Vasta omanikule",
+    "request.replyPlaceholder": "Kirjuta sõnum, mille omanik saab.",
+    "request.sendReply": "Saada vastus",
+    "request.addInternalNote": "Lisa sisemärge",
+    "request.notePlaceholder": "Lisa kontekst, mida näevad ainult kliiniku töötajad.",
+    "request.saveNote": "Salvesta märge",
+    "request.actionSaved": "Tegevus salvestatud.",
+    "request.actionError": "Tegevust ei saanud salvestada. Kontrolli välju ja proovi uuesti."
   },
   ru: {
     "nav.back": "Назад",
@@ -406,7 +434,21 @@ export const uiCopy = {
     "request.internalNotes": "Внутренние заметки",
     "request.events": "События",
     "request.noSummary": "AI-резюме еще не создано.",
-    "request.export": "Экспорт"
+    "request.export": "Экспорт",
+    "request.actions": "Действия сотрудника",
+    "request.assigned": "Назначено",
+    "request.unassigned": "Не назначено",
+    "request.you": "вы",
+    "request.save": "Сохранить",
+    "request.assign": "Назначить",
+    "request.replyToOwner": "Ответ владельцу",
+    "request.replyPlaceholder": "Напишите сообщение, которое получит владелец.",
+    "request.sendReply": "Отправить ответ",
+    "request.addInternalNote": "Добавить внутреннюю заметку",
+    "request.notePlaceholder": "Добавьте контекст, видимый только сотрудникам клиники.",
+    "request.saveNote": "Сохранить заметку",
+    "request.actionSaved": "Действие сохранено.",
+    "request.actionError": "Не удалось сохранить действие. Проверьте поля и попробуйте снова."
   }
 } satisfies Record<SupportedLocale, Record<string, string>>;
 
