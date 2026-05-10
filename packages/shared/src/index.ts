@@ -8,20 +8,38 @@ import {
 
 export type RequestStatus =
   | "new"
-  | "urgent"
   | "waiting_staff"
   | "waiting_owner"
   | "resolved";
 
 export type RequestUrgency = "low" | "medium" | "high";
+export type InboxView = RequestStatus | "urgent";
 
 export const requestStatusColumns = [
+  { value: "new", labelKey: "new" },
+  { value: "waiting_staff", labelKey: "waiting_staff" },
+  { value: "waiting_owner", labelKey: "waiting_owner" },
+  { value: "resolved", labelKey: "resolved" }
+] as const;
+
+export const inboxViewColumns = [
   { value: "new", labelKey: "new" },
   { value: "urgent", labelKey: "urgent" },
   { value: "waiting_staff", labelKey: "waiting_staff" },
   { value: "waiting_owner", labelKey: "waiting_owner" },
   { value: "resolved", labelKey: "resolved" }
 ] as const;
+
+export function getInboxViewForRequest(request: {
+  status: RequestStatus;
+  urgency: RequestUrgency;
+}): InboxView {
+  if (request.status !== "resolved" && request.urgency === "high") {
+    return "urgent";
+  }
+
+  return request.status;
+}
 
 export const requestCategories = [
   { value: "medical_question" },
@@ -48,10 +66,10 @@ export const pilotMetrics = {
 export const demoRequests = [
   {
     id: "demo-luna",
-    status: "urgent",
+    status: "new",
     urgency: "high",
     category: "medical_question",
-    channel: "WhatsApp",
+    channel: "whatsapp",
     petName: "Luna",
     species: "Cat",
     ownerName: "Marta Tamm",
@@ -61,19 +79,19 @@ export const demoRequests = [
     messages: [
       {
         id: "m1",
-        sender: "Owner",
+        sender: "owner",
         time: "09:12",
         body: "My cat Luna has not eaten since yesterday and she is hiding under the bed."
       },
       {
         id: "m2",
-        sender: "AI intake",
+        sender: "ai",
         time: "09:13",
         body: "How long has this been happening, and has Luna vomited or stopped drinking water?"
       },
       {
         id: "m3",
-        sender: "Owner",
+        sender: "owner",
         time: "09:16",
         body: "About 24 hours. She drinks a little. No vomiting."
       }
@@ -84,7 +102,7 @@ export const demoRequests = [
     status: "waiting_staff",
     urgency: "medium",
     category: "refill",
-    channel: "Web",
+    channel: "web",
     petName: "Bruno",
     species: "Dog",
     ownerName: "Ivan Petrov",
@@ -94,7 +112,7 @@ export const demoRequests = [
     messages: [
       {
         id: "m1",
-        sender: "Owner",
+        sender: "owner",
         time: "10:04",
         body: "Can we refill Bruno's allergy medicine this week?"
       }
@@ -105,7 +123,7 @@ export const demoRequests = [
     status: "waiting_owner",
     urgency: "low",
     category: "appointment",
-    channel: "WhatsApp",
+    channel: "whatsapp",
     petName: "Milo",
     species: "Rabbit",
     ownerName: "Katrin Saar",
@@ -115,7 +133,7 @@ export const demoRequests = [
     messages: [
       {
         id: "m1",
-        sender: "Staff",
+        sender: "staff",
         time: "11:30",
         body: "We can see Milo tomorrow at 10:30 or Friday at 14:00. Which works better?"
       }

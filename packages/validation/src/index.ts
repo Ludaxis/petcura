@@ -23,12 +23,18 @@ export const requestStatusSchema = z.enum([
 
 export const urgencySchema = z.enum(["low", "medium", "high"]);
 
+export const supportedLocaleSchema = z.enum(["en", "et", "ru"]);
+
+const trimmedString = z.string().trim();
+
 export const intakeRequestSchema = z.object({
-  ownerName: z.string().min(1).max(120),
-  phone: z.string().min(6).max(32),
-  petName: z.string().min(1).max(120),
+  ownerName: trimmedString.min(1).max(120),
+  phone: trimmedString.min(6).max(32),
+  petName: trimmedString.min(1).max(120),
+  petSpecies: trimmedString.min(1).max(80).default("unknown"),
   category: requestCategorySchema,
-  message: z.string().min(10).max(4000)
+  message: trimmedString.min(10).max(4000),
+  preferredLanguage: supportedLocaleSchema.default("en")
 });
 
 export type IntakeRequestInput = z.infer<typeof intakeRequestSchema>;

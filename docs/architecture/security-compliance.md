@@ -10,7 +10,8 @@ Primary application data is hosted in EU regions. Subprocessors, transfer mechan
 
 - Supabase Auth for staff.
 - Magic-link auth by default; 2FA for clinic admins when supported.
-- RLS on all domain tables.
+- RLS on all domain tables, enforced by active `clinic_staff` membership.
+- Anonymous users must not read domain tables; public intake uses server-side service-role writes only.
 - No service-role key in client-side code.
 - Webhook signatures verified for Twilio inbound events.
 - Webhook handlers are idempotent.

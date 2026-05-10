@@ -1,17 +1,20 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Inbox, Languages } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Inbox, Languages, LogOut } from "lucide-react";
 import { Badge, Button, Panel } from "@petcura/ui";
 import {
   createTranslator,
-  demoRequests,
+  getInboxViewForRequest,
   getRequestCategoryLabel,
   getRequestStatusLabel,
   getUrgencyLabel,
-  requestStatusColumns,
+  inboxViewColumns,
   withLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { requireStaffContext } from "@/lib/auth/staff";
+import { listInboxRequests } from "@/lib/requests";
+import { signOutStaff } from "./actions";
 
 type InboxPageProps = {
   searchParams?: Promise<{
@@ -22,6 +25,15 @@ type InboxPageProps = {
 export default async function InboxPage({ searchParams }: InboxPageProps) {
   const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
+  const staffContext = await requireStaffContext(locale, "/inbox");
+  const requests = await listInboxRequests(
+    staffContext.supabase,
+    staffContext.clinic.id
+  );
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
@@ -46,14 +58,22 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
             label={t("language.label")}
             locale={locale}
           />
-          <Badge tone="neutral">{t("inbox.demoBadge")}</Badge>
+          <Badge tone="teal">{staffContext.clinic.name}</Badge>
+          <Badge tone="neutral">{t("inbox.liveBadge")}</Badge>
+          <form action={signOutStaff}>
+            <input name="lang" type="hidden" value={locale} />
+            <Button variant="secondary" type="submit">
+              <LogOut aria-hidden="true" size={16} />
+              {t("auth.logout")}
+            </Button>
+          </form>
         </div>
       </header>
 
       <section className="grid gap-4 lg:grid-cols-5">
-        {requestStatusColumns.map((column) => {
-          const columnRequests = demoRequests.filter(
-            (request) => request.status === column.value
+        {inboxViewColumns.map((column) => {
+          const columnRequests = requests.filter(
+            (request) => getInboxViewForRequest(request) === column.value
           );
 
           return (
@@ -71,6 +91,11 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
               </div>
 
               <div className="grid gap-2">
+                {columnRequests.length === 0 ? (
+                  <p className="rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]">
+                    {t("inbox.empty")}
+                  </p>
+                ) : null}
                 {columnRequests.map((request) => (
                   <Link
                     className="group rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 transition hover:border-[var(--primary)]"
@@ -93,6 +118,9 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
                     <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
                       {request.summary}
                     </p>
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      {dateFormatter.format(new Date(request.updatedAt))}
+                    </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Badge
                         tone={
@@ -108,7 +136,7 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
                       <Badge tone="neutral">
                         {getRequestCategoryLabel(request.category, locale)}
                       </Badge>
-                      {request.translationAvailable ? (
+                      {request.ownerLanguage !== locale ? (
                         <Badge tone="teal">
                           <Languages aria-hidden="true" size={12} />
                           {t("inbox.translation")}

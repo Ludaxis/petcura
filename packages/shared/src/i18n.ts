@@ -108,16 +108,19 @@ export const urgencyLabels = {
 
 export const channelLabels = {
   en: {
-    WhatsApp: "WhatsApp",
-    Web: "Web"
+    whatsapp: "WhatsApp",
+    sms: "SMS",
+    web: "Web"
   },
   et: {
-    WhatsApp: "WhatsApp",
-    Web: "Veeb"
+    whatsapp: "WhatsApp",
+    sms: "SMS",
+    web: "Veeb"
   },
   ru: {
-    WhatsApp: "WhatsApp",
-    Web: "Веб"
+    whatsapp: "WhatsApp",
+    sms: "SMS",
+    web: "Веб"
   }
 } as const;
 
@@ -125,19 +128,22 @@ export type RequestChannel = keyof typeof channelLabels.en;
 
 export const senderLabels = {
   en: {
-    Owner: "Owner",
-    "AI intake": "AI intake",
-    Staff: "Staff"
+    owner: "Owner",
+    staff: "Staff",
+    system: "System",
+    ai: "AI"
   },
   et: {
-    Owner: "Omanik",
-    "AI intake": "AI vastuvõtt",
-    Staff: "Töötaja"
+    owner: "Omanik",
+    staff: "Töötaja",
+    system: "Süsteem",
+    ai: "AI"
   },
   ru: {
-    Owner: "Владелец",
-    "AI intake": "AI-прием",
-    Staff: "Сотрудник"
+    owner: "Владелец",
+    staff: "Сотрудник",
+    system: "Система",
+    ai: "AI"
   }
 } as const;
 
@@ -149,6 +155,15 @@ export const uiCopy = {
     "nav.inbox": "Inbox",
     "nav.ownerIntake": "Owner intake",
     "nav.clinicInbox": "Clinic inbox",
+    "auth.login": "Staff login",
+    "auth.logout": "Sign out",
+    "auth.email": "Work email",
+    "auth.sendLink": "Send magic link",
+    "auth.checkEmail": "Check your email for the secure login link.",
+    "auth.noMembership":
+      "This account is not linked to an active clinic yet.",
+    "auth.invalidEmail": "Enter a valid work email.",
+    "auth.loginError": "Could not send the login link. Try again.",
     "language.label": "Language",
     "home.kicker": "PetCura",
     "home.title": "Clinic ClientOps foundation",
@@ -181,6 +196,8 @@ export const uiCopy = {
     "intake.ownerName": "Your name",
     "intake.phone": "Phone number",
     "intake.petName": "Pet name",
+    "intake.petSpecies": "Species",
+    "intake.petSpeciesPlaceholder": "Cat, dog, rabbit...",
     "intake.category": "Request type",
     "intake.message": "What is happening?",
     "intake.messagePlaceholder":
@@ -188,11 +205,20 @@ export const uiCopy = {
     "intake.attachments": "Photo/video attachments will be enabled with Supabase Storage.",
     "intake.disclaimer":
       "PetCura structures requests for clinic staff. It does not provide diagnosis or emergency medical advice.",
-    "intake.submitDisabled": "Submit once Supabase is connected",
+    "intake.submit": "Submit request",
+    "intake.submitting": "Submitting...",
+    "intake.successTitle": "Request sent",
+    "intake.successBody": "Your request is now in the clinic inbox.",
+    "intake.caseId": "Case ID",
+    "intake.error": "Could not submit the request. Check the fields and try again.",
     "inbox.kicker": "Clinic dashboard",
     "inbox.title": "ClientOps inbox",
-    "inbox.demoBadge": "Demo data until Supabase live requests are connected",
+    "inbox.liveBadge": "Live Supabase data",
+    "inbox.empty": "No requests in this view.",
     "inbox.translation": "translation",
+    "request.owner": "Owner",
+    "request.pet": "Pet",
+    "request.status": "Status",
     "request.note": "Note",
     "request.reminder": "Reminder",
     "request.reply": "Reply",
@@ -205,6 +231,9 @@ export const uiCopy = {
       "AI output is advisory until staff review is stored in `ai_outputs`.",
     "request.conversation": "Conversation",
     "request.timeline": "Request timeline",
+    "request.internalNotes": "Internal notes",
+    "request.events": "Events",
+    "request.noSummary": "No AI summary has been generated yet.",
     "request.export": "Export"
   },
   et: {
@@ -212,6 +241,15 @@ export const uiCopy = {
     "nav.inbox": "Postkast",
     "nav.ownerIntake": "Omaniku pöördumine",
     "nav.clinicInbox": "Kliiniku postkast",
+    "auth.login": "Töötaja sisselogimine",
+    "auth.logout": "Logi välja",
+    "auth.email": "Töö e-post",
+    "auth.sendLink": "Saada sisselogimislink",
+    "auth.checkEmail": "Kontrolli e-posti turvalise sisselogimislingi jaoks.",
+    "auth.noMembership":
+      "See konto ei ole veel seotud aktiivse kliinikuga.",
+    "auth.invalidEmail": "Sisesta kehtiv töö e-post.",
+    "auth.loginError": "Sisselogimislinki ei saanud saata. Proovi uuesti.",
     "language.label": "Keel",
     "home.kicker": "PetCura",
     "home.title": "Kliiniku ClientOps alus",
@@ -244,6 +282,8 @@ export const uiCopy = {
     "intake.ownerName": "Sinu nimi",
     "intake.phone": "Telefoninumber",
     "intake.petName": "Lemmiku nimi",
+    "intake.petSpecies": "Liik",
+    "intake.petSpeciesPlaceholder": "Kass, koer, küülik...",
     "intake.category": "Pöördumise tüüp",
     "intake.message": "Mis toimub?",
     "intake.messagePlaceholder":
@@ -251,11 +291,20 @@ export const uiCopy = {
     "intake.attachments": "Foto/video lisamine aktiveeritakse Supabase Storage'iga.",
     "intake.disclaimer":
       "PetCura struktureerib pöördumised kliiniku töötajatele. See ei anna diagnoosi ega erakorralist meditsiinilist nõu.",
-    "intake.submitDisabled": "Saada, kui Supabase on ühendatud",
+    "intake.submit": "Saada pöördumine",
+    "intake.submitting": "Saadan...",
+    "intake.successTitle": "Pöördumine saadetud",
+    "intake.successBody": "Sinu pöördumine on nüüd kliiniku postkastis.",
+    "intake.caseId": "Juhtumi ID",
+    "intake.error": "Pöördumist ei saanud saata. Kontrolli välju ja proovi uuesti.",
     "inbox.kicker": "Kliiniku töölaud",
     "inbox.title": "ClientOps postkast",
-    "inbox.demoBadge": "Demodata kuni Supabase'i pärispöördumised on ühendatud",
+    "inbox.liveBadge": "Supabase'i pärisandmed",
+    "inbox.empty": "Selles vaates ei ole pöördumisi.",
     "inbox.translation": "tõlge",
+    "request.owner": "Omanik",
+    "request.pet": "Lemmik",
+    "request.status": "Staatus",
     "request.note": "Märkus",
     "request.reminder": "Meeldetuletus",
     "request.reply": "Vasta",
@@ -268,6 +317,9 @@ export const uiCopy = {
       "AI väljund on abistav, kuni töötaja ülevaatus salvestatakse tabelisse `ai_outputs`.",
     "request.conversation": "Vestlus",
     "request.timeline": "Pöördumise ajajoon",
+    "request.internalNotes": "Sisemärkmed",
+    "request.events": "Sündmused",
+    "request.noSummary": "AI kokkuvõtet ei ole veel loodud.",
     "request.export": "Ekspordi"
   },
   ru: {
@@ -275,6 +327,15 @@ export const uiCopy = {
     "nav.inbox": "Входящие",
     "nav.ownerIntake": "Запрос владельца",
     "nav.clinicInbox": "Входящие клиники",
+    "auth.login": "Вход для сотрудников",
+    "auth.logout": "Выйти",
+    "auth.email": "Рабочая почта",
+    "auth.sendLink": "Отправить magic link",
+    "auth.checkEmail": "Проверьте почту для безопасной ссылки входа.",
+    "auth.noMembership":
+      "Эта учетная запись еще не связана с активной клиникой.",
+    "auth.invalidEmail": "Введите корректную рабочую почту.",
+    "auth.loginError": "Не удалось отправить ссылку входа. Попробуйте еще раз.",
     "language.label": "Язык",
     "home.kicker": "PetCura",
     "home.title": "Основа ClientOps для клиники",
@@ -307,6 +368,8 @@ export const uiCopy = {
     "intake.ownerName": "Ваше имя",
     "intake.phone": "Номер телефона",
     "intake.petName": "Имя питомца",
+    "intake.petSpecies": "Вид",
+    "intake.petSpeciesPlaceholder": "Кошка, собака, кролик...",
     "intake.category": "Тип запроса",
     "intake.message": "Что происходит?",
     "intake.messagePlaceholder":
@@ -314,11 +377,20 @@ export const uiCopy = {
     "intake.attachments": "Фото/видео вложения будут включены через Supabase Storage.",
     "intake.disclaimer":
       "PetCura структурирует запросы для сотрудников клиники. Сервис не ставит диагноз и не дает экстренные медицинские советы.",
-    "intake.submitDisabled": "Отправить после подключения Supabase",
+    "intake.submit": "Отправить запрос",
+    "intake.submitting": "Отправка...",
+    "intake.successTitle": "Запрос отправлен",
+    "intake.successBody": "Ваш запрос теперь во входящих клиники.",
+    "intake.caseId": "ID обращения",
+    "intake.error": "Не удалось отправить запрос. Проверьте поля и попробуйте снова.",
     "inbox.kicker": "Панель клиники",
     "inbox.title": "ClientOps входящие",
-    "inbox.demoBadge": "Демо-данные до подключения реальных запросов Supabase",
+    "inbox.liveBadge": "Реальные данные Supabase",
+    "inbox.empty": "В этом виде нет запросов.",
     "inbox.translation": "перевод",
+    "request.owner": "Владелец",
+    "request.pet": "Питомец",
+    "request.status": "Статус",
     "request.note": "Заметка",
     "request.reminder": "Напоминание",
     "request.reply": "Ответить",
@@ -331,6 +403,9 @@ export const uiCopy = {
       "AI-результат является вспомогательным, пока проверка сотрудника не сохранена в `ai_outputs`.",
     "request.conversation": "Разговор",
     "request.timeline": "Хронология запроса",
+    "request.internalNotes": "Внутренние заметки",
+    "request.events": "События",
+    "request.noSummary": "AI-резюме еще не создано.",
     "request.export": "Экспорт"
   }
 } satisfies Record<SupportedLocale, Record<string, string>>;

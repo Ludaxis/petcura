@@ -8,6 +8,7 @@ import {
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { IntakeForm } from "./intake-form";
 
 type IntakePageProps = {
   searchParams?: Promise<{
@@ -52,95 +53,23 @@ export default async function IntakePage({ searchParams }: IntakePageProps) {
           </div>
         </div>
 
-        <form className="grid gap-4">
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="owner-name">
-              {t("intake.ownerName")}
-            </label>
-            <input
-              className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
-              id="owner-name"
-              name="ownerName"
-              placeholder="Marta Tamm"
-            />
+        <div className="mb-4 rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-4">
+          <div className="flex items-center gap-3 text-sm text-[var(--muted)]">
+            <Camera aria-hidden="true" size={18} />
+            {t("intake.attachments")}
           </div>
+        </div>
 
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="phone">
-              {t("intake.phone")}
-            </label>
-            <input
-              className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
-              id="phone"
-              name="phone"
-              placeholder="+372 ..."
-              type="tel"
-            />
-          </div>
+        <div className="mb-5 flex items-start gap-2 text-xs leading-5 text-[var(--muted)]">
+          <ShieldCheck
+            aria-hidden="true"
+            className="mt-0.5 shrink-0"
+            size={15}
+          />
+          {t("intake.disclaimer")}
+        </div>
 
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="pet-name">
-              {t("intake.petName")}
-            </label>
-            <input
-              className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
-              id="pet-name"
-              name="petName"
-              placeholder="Luna"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="category">
-              {t("intake.category")}
-            </label>
-            <select
-              className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
-              id="category"
-              name="category"
-              defaultValue="medical_question"
-            >
-              {localizedCategories.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="message">
-              {t("intake.message")}
-            </label>
-            <textarea
-              className="min-h-36 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 py-3"
-              id="message"
-              name="message"
-              placeholder={t("intake.messagePlaceholder")}
-            />
-          </div>
-
-          <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-4">
-            <div className="flex items-center gap-3 text-sm text-[var(--muted)]">
-              <Camera aria-hidden="true" size={18} />
-              {t("intake.attachments")}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 border-t border-[var(--line)] pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="flex items-start gap-2 text-xs leading-5 text-[var(--muted)]">
-              <ShieldCheck
-                aria-hidden="true"
-                className="mt-0.5 shrink-0"
-                size={15}
-              />
-              {t("intake.disclaimer")}
-            </p>
-            <Button type="button" aria-disabled="true">
-              {t("intake.submitDisabled")}
-            </Button>
-          </div>
-        </form>
+        <IntakeForm categories={localizedCategories} locale={locale} />
       </Panel>
     </main>
   );

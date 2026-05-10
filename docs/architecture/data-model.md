@@ -25,7 +25,9 @@
 ## Invariants
 
 - Every tenant-owned table includes `clinic_id`.
-- RLS is enabled for all domain tables.
+- RLS is enabled for all domain tables and checks active `clinic_staff` membership.
+- `requests.status` is workflow-only: `new`, `waiting_staff`, `waiting_owner`, `resolved`.
+- Urgent is an inbox view derived from `requests.urgency = high`, not a persisted status.
 - `requests.urgency` is staff-confirmed.
 - AI may write `urgency_suggestion` or `risk_flags_json`, but not final urgency.
 - Attachments live in `attachments`; do not duplicate attachment state in `messages`.

@@ -11,15 +11,17 @@ import {
 import { Badge, Button, Panel } from "@petcura/ui";
 import {
   createTranslator,
-  demoRequests,
   getChannelLabel,
   getRequestCategoryLabel,
+  getRequestStatusLabel,
   getSenderLabel,
   getUrgencyLabel,
   withLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { requireStaffContext } from "@/lib/auth/staff";
+import { getRequestDetail } from "@/lib/requests";
 
 type RequestDetailPageProps = {
   params: Promise<{
@@ -37,7 +39,19 @@ export default async function RequestDetailPage({
   const { id } = await params;
   const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
-  const request = demoRequests.find((item) => item.id === id);
+  const staffContext = await requireStaffContext(
+    locale,
+    `/requests/${encodeURIComponent(id)}`
+  );
+  const request = await getRequestDetail(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    id
+  );
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 
   if (!request) {
     notFound();
@@ -90,6 +104,14 @@ export default async function RequestDetailPage({
             <div className="mt-5 grid gap-2 text-sm">
               <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
                 <span className="text-[var(--muted)]">
+                  {t("request.status")}
+                </span>
+                <span className="font-medium">
+                  {getRequestStatusLabel(request.status, locale)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
+                <span className="text-[var(--muted)]">
                   {t("request.urgency")}
                 </span>
                 <Badge
@@ -120,6 +142,14 @@ export default async function RequestDetailPage({
                   {getChannelLabel(request.channel, locale)}
                 </span>
               </div>
+              <div className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
+                <span className="text-[var(--muted)]">
+                  {t("request.owner")}
+                </span>
+                <span className="text-right font-medium">
+                  {request.ownerPhone}
+                </span>
+              </div>
             </div>
           </Panel>
 
@@ -129,10 +159,27 @@ export default async function RequestDetailPage({
               <Badge tone="neutral">{t("request.draft")}</Badge>
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-              {request.summary}
+              {request.summary || t("request.noSummary")}
             </p>
             <div className="mt-4 rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-xs leading-5 text-[var(--muted)]">
               {t("request.aiNotice")}
+            </div>
+          </Panel>
+
+          <Panel className="p-5">
+            <h2 className="font-semibold">{t("request.events")}</h2>
+            <div className="mt-4 grid gap-2">
+              {request.events.map((event) => (
+                <div
+                  className="flex items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm"
+                  key={event.id}
+                >
+                  <span className="font-medium">{event.eventType}</span>
+                  <span className="text-xs text-[var(--muted)]">
+                    {dateFormatter.format(new Date(event.createdAt))}
+                  </span>
+                </div>
+              ))}
             </div>
           </Panel>
         </div>
@@ -161,10 +208,10 @@ export default async function RequestDetailPage({
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="text-sm font-semibold">
-                    {getSenderLabel(message.sender, locale)}
+                    {getSenderLabel(message.senderType, locale)}
                   </span>
                   <span className="text-xs text-[var(--muted)]">
-                    {message.time}
+                    {dateFormatter.format(new Date(message.createdAt))}
                   </span>
                 </div>
                 <p className="text-sm leading-6 text-[var(--foreground)]">
@@ -173,6 +220,22 @@ export default async function RequestDetailPage({
               </div>
             ))}
           </div>
+
+          {request.notes.length > 0 ? (
+            <div className="mt-6 border-t border-[var(--line)] pt-5">
+              <h3 className="font-semibold">{t("request.internalNotes")}</h3>
+              <div className="mt-3 grid gap-2">
+                {request.notes.map((note) => (
+                  <div
+                    className="rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]"
+                    key={note.id}
+                  >
+                    {note.body}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </Panel>
       </section>
     </main>
