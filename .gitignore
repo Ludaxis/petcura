@@ -4,6 +4,7 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+supabase/.temp/
 playwright-report/
 test-results/
 .env
