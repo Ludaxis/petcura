@@ -33,16 +33,24 @@ export function getDefaultClinicSlug() {
 }
 
 export async function getDefaultClinic() {
+  return getClinicBySlug(getDefaultClinicSlug());
+}
+
+export async function getClinicBySlug(slug: string) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("clinics")
     .select("id, name, slug, timezone, locale")
-    .eq("slug", getDefaultClinicSlug())
+    .eq("slug", slug)
     .single();
 
   if (error) {
-    throw new Error(`Default clinic is not available: ${error.message}`);
+    throw new Error(`Clinic is not available: ${error.message}`);
   }
 
   return data;
+}
+
+export async function getIntakeClinic(slug?: string) {
+  return getClinicBySlug(slug?.trim() || getDefaultClinicSlug());
 }

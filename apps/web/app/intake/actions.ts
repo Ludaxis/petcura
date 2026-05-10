@@ -1,7 +1,7 @@
 "use server";
 
 import { intakeRequestSchema } from "@petcura/validation";
-import { createAdminClient, getDefaultClinic } from "@/lib/supabase/admin";
+import { createAdminClient, getIntakeClinic } from "@/lib/supabase/admin";
 
 export type IntakeFormState = {
   ok: boolean;
@@ -19,6 +19,7 @@ export async function submitOwnerIntake(
   formData: FormData
 ): Promise<IntakeFormState> {
   const parsed = intakeRequestSchema.safeParse({
+    clinicSlug: formData.get("clinicSlug"),
     ownerName: formData.get("ownerName"),
     phone: formData.get("phone"),
     petName: formData.get("petName"),
@@ -37,7 +38,17 @@ export async function submitOwnerIntake(
   }
 
   const admin = createAdminClient();
-  const clinic = await getDefaultClinic();
+  let clinic: Awaited<ReturnType<typeof getIntakeClinic>>;
+
+  try {
+    clinic = await getIntakeClinic(parsed.data.clinicSlug);
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "clinic_not_found"
+    };
+  }
+
   const input = {
     ...parsed.data,
     phone: normalizePhone(parsed.data.phone)

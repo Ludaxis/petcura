@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+const trimmedString = z.string().trim();
+const uuidSchema = z.uuid();
+const emailSchema = trimmedString.toLowerCase().pipe(z.email());
+
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
@@ -30,11 +34,28 @@ export const urgencySchema = z.enum(["low", "medium", "high"]);
 
 export const supportedLocaleSchema = z.enum(["en", "et", "ru"]);
 
-const uuidSchema = z.uuid();
+export const staffRoleSchema = z.enum([
+  "owner",
+  "admin",
+  "vet",
+  "tech",
+  "reception"
+]);
 
-const trimmedString = z.string().trim();
+export const clinicSlugSchema = trimmedString
+  .min(2)
+  .max(80)
+  .toLowerCase()
+  .regex(
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    "Use lowercase letters, numbers, and single hyphens."
+  );
 
 export const intakeRequestSchema = z.object({
+  clinicSlug: z
+    .union([clinicSlugSchema, z.literal("")])
+    .optional()
+    .transform((value) => value || undefined),
   ownerName: trimmedString.min(1).max(120),
   phone: trimmedString.min(6).max(32),
   petName: trimmedString.min(1).max(120),
@@ -45,6 +66,31 @@ export const intakeRequestSchema = z.object({
 });
 
 export type IntakeRequestInput = z.infer<typeof intakeRequestSchema>;
+
+export const createClinicSchema = z.object({
+  name: trimmedString.min(2).max(160),
+  slug: clinicSlugSchema,
+  country: trimmedString
+    .min(2)
+    .max(2)
+    .toUpperCase()
+    .regex(/^[A-Z]{2}$/),
+  timezone: trimmedString.min(3).max(80).default("Europe/Tallinn"),
+  locale: supportedLocaleSchema.default("en")
+});
+
+export const createClinicStaffSchema = z.object({
+  clinicId: uuidSchema,
+  email: emailSchema,
+  role: staffRoleSchema.default("reception")
+});
+
+export const updateClinicStaffStatusSchema = z.object({
+  membershipId: uuidSchema,
+  isActive: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+});
 
 export const staffReplySchema = z.object({
   requestId: uuidSchema,
