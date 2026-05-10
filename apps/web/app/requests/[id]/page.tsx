@@ -89,7 +89,7 @@ export default async function RequestDetailPage({
       : staff.role;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-4 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
         <Button asChild variant="ghost">
           <Link href={withLocale("/inbox", locale)}>
@@ -97,7 +97,7 @@ export default async function RequestDetailPage({
             {t("nav.inbox")}
           </Link>
         </Button>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <LanguageSwitcher
             currentPath={`/requests/${id}`}
             label={t("language.label")}
@@ -122,16 +122,18 @@ export default async function RequestDetailPage({
         </div>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
-        <div className="grid gap-4">
-          <Panel className="p-5">
+      <section className="grid min-w-0 gap-4 lg:grid-cols-[0.72fr_1.28fr]">
+        <div className="grid min-w-0 gap-4">
+          <Panel className="min-w-0 p-5">
             <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary)]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary)]">
                 <UserRound aria-hidden="true" size={22} />
               </div>
-              <div>
-                <h1 className="text-2xl font-semibold">{request.petName}</h1>
-                <p className="mt-1 text-sm text-[var(--muted)]">
+              <div className="min-w-0">
+                <h1 className="break-words text-2xl font-semibold">
+                  {request.petName}
+                </h1>
+                <p className="mt-1 break-words text-sm text-[var(--muted)]">
                   {request.species} · {request.ownerName}
                 </p>
               </div>
@@ -141,7 +143,7 @@ export default async function RequestDetailPage({
                 <span className="text-[var(--muted)]">
                   {t("request.status")}
                 </span>
-                <span className="font-medium">
+                <span className="min-w-0 text-right font-medium">
                   {getRequestStatusLabel(request.status, locale)}
                 </span>
               </div>
@@ -165,7 +167,7 @@ export default async function RequestDetailPage({
                 <span className="text-[var(--muted)]">
                   {t("request.category")}
                 </span>
-                <span className="font-medium">
+                <span className="min-w-0 text-right font-medium">
                   {getRequestCategoryLabel(request.category, locale)}
                 </span>
               </div>
@@ -173,7 +175,7 @@ export default async function RequestDetailPage({
                 <span className="text-[var(--muted)]">
                   {t("request.channel")}
                 </span>
-                <span className="font-medium">
+                <span className="min-w-0 text-right font-medium">
                   {getChannelLabel(request.channel, locale)}
                 </span>
               </div>
@@ -181,7 +183,7 @@ export default async function RequestDetailPage({
                 <span className="text-[var(--muted)]">
                   {t("request.owner")}
                 </span>
-                <span className="text-right font-medium">
+                <span className="min-w-0 break-words text-right font-medium">
                   {request.ownerPhone}
                 </span>
               </div>
@@ -189,7 +191,7 @@ export default async function RequestDetailPage({
                 <span className="text-[var(--muted)]">
                   {t("request.assigned")}
                 </span>
-                <span className="text-right font-medium">
+                <span className="min-w-0 break-words text-right font-medium">
                   {currentAssignee
                     ? getStaffLabel(currentAssignee)
                     : t("request.unassigned")}
@@ -198,7 +200,7 @@ export default async function RequestDetailPage({
             </div>
           </Panel>
 
-          <Panel className="p-5">
+          <Panel className="min-w-0 p-5">
             <div className="mb-4 flex items-center gap-2">
               <Settings2
                 aria-hidden="true"
@@ -215,7 +217,7 @@ export default async function RequestDetailPage({
                 <label className="text-sm font-medium" htmlFor="status">
                   {t("request.status")}
                 </label>
-                <div className="flex gap-2">
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <select
                     className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
                     defaultValue={request.status}
@@ -228,7 +230,11 @@ export default async function RequestDetailPage({
                       </option>
                     ))}
                   </select>
-                  <Button type="submit" variant="secondary">
+                  <Button
+                    className="w-full sm:w-auto"
+                    type="submit"
+                    variant="secondary"
+                  >
                     <Save aria-hidden="true" size={15} />
                     {t("request.save")}
                   </Button>
@@ -241,7 +247,7 @@ export default async function RequestDetailPage({
                 <label className="text-sm font-medium" htmlFor="urgency">
                   {t("request.urgency")}
                 </label>
-                <div className="flex gap-2">
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <select
                     className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
                     defaultValue={request.urgency}
@@ -254,7 +260,11 @@ export default async function RequestDetailPage({
                       </option>
                     ))}
                   </select>
-                  <Button type="submit" variant="secondary">
+                  <Button
+                    className="w-full sm:w-auto"
+                    type="submit"
+                    variant="secondary"
+                  >
                     <Save aria-hidden="true" size={15} />
                     {t("request.save")}
                   </Button>
@@ -267,7 +277,7 @@ export default async function RequestDetailPage({
                 <label className="text-sm font-medium" htmlFor="staffMemberId">
                   {t("request.assigned")}
                 </label>
-                <div className="flex gap-2">
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <select
                     className="h-10 min-w-0 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
                     defaultValue={request.assignedStaffId ?? "unassigned"}
@@ -281,7 +291,11 @@ export default async function RequestDetailPage({
                       </option>
                     ))}
                   </select>
-                  <Button type="submit" variant="secondary">
+                  <Button
+                    className="w-full sm:w-auto"
+                    type="submit"
+                    variant="secondary"
+                  >
                     <UserRoundCheck aria-hidden="true" size={15} />
                     {t("request.assign")}
                   </Button>
@@ -290,12 +304,12 @@ export default async function RequestDetailPage({
             </div>
           </Panel>
 
-          <Panel className="p-5">
+          <Panel className="min-w-0 p-5">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-semibold">{t("request.aiSummary")}</h2>
               <Badge tone="neutral">{t("request.draft")}</Badge>
             </div>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+            <p className="mt-3 break-words text-sm leading-6 text-[var(--muted)]">
               {request.summary || t("request.noSummary")}
             </p>
             <div className="mt-4 rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-xs leading-5 text-[var(--muted)]">
@@ -303,15 +317,17 @@ export default async function RequestDetailPage({
             </div>
           </Panel>
 
-          <Panel className="p-5">
+          <Panel className="min-w-0 p-5">
             <h2 className="font-semibold">{t("request.events")}</h2>
             <div className="mt-4 grid gap-2">
               {request.events.map((event) => (
                 <div
-                  className="flex items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm"
+                  className="grid gap-1 rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
                   key={event.id}
                 >
-                  <span className="font-medium">{event.eventType}</span>
+                  <span className="min-w-0 break-words font-medium">
+                    {event.eventType}
+                  </span>
                   <span className="text-xs text-[var(--muted)]">
                     {dateFormatter.format(new Date(event.createdAt))}
                   </span>
@@ -321,8 +337,8 @@ export default async function RequestDetailPage({
           </Panel>
         </div>
 
-        <Panel className="p-5">
-          <div className="flex items-center justify-between gap-3">
+        <Panel className="min-w-0 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-[var(--primary)]">
                 {t("request.conversation")}
@@ -331,7 +347,7 @@ export default async function RequestDetailPage({
                 {t("request.timeline")}
               </h2>
             </div>
-            <Button variant="secondary">
+            <Button className="w-full sm:w-auto" variant="secondary">
               <FileDown aria-hidden="true" size={16} />
               {t("request.export")}
             </Button>
@@ -343,7 +359,7 @@ export default async function RequestDetailPage({
                 className="rounded-[var(--radius)] border border-[var(--line)] bg-white p-4"
                 key={message.id}
               >
-                <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="mb-2 grid gap-1 sm:flex sm:items-center sm:justify-between sm:gap-3">
                   <span className="text-sm font-semibold">
                     {getSenderLabel(message.senderType, locale)}
                   </span>
@@ -351,7 +367,7 @@ export default async function RequestDetailPage({
                     {dateFormatter.format(new Date(message.createdAt))}
                   </span>
                 </div>
-                <p className="text-sm leading-6 text-[var(--foreground)]">
+                <p className="break-words text-sm leading-6 text-[var(--foreground)]">
                   {message.body}
                 </p>
               </div>
@@ -420,7 +436,7 @@ export default async function RequestDetailPage({
               <div className="mt-3 grid gap-2">
                 {request.notes.map((note) => (
                   <div
-                    className="rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]"
+                    className="break-words rounded-[var(--radius)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]"
                     key={note.id}
                   >
                     {note.body}
