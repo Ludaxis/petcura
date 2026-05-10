@@ -1,5 +1,13 @@
 import { normalizeLocale, type SupportedLocale } from "@petcura/shared";
 
+export type TwilioDeliveryStatus =
+  | "queued"
+  | "sent"
+  | "delivered"
+  | "read"
+  | "acknowledged"
+  | "failed";
+
 export type TwilioWhatsAppPayload = {
   from: string;
   to: string;
@@ -16,8 +24,46 @@ export type TwilioWhatsAppMedia = {
   contentType: string;
 };
 
+export type TwilioMessageStatusPayload = {
+  messageSid: string;
+  rawStatus: string;
+  status: TwilioDeliveryStatus;
+  eventId: string;
+  eventType?: string | undefined;
+  errorCode?: string | undefined;
+  channelStatusMessage?: string | undefined;
+};
+
 export function stripTwilioWhatsAppPrefix(value: string) {
   return value.replace(/^whatsapp:/i, "").trim();
+}
+
+export function formatTwilioWhatsAppAddress(value: string) {
+  return `whatsapp:${stripTwilioWhatsAppPrefix(value)}`;
+}
+
+export function mapTwilioDeliveryStatus(
+  status: string | null | undefined
+): TwilioDeliveryStatus {
+  const normalized = status?.toLowerCase();
+
+  if (normalized === "delivered") return "delivered";
+  if (normalized === "read") return "read";
+  if (normalized === "sent" || normalized === "sending") return "sent";
+  if (normalized === "failed" || normalized === "undelivered") return "failed";
+
+  return "queued";
+}
+
+export function getTwilioDeliveryEventId(
+  messageSid: string,
+  rawStatus: string,
+  eventType?: string | undefined,
+  errorCode?: string | undefined
+) {
+  return [messageSid, rawStatus || "unknown", eventType, errorCode]
+    .filter(Boolean)
+    .join(":");
 }
 
 export function formDataToRecord(params: URLSearchParams) {
@@ -84,6 +130,40 @@ export function parseTwilioWhatsAppPayload(
     profileName,
     media,
     preferredLanguage
+  };
+}
+
+export function parseTwilioMessageStatusPayload(
+  params: URLSearchParams
+): TwilioMessageStatusPayload {
+  const messageSid = params.get("MessageSid") ?? params.get("SmsSid") ?? "";
+  const rawStatus =
+    params.get("MessageStatus") ?? params.get("SmsStatus") ?? "";
+  const eventType = params.get("EventType") ?? undefined;
+  const errorCode = params.get("ErrorCode") ?? undefined;
+  const channelStatusMessage = params.get("ChannelStatusMessage") ?? undefined;
+
+  if (!messageSid) {
+    throw new Error("missing_message_sid");
+  }
+
+  if (!rawStatus) {
+    throw new Error("missing_message_status");
+  }
+
+  return {
+    messageSid,
+    rawStatus,
+    status: mapTwilioDeliveryStatus(rawStatus),
+    eventId: getTwilioDeliveryEventId(
+      messageSid,
+      rawStatus,
+      eventType,
+      errorCode
+    ),
+    eventType,
+    errorCode,
+    channelStatusMessage
   };
 }
 

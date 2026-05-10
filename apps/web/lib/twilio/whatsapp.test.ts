@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatTwilioWhatsAppAddress,
   formDataToRecord,
+  getTwilioDeliveryEventId,
   getTwilioWebhookUrl,
+  mapTwilioDeliveryStatus,
+  parseTwilioMessageStatusPayload,
   parseTwilioWhatsAppPayload,
   stripTwilioWhatsAppPrefix
 } from "./whatsapp";
@@ -12,6 +16,15 @@ describe("Twilio WhatsApp helpers", () => {
       "+37258046666"
     );
     expect(stripTwilioWhatsAppPrefix("+37258046666")).toBe("+37258046666");
+  });
+
+  it("formats WhatsApp API addresses", () => {
+    expect(formatTwilioWhatsAppAddress("+37258046666")).toBe(
+      "whatsapp:+37258046666"
+    );
+    expect(formatTwilioWhatsAppAddress("whatsapp:+37258046666")).toBe(
+      "whatsapp:+37258046666"
+    );
   });
 
   it("parses inbound WhatsApp form payloads", () => {
@@ -91,6 +104,41 @@ describe("Twilio WhatsApp helpers", () => {
 
     expect(getTwilioWebhookUrl(request)).toBe(
       "https://app.petcura.app/api/webhooks/twilio/whatsapp?clinic=alex"
+    );
+  });
+
+  it("maps Twilio delivery statuses to PetCura statuses", () => {
+    expect(mapTwilioDeliveryStatus("queued")).toBe("queued");
+    expect(mapTwilioDeliveryStatus("accepted")).toBe("queued");
+    expect(mapTwilioDeliveryStatus("sending")).toBe("sent");
+    expect(mapTwilioDeliveryStatus("sent")).toBe("sent");
+    expect(mapTwilioDeliveryStatus("delivered")).toBe("delivered");
+    expect(mapTwilioDeliveryStatus("read")).toBe("read");
+    expect(mapTwilioDeliveryStatus("undelivered")).toBe("failed");
+    expect(mapTwilioDeliveryStatus("failed")).toBe("failed");
+  });
+
+  it("parses status callback payloads", () => {
+    const params = new URLSearchParams({
+      MessageSid: "SM789",
+      MessageStatus: "delivered",
+      EventType: "DELIVERED"
+    });
+
+    expect(parseTwilioMessageStatusPayload(params)).toEqual({
+      messageSid: "SM789",
+      rawStatus: "delivered",
+      status: "delivered",
+      eventId: "SM789:delivered:DELIVERED",
+      eventType: "DELIVERED",
+      errorCode: undefined,
+      channelStatusMessage: undefined
+    });
+  });
+
+  it("builds stable delivery event ids", () => {
+    expect(getTwilioDeliveryEventId("SM789", "failed", undefined, "30003")).toBe(
+      "SM789:failed:30003"
     );
   });
 });
