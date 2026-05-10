@@ -1,0 +1,38 @@
+# Data Model
+
+## Core Tables
+
+- `clinics`
+- `clinic_staff`
+- `owners`
+- `owner_channel_identities`
+- `pets`
+- `requests`
+- `messages`
+- `attachments`
+- `message_delivery_events`
+- `internal_notes`
+- `request_events`
+- `ai_outputs`
+- `reminders`
+- `notification_templates`
+- `consents`
+- `pms_exports`
+- `audit_logs`
+- `clinic_channels`
+- `staff_presence`
+
+## Invariants
+
+- Every tenant-owned table includes `clinic_id`.
+- RLS is enabled for all domain tables.
+- `requests.urgency` is staff-confirmed.
+- AI may write `urgency_suggestion` or `risk_flags_json`, but not final urgency.
+- Attachments live in `attachments`; do not duplicate attachment state in `messages`.
+- `request_events` is the case timeline source of truth.
+- `ai_outputs` is the AI accountability source of truth.
+- `message_delivery_events` is the outbound delivery source of truth.
+
+## Soft Delete and Erasure
+
+Owner and pet data must support GDPR erasure while retaining non-PII operational/audit structure where legally required.

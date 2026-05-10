@@ -1,0 +1,14 @@
+.DS_Store
+node_modules/
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
+secrets/
+config/credentials.json
+CLAUDE.local.md
+.claude/settings.local.json
