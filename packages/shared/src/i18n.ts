@@ -163,6 +163,10 @@ export const uiCopy = {
     "auth.noMembership":
       "This account is not linked to an active clinic yet.",
     "auth.invalidEmail": "Enter a valid work email.",
+    "auth.rateLimited":
+      "Too many login links were requested. Wait a few minutes, then try again.",
+    "auth.emailNotAuthorized":
+      "Supabase Auth is still using the default email sender, so this address is not authorized. Configure custom SMTP before inviting clinic staff.",
     "auth.loginError": "Could not send the login link. Try again.",
     "nav.admin": "Admin",
     "admin.kicker": "Platform setup",
@@ -292,6 +296,10 @@ export const uiCopy = {
     "auth.noMembership":
       "See konto ei ole veel seotud aktiivse kliinikuga.",
     "auth.invalidEmail": "Sisesta kehtiv töö e-post.",
+    "auth.rateLimited":
+      "Sisselogimislinke küsiti liiga palju. Oota mõni minut ja proovi uuesti.",
+    "auth.emailNotAuthorized":
+      "Supabase Auth kasutab veel vaikimisi e-posti saatjat, seega ei ole see aadress lubatud. Seadista kohandatud SMTP enne kliiniku töötajate kutsumist.",
     "auth.loginError": "Sisselogimislinki ei saanud saata. Proovi uuesti.",
     "nav.admin": "Admin",
     "admin.kicker": "Platvormi seadistus",
@@ -421,6 +429,10 @@ export const uiCopy = {
     "auth.noMembership":
       "Эта учетная запись еще не связана с активной клиникой.",
     "auth.invalidEmail": "Введите корректную рабочую почту.",
+    "auth.rateLimited":
+      "Запрошено слишком много ссылок входа. Подождите несколько минут и попробуйте снова.",
+    "auth.emailNotAuthorized":
+      "Supabase Auth все еще использует стандартную отправку писем, поэтому этот адрес не разрешен. Настройте custom SMTP перед приглашением сотрудников клиники.",
     "auth.loginError": "Не удалось отправить ссылку входа. Попробуйте еще раз.",
     "nav.admin": "Админ",
     "admin.kicker": "Настройка платформы",
