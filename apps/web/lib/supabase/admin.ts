@@ -29,7 +29,7 @@ export function createAdminClient() {
 }
 
 export function getDefaultClinicSlug() {
-  return process.env.PETCURA_DEFAULT_CLINIC_SLUG ?? "alex-vet-demo";
+  return process.env.PETCURA_DEFAULT_CLINIC_SLUG?.trim() || "alex-vet-demo";
 }
 
 export async function getDefaultClinic() {

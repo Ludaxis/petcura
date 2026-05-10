@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import nextEnv from "@next/env";
+
+const { loadEnvConfig } = nextEnv;
+loadEnvConfig(process.cwd());
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -6,6 +10,7 @@ export default defineConfig({
   expect: {
     timeout: 10_000
   },
+  workers: 1,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3100",
     trace: "retain-on-failure"

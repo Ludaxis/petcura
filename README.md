@@ -10,13 +10,13 @@ Production is deployed at `https://app.petcura.app`.
 
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example apps/web/.env.local
 npm run dev
 ```
 
 The app runs at `http://localhost:3000`.
 
-Fill `.env.local` with the hosted Supabase project values before wiring live data:
+Fill `apps/web/.env.local` with the hosted Supabase project values before wiring live data. In a local monorepo checkout, you can also keep the values in root `.env.local` and symlink `apps/web/.env.local` to it.
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for browser and SSR clients

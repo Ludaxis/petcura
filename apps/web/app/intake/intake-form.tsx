@@ -5,7 +5,6 @@ import { CheckCircle2, Send } from "lucide-react";
 import { Badge, Button } from "@petcura/ui";
 import { createTranslator, type SupportedLocale } from "@petcura/shared";
 import {
-  initialIntakeFormState,
   submitOwnerIntake,
   type IntakeFormState
 } from "./actions";
@@ -16,6 +15,10 @@ type IntakeFormProps = {
     label: string;
   }>;
   locale: SupportedLocale;
+};
+
+const initialIntakeFormState: IntakeFormState = {
+  ok: false
 };
 
 function FieldError({

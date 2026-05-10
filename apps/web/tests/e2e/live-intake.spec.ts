@@ -6,7 +6,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const secretKey = process.env.SUPABASE_SECRET_KEY;
 const defaultClinicSlug =
-  process.env.PETCURA_DEFAULT_CLINIC_SLUG ?? "alex-vet-demo";
+  process.env.PETCURA_DEFAULT_CLINIC_SLUG?.trim() || "alex-vet-demo";
 
 function adminClient() {
   if (!supabaseUrl || !secretKey) {
@@ -19,6 +19,10 @@ function adminClient() {
       persistSession: false
     }
   });
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 test("owner intake appears in authenticated clinic inbox and detail", async ({
@@ -90,18 +94,31 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
       });
 
     expect(linkError).toBeNull();
-    expect(link.properties?.action_link).toBeTruthy();
+    expect(link.properties?.hashed_token).toBeTruthy();
 
-    await page.goto(link.properties!.action_link);
+    const callbackUrl = new URL("/auth/callback", baseURL);
+    callbackUrl.searchParams.set("next", "/inbox");
+    callbackUrl.searchParams.set("lang", "en");
+    callbackUrl.searchParams.set("token_hash", link.properties!.hashed_token);
+    callbackUrl.searchParams.set(
+      "type",
+      link.properties!.verification_type ?? "magiclink"
+    );
+
+    await page.goto(callbackUrl.toString());
     await expect(
       page.getByRole("heading", { name: "ClientOps inbox" })
     ).toBeVisible();
-    await expect(page.getByText(petName)).toBeVisible();
 
-    await page.getByText(petName).click();
+    const requestLink = page.getByRole("link", {
+      name: new RegExp(`${escapeRegExp(petName)}.*${escapeRegExp(ownerName)}`)
+    });
+
+    await expect(requestLink).toBeVisible();
+    await requestLink.click();
     await expect(page.getByRole("heading", { name: petName })).toBeVisible();
-    await expect(page.getByText(ownerName)).toBeVisible();
-    await expect(page.getByText(message)).toBeVisible();
+    await expect(page.getByText(ownerName).first()).toBeVisible();
+    await expect(page.getByText(message).first()).toBeVisible();
   } finally {
     if (clinicId) {
       const { data: owners } = await admin

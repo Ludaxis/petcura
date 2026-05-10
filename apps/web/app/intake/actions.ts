@@ -10,12 +10,6 @@ export type IntakeFormState = {
   fieldErrors?: Record<string, string[] | undefined>;
 };
 
-const initialState: IntakeFormState = {
-  ok: false
-};
-
-export { initialState as initialIntakeFormState };
-
 function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, "");
 }
