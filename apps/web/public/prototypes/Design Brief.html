@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PetCura — Design Brief v0.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* Tuned variant of the codebase tokens — see §4 for rationale */
+    --bg:        #fbfbfa;
+    --paper:    #ffffff;
+    --ink:       #0f1311;
+    --ink-2:     #2a322f;
+    --muted:     #5e6a65;
+    --muted-2:   #8a948f;
+    --line:      #e6e8e6;
+    --line-2:    #f0f1ef;
+    --teal:      #0e6a64;
+    --teal-soft: #e8f1ef;
+    --amber:     #8a5a00;
+    --red:       #9a1f1f;
+    --green:     #2d6a4f;
+    --radius:    6px;
+    --maxw:     880px;
+    --kbd-bg:   #f4f4f2;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Geist",ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;
+    font-size:15px;
+    line-height:1.55;
+    font-feature-settings:"ss01","cv11";
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:var(--maxw);margin:0 auto;padding:64px 28px 160px}
+  .mono{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* Masthead */
+  .masthead{
+    display:grid;
+    grid-template-columns: 1fr auto;
+    gap:24px;
+    align-items:end;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:48px;
+  }
+  .crest{
+    display:flex;align-items:center;gap:10px;
+    font-family:"Geist Mono",monospace;
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted);
+  }
+  .crest .mark{
+    width:16px;height:16px;border-radius:3px;
+    background:var(--teal); position:relative;
+  }
+  .crest .mark::after{
+    content:"";position:absolute;inset:4px 3px 4px 7px;
+    background:var(--paper);border-radius:1px;
+  }
+  h1.title{
+    font-size:34px; line-height:1.15; font-weight:600; letter-spacing:-0.02em;
+    margin:14px 0 6px;
+  }
+  .subtitle{color:var(--muted);font-size:15px;margin:0}
+  .meta{
+    text-align:right;
+    font-family:"Geist Mono",monospace;
+    font-size:11px;
+    color:var(--muted);
+    line-height:1.7;
+  }
+  .meta b{color:var(--ink-2);font-weight:500}
+
+  /* TOC */
+  .toc{
+    margin: 0 0 56px;
+    padding: 18px 20px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+  }
+  .toc h4{
+    margin:0 0 10px;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    font-weight:500;font-family:"Geist Mono",monospace;
+  }
+  .toc ol{margin:0;padding:0;list-style:none;column-count:2;column-gap:32px}
+  .toc li{
+    font-size:13.5px;
+    padding:3px 0;
+    break-inside:avoid;
+    display:flex;justify-content:space-between;gap:12px;
+  }
+  .toc li a{color:var(--ink-2);text-decoration:none}
+  .toc li a:hover{color:var(--teal)}
+  .toc .num{font-family:"Geist Mono",monospace;color:var(--muted-2);font-size:11px}
+
+  /* Sections */
+  section{margin:64px 0}
+  section + section{border-top:1px solid var(--line-2);padding-top:48px}
+  h2{
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted); font-weight:500; margin:0 0 6px;
+    font-family:"Geist Mono",monospace;
+  }
+  h2 .n{color:var(--teal);margin-right:10px}
+  h3{
+    font-size:22px; font-weight:600; letter-spacing:-0.01em;
+    margin:0 0 24px; color:var(--ink);
+  }
+  h4{
+    font-size:14px;font-weight:600;margin:28px 0 10px;
+    color:var(--ink);
+  }
+  p{margin:0 0 14px;color:var(--ink-2)}
+  p.lede{font-size:17px;line-height:1.55;color:var(--ink);margin-bottom:22px;text-wrap:pretty}
+  strong{color:var(--ink);font-weight:600}
+  em{font-style:normal;color:var(--teal);font-weight:500}
+
+  ul,ol{padding-left:20px;margin:6px 0 16px;color:var(--ink-2)}
+  ul li,ol li{margin:4px 0}
+  ul.tight li, ol.tight li{margin:1px 0}
+  ul.dash{list-style:none;padding-left:0}
+  ul.dash li{padding-left:16px;position:relative}
+  ul.dash li::before{
+    content:"—";position:absolute;left:0;color:var(--muted-2);
+  }
+
+  /* Inline */
+  kbd{
+    font-family:"Geist Mono",monospace;
+    font-size:11.5px;
+    padding:1.5px 6px;
+    border:1px solid var(--line);
+    border-bottom-width:2px;
+    border-radius:4px;
+    background:var(--kbd-bg);
+    color:var(--ink-2);
+  }
+  code{
+    font-family:"Geist Mono",monospace;
+    font-size:13px;
+    background:var(--line-2);
+    padding:1px 5px;
+    border-radius:3px;
+    color:var(--ink-2);
+  }
+
+  /* Cards / blocks */
+  .block{
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin:14px 0;
+  }
+  .block .label{
+    font-family:"Geist Mono",monospace;
+    font-size:10.5px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .pushback{
+    border-left:2px solid var(--teal);
+    background:var(--paper);
+  }
+  .pushback .label{color:var(--teal)}
+  .reject{
+    border-left:2px solid var(--muted-2);
+    background:var(--paper);
+  }
+  .reject .label{color:var(--muted)}
+
+  /* Two-col */
+  .cols{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  .cols.three{grid-template-columns:repeat(3,1fr)}
+
+  /* Tables */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+    margin:8px 0 18px;
+  }
+  th,td{
+    text-align:left;
+    padding:9px 10px;
+    border-bottom:1px solid var(--line-2);
+    vertical-align:top;
+    font-weight:400;
+    color:var(--ink-2);
+  }
+  th{
+    color:var(--muted);
+    font-family:"Geist Mono",monospace;
+    font-size:10.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    border-bottom:1px solid var(--line);
+    font-weight:500;
+  }
+  td.mono{font-family:"Geist Mono",monospace;font-size:12.5px;color:var(--ink)}
+  td.swatch{padding-left:36px;position:relative}
+  td.swatch::before{
+    content:"";
+    position:absolute;
+    left:10px; top:11px;
+    width:18px;height:18px;border-radius:4px;
+    background:var(--swatch);
+    border:1px solid rgba(0,0,0,.06);
+  }
+
+  /* Wireframes */
+  .wire{
+    font-family:"Geist Mono",monospace;
+    font-size:11.5px;
+    line-height:1.55;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin:14px 0;
+    color:var(--ink-2);
+    white-space:pre;
+    overflow-x:auto;
+  }
+  .wire .c{color:var(--muted-2)} /* comments */
+  .wire .h{color:var(--ink);font-weight:500} /* highlight */
+  .wire .a{color:var(--teal);font-weight:500} /* accent */
+  .wire .r{color:var(--red)}
+  .wire .y{color:var(--amber)}
+
+  /* Open questions */
+  .q{
+    display:grid;
+    grid-template-columns: 38px 1fr;
+    gap:12px;
+    padding:14px 0;
+    border-top:1px solid var(--line-2);
+  }
+  .q:first-of-type{border-top:1px solid var(--line)}
+  .q .id{
+    font-family:"Geist Mono",monospace;
+    font-size:11px;
+    color:var(--muted-2);
+    padding-top:3px;
+    letter-spacing:.06em;
+  }
+  .q .id .pri{
+    display:inline-block;
+    width:6px;height:6px;border-radius:50%;
+    background:var(--muted-2);
+    margin-right:6px;vertical-align:1px;
+  }
+  .q.p1 .id .pri{background:var(--red)}
+  .q.p2 .id .pri{background:var(--amber)}
+  .q.p3 .id .pri{background:var(--teal)}
+  .q .body .ask{font-weight:500;color:var(--ink);margin:0 0 4px}
+  .q .body .why{font-size:13px;color:var(--muted);margin:0}
+
+  /* Footer */
+  footer{
+    margin-top:80px; padding-top:18px;
+    border-top:1px solid var(--line);
+    color:var(--muted);
+    font-family:"Geist Mono",monospace;
+    font-size:11px;
+    display:flex; justify-content:space-between;
+  }
+
+  /* Color preview chips */
+  .swatches{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:8px;
+    margin:8px 0 14px;
+  }
+  .swatches .sw{
+    height:64px; border-radius:4px; border:1px solid rgba(0,0,0,.06);
+    position:relative;
+    font-family:"Geist Mono",monospace;
+    font-size:10px;
+    color:var(--ink-2);
+    padding:6px 8px;
+    display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  .swatches .sw.dark{color:#fff}
+  .swatches .sw .name{font-weight:500}
+
+  @media (max-width: 700px){
+    .cols, .cols.three{grid-template-columns:1fr}
+    .toc ol{column-count:1}
+    .masthead{grid-template-columns:1fr}
+    .meta{text-align:left}
+  }
+</style>
+</head>
+<body>
+
+<main class="page">
+
+  <!-- ======================== MASTHEAD ======================== -->
+  <header class="masthead">
+    <div>
+      <div class="crest">
+        <span class="mark" aria-hidden="true"></span>
+        <span>PetCura · Design</span>
+      </div>
+      <h1 class="title">Design Brief</h1>
+      <p class="subtitle">ClientOps inbox for European veterinary clinics — direction, principles, surfaces, open questions.</p>
+    </div>
+    <div class="meta">
+      <div><b>Doc</b> &nbsp; v0.1 · pre-visual</div>
+      <div><b>Date</b> &nbsp; 10 May 2026</div>
+      <div><b>Owner</b> &nbsp; Design lead</div>
+      <div><b>Status</b> &nbsp; Awaiting confirmation</div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#pushback"><span><span class="num">00</span> &nbsp; Push-back before designing</span></a></li>
+      <li><a href="#principles"><span><span class="num">01</span> &nbsp; Design principles, refined</span></a></li>
+      <li><a href="#brand"><span><span class="num">02</span> &nbsp; Brand &amp; visual direction</span></a></li>
+      <li><a href="#tokens"><span><span class="num">03</span> &nbsp; Foundations &amp; tokens</span></a></li>
+      <li><a href="#ia"><span><span class="num">04</span> &nbsp; Information architecture</span></a></li>
+      <li><a href="#surfaces"><span><span class="num">05</span> &nbsp; Surface plans (×4)</span></a></li>
+      <li><a href="#ai"><span><span class="num">06</span> &nbsp; AI assistance pattern</span></a></li>
+      <li><a href="#components"><span><span class="num">07</span> &nbsp; Component scope &amp; states</span></a></li>
+      <li><a href="#shortcuts"><span><span class="num">08</span> &nbsp; Keyboard model</span></a></li>
+      <li><a href="#questions"><span><span class="num">09</span> &nbsp; Open questions</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ======================== 00 PUSH-BACK ======================== -->
+  <section id="pushback">
+    <h2><span class="n">00</span>Push-back</h2>
+    <h3>Five things I want to challenge before we design.</h3>
+
+    <p class="lede">You asked for opinion. Here are the places where I'd consciously diverge from the brief — each with the trade-off I considered and the reason I'd still push.</p>
+
+    <div class="block pushback">
+      <div class="label">P1 · Five inbox columns is too many</div>
+      <p>The brief specifies five columns: <em>New, Urgent, Waiting Staff, Waiting Owner, Resolved</em>. On a 13&Prime; reception laptop at 1440&times;900 with a sidebar, that's ~220px per column — tighter than Front, tighter than Linear's triage. Owner-card + pet-name + last-message preview + AI tags don't fit at that width.</p>
+      <p>I'd argue for <strong>a single, dense, sortable list with status as a leading column and saved &ldquo;views&rdquo; as the primary navigation.</strong> Linear and Height ship this. Five Trello-style columns visualise the lifecycle but punish the actual work of triaging 80 requests on a Monday morning. The kanban view becomes an optional secondary mode (<kbd>⌘ ⇧ B</kbd>) for shift handoff, not the default.</p>
+      <p class="mono" style="font-size:12px;color:var(--muted)">Trade-off rejected: a five-column board reads as &ldquo;ops product&rdquo; and matches Front. The work pattern at 80 req/day doesn't tolerate the per-card real estate.</p>
+    </div>
+
+    <div class="block pushback">
+      <div class="label">P2 · &ldquo;AI must look like assistance, not authority&rdquo; — agreed, but stronger</div>
+      <p>The brief asks for a subtle &ldquo;AI draft&rdquo; affordance. I'd go further: <em>AI output is structurally separated from human-authored content</em>, lives in its own surface region with a distinct background tint and a left border, and never collapses into a chat bubble that looks like a vet wrote it. One subtle pill is not enough when the output is a full reply draft about a dog's vomiting. The visual contract is: &ldquo;a vet did <strong>not</strong> say this until they press <kbd>⏎</kbd>.&rdquo; See §06.</p>
+    </div>
+
+    <div class="block pushback">
+      <div class="label">P3 · Three urgency levels are too few for triage realities</div>
+      <p>EU vet clinics have a stable triage pattern: <em>routine, today, same-hour, life-threat</em>. Your contract says low/medium/high. I'd map that to a 4-tier model in the UI (<em>Routine · Today · Now · Critical</em>) while keeping <code>low|medium|high</code> as the database enum, mapping <code>high → "Now"</code> and exposing <em>Critical</em> as a flag that always pages on-call. Reason: nurses already think in those four buckets. If we ship three, they'll abuse <code>high</code> as &ldquo;needs to happen today&rdquo; and lose signal for true emergencies.</p>
+      <p class="mono" style="font-size:12px;color:var(--muted)">If the data contract is locked, I'll fold critical into a separate <code>risk_flag</code> instead. Decision needed (Q-04).</p>
+    </div>
+
+    <div class="block pushback">
+      <div class="label">P4 · Light mode v1, dark in v1.1 is correct, but</div>
+      <p>Reception desks at 7am and after-hours on-call shifts at 11pm are the highest-volume windows. Vets explicitly request dark mode within 4 weeks, every time. I'd ship dark mode in v1 alongside light, and use the time saved on... <em>every other thing in the brief</em>. Cost: ~5% extra design time, all token-driven. Benefit: stops the inevitable v1.1 fire drill.</p>
+    </div>
+
+    <div class="block pushback">
+      <div class="label">P5 · The five-state Reminder model has a hole</div>
+      <p><em>Scheduled, Sent, Acknowledged, Completed, Missed.</em> Missing: <strong>Snoozed</strong> (owner replied &ldquo;tomorrow please&rdquo;) and <strong>Cancelled</strong> (clinic cancelled appointment). Without these, missed-by-snooze pollutes the Missed bucket and skews KPIs. Add both, defer to product on whether they appear in the public KPI set.</p>
+    </div>
+  </section>
+
+
+  <!-- ======================== 01 PRINCIPLES ======================== -->
+  <section id="principles">
+    <h2><span class="n">01</span>Principles</h2>
+    <h3>What we optimise for, in order.</h3>
+
+    <ol class="tight" style="counter-reset:p; padding-left:0; list-style:none">
+      <li><h4 style="margin:18px 0 4px">1 &nbsp;·&nbsp; Density without noise</h4>
+        <p>Information per square inch is the headline metric. We strip chrome before we add it. Cards, drop shadows, gradients, container borders &mdash; default off. We rely on type weight, vertical rhythm, and a single hairline rule (1px <code>--line</code>) for separation.</p></li>
+
+      <li><h4>2 &nbsp;·&nbsp; The inbox <em>is</em> the dashboard</h4>
+        <p>No KPI tile strip above the list. The work is the work. If clinic admins need numbers, they get a separate <em>Reports</em> surface, not a tile-sandwich on top of triage.</p></li>
+
+      <li><h4>3 &nbsp;·&nbsp; Keyboard is primary, mouse is fallback</h4>
+        <p>Every primary action has a shortcut, shown on hover and in <kbd>⌘ K</kbd>. The interaction grammar is <em>vim-style</em>: object-then-verb (select request → assign), navigation with <kbd>j</kbd>/<kbd>k</kbd>, action with single letter. See §08.</p></li>
+
+      <li><h4>4 &nbsp;·&nbsp; Calm at the edges, urgent at the centre</h4>
+        <p>Owner surfaces (WhatsApp, web intake) read as warm, slow, reassuring. Staff surfaces read as cold, fast, exact. Same brand, two registers. We do not make staff UI &ldquo;friendly&rdquo; &mdash; vets read that as condescension, and consumer-pet-brand iconography is a hard no.</p></li>
+
+      <li><h4>5 &nbsp;·&nbsp; AI is a second author, never the author</h4>
+        <p>Every AI artefact carries provenance: model, prompt version, confidence, and a visible <em>Accept / Edit / Regenerate / Reject</em> control. Nothing AI-generated reaches an owner without a human keystroke. Nothing AI-generated <em>looks</em> like it was written by the clinic. See §06.</p></li>
+
+      <li><h4>6 &nbsp;·&nbsp; Trust is rendered, not claimed</h4>
+        <p>Audit trail is not a settings link &mdash; it is rendered inline in request detail (collapsed by default, one click to expand). &ldquo;Last edited by Liis 14:02&rdquo; is part of the type spec, not an afterthought.</p></li>
+
+      <li><h4>7 &nbsp;·&nbsp; Localisation is the visual system, not a wrapper</h4>
+        <p>EN/ET/RU is foundational (<code>localization.md</code>). Estonian compound words run 30&ndash;40% longer than English. Russian Cyrillic shifts vertical metrics. Type scale, button paddings, table column widths are tested in all three locales before sign-off &mdash; not after.</p></li>
+
+      <li><h4>8 &nbsp;·&nbsp; Reduced motion is the canonical motion</h4>
+        <p>We design the no-motion variant first. Animations are 150&ndash;200ms ease-out, layered on top, and never carry meaning that's lost without them. <em>If a status change requires a slide animation to be understood, the status change is wrong.</em></p></li>
+    </ol>
+  </section>
+
+
+  <!-- ======================== 02 BRAND ======================== -->
+  <section id="brand">
+    <h2><span class="n">02</span>Brand</h2>
+    <h3>Visual register: a healthcare operations tool that respects its users.</h3>
+
+    <p>References (in priority order): <em>Linear</em> for density and shortcut grammar; <em>Stripe Dashboard</em> for tabular clarity; <em>Vercel</em> for type discipline; <em>Apple Health</em> for the <em>owner</em>-side calm only. Anti-references: every consumer pet brand, every &ldquo;modern&rdquo; SaaS landing page in the last 18 months.</p>
+
+    <h4>Wordmark &amp; product chrome</h4>
+    <p>PetCura wordmark is set in the body face, weight 500, no custom letterforms. The clinic identifier (multi-tenant) sits adjacent in the chrome &mdash; <em>quiet, always visible, never shouting</em>. Format: <code class="mono">PetCura&nbsp;·&nbsp;Tartu Loomakliinik</code> in the top-left, body weight 400. No logo lockup, no badge.</p>
+
+    <h4>Type</h4>
+    <p>I'd take <strong>Geist Sans</strong> over Inter. Geist's ink trap and tabular numbers are slightly better at small sizes (12&ndash;13px), and its <code>cv11</code> alternate gives us the straight-sided <em>l</em> and single-storey <em>a</em> that read better in numeric-heavy tables (request IDs, timestamps, phone numbers). Three weights only: <code>400</code> body, <code>500</code> emphasis &amp; UI labels, <code>600</code> headings only. <strong>Geist Mono</strong> for IDs, timestamps, kbd, code, and the audit log &mdash; this gives the audit trail an instantly-recognisable visual register.</p>
+    <p>If Geist's licensing is a friction (Vercel restrictions on commercial use in some regions), <em>Inter</em> is the no-risk fallback with identical token mapping.</p>
+
+    <h4>Colour</h4>
+    <p>The codebase ships a teal-on-cream palette and a body gradient. I'd keep the teal primary (<code>#0e6a64</code>, slightly desaturated from the existing <code>#0f766e</code> for fewer chroma fights with red urgency) and <strong>remove the body gradient entirely</strong> — it contradicts &ldquo;operational density.&rdquo; Background goes to <code>#fbfbfa</code> (warm off-white, neutral, distinct from <code>--paper</code>).</p>
+
+    <div class="swatches" aria-hidden="true">
+      <div class="sw" style="background:#fbfbfa">           <span class="name">bg/00 fbfbfa</span></div>
+      <div class="sw" style="background:#ffffff">           <span class="name">paper ffffff</span></div>
+      <div class="sw" style="background:#f0f1ef">           <span class="name">surface/soft</span></div>
+      <div class="sw" style="background:#e6e8e6">           <span class="name">line e6e8e6</span></div>
+      <div class="sw dark" style="background:#5e6a65">      <span class="name">muted 5e6a65</span></div>
+      <div class="sw dark" style="background:#0f1311">      <span class="name">ink 0f1311</span></div>
+      <div class="sw dark" style="background:#0e6a64">      <span class="name">teal 0e6a64</span></div>
+      <div class="sw" style="background:#e8f1ef">           <span class="name">teal/soft</span></div>
+      <div class="sw dark" style="background:#9a1f1f">      <span class="name">red 9a1f1f</span></div>
+      <div class="sw dark" style="background:#8a5a00">      <span class="name">amber 8a5a00</span></div>
+      <div class="sw dark" style="background:#2d6a4f">      <span class="name">green 2d6a4f</span></div>
+      <div class="sw" style="background:#f4f4f2">           <span class="name">kbd f4f4f2</span></div>
+    </div>
+
+    <p>Semantic colour discipline:</p>
+    <ul class="dash tight">
+      <li><strong>Teal</strong> only for primary affordances and selected states. Not for &ldquo;active link&rdquo; in body text — ink stays ink.</li>
+      <li><strong>Red</strong> only for <em>Critical</em> urgency and destructive confirmations. Never for validation errors on owner-facing forms (use ink + helper copy).</li>
+      <li><strong>Amber</strong> only for <em>Now / today</em> urgency and AI low-confidence states.</li>
+      <li><strong>Green</strong> only for <em>resolved</em> and <em>delivered</em> indicators. Never for &ldquo;success toast&rdquo; — toast is neutral with a green dot.</li>
+    </ul>
+
+    <h4>Iconography</h4>
+    <p>Lucide, 1.5px stroke, 16&times;16 default. Filled variants are reserved for binary status indicators only (delivered ✓, read ✓✓, missed ●). No decorative icons in row labels. No paw prints, no animal silhouettes anywhere in staff UI. Owner intake may use one calm illustration on the success state &mdash; placeholder only until we commission.</p>
+
+    <h4>Motion</h4>
+    <p>Three motion tokens: <code>--motion-fast</code> 120ms, <code>--motion</code> 180ms, <code>--motion-slow</code> 240ms; all <code>cubic-bezier(.2,.6,.2,1)</code> (ease-out, no overshoot). One use only: state changes (open/close, in/out, list reorder). No page transitions. No spring physics. Reduced-motion swaps duration to <code>1ms</code> globally — no opacity-only fallbacks, just instant.</p>
+  </section>
+
+
+  <!-- ======================== 03 TOKENS ======================== -->
+  <section id="tokens">
+    <h2><span class="n">03</span>Foundations</h2>
+    <h3>Token spec — preview. Full JSON in v0.2.</h3>
+
+    <h4>Spacing — 4px base, geometric</h4>
+    <table>
+      <thead><tr><th style="width:80px">Token</th><th style="width:80px">Px</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">--s-0</td><td class="mono">0</td><td>Reset</td></tr>
+        <tr><td class="mono">--s-1</td><td class="mono">4</td><td>Icon-to-label gap, badge inner</td></tr>
+        <tr><td class="mono">--s-2</td><td class="mono">8</td><td>Form control inner padding-y</td></tr>
+        <tr><td class="mono">--s-3</td><td class="mono">12</td><td>Inbox row padding-y, default gap</td></tr>
+        <tr><td class="mono">--s-4</td><td class="mono">16</td><td>Card padding, between-field</td></tr>
+        <tr><td class="mono">--s-5</td><td class="mono">24</td><td>Section gap</td></tr>
+        <tr><td class="mono">--s-6</td><td class="mono">32</td><td>Pane padding-x, large section gap</td></tr>
+        <tr><td class="mono">--s-7</td><td class="mono">48</td><td>Empty-state vertical breathing room</td></tr>
+        <tr><td class="mono">--s-8</td><td class="mono">64</td><td>Reserved &mdash; not used in staff UI</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Type scale</h4>
+    <table>
+      <thead><tr><th>Token</th><th>Size / line</th><th>Weight</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">t/xs</td><td class="mono">11 / 14</td><td>500</td><td>Eyebrow labels, table headers, kbd</td></tr>
+        <tr><td class="mono">t/sm</td><td class="mono">12.5 / 18</td><td>400&middot;500</td><td>Meta, timestamps, audit lines</td></tr>
+        <tr><td class="mono">t/base</td><td class="mono">13.5 / 20</td><td>400&middot;500</td><td>Inbox rows, table cells, form input</td></tr>
+        <tr><td class="mono">t/md</td><td class="mono">15 / 22</td><td>400</td><td>Body, message thread, owner-facing default</td></tr>
+        <tr><td class="mono">t/lg</td><td class="mono">17 / 24</td><td>500</td><td>Pet/owner card name, panel titles</td></tr>
+        <tr><td class="mono">t/xl</td><td class="mono">22 / 28</td><td>600</td><td>Page H1 (rare in staff UI), modal titles</td></tr>
+        <tr><td class="mono">t/2xl</td><td class="mono">28 / 34</td><td>600</td><td>Owner-side hero only</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Radius</h4>
+    <p>Two values only: <code>--r-1</code> 4px (inputs, badges, inline) · <code>--r-2</code> 6px (cards, panels, dialogs). No <code>--r-3</code>; nothing in this product needs more. Pills (status) use <code>9999px</code>.</p>
+
+    <h4>Elevation</h4>
+    <p>Three layers, tightly scoped: <code>--e-0</code> none (default — paper sits on background, hairline only) · <code>--e-1</code> dropdowns and popovers (single-axis 0 4 12 rgba(15,19,17,0.06)) · <code>--e-2</code> dialogs and command palette (0 12 32 rgba(15,19,17,0.10)). <em>No shadow on cards, ever.</em> Cards use border, not float.</p>
+
+    <h4>Status pill semantics</h4>
+    <table>
+      <thead><tr><th>Status</th><th>Token</th><th>Fill / Text</th><th>Iconography</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">new</td>           <td class="mono">--st-new</td>   <td>ink/05 / ink</td>   <td>—</td></tr>
+        <tr><td class="mono">urgent · today</td><td class="mono">--st-urgent</td><td>amber/15 / amber</td><td>● filled</td></tr>
+        <tr><td class="mono">urgent · now</td>  <td class="mono">--st-now</td>   <td>red/12 / red</td>    <td>● filled, pulsing on first 60s only</td></tr>
+        <tr><td class="mono">waiting_staff</td> <td class="mono">--st-ws</td>    <td>teal/10 / teal</td>  <td>◐ outline</td></tr>
+        <tr><td class="mono">waiting_owner</td> <td class="mono">--st-wo</td>    <td>ink/05 / muted</td>  <td>◌ outline</td></tr>
+        <tr><td class="mono">resolved</td>      <td class="mono">--st-resolved</td><td>green/10 / green</td><td>✓ filled</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+
+  <!-- ======================== 04 IA ======================== -->
+  <section id="ia">
+    <h2><span class="n">04</span>Information architecture</h2>
+    <h3>App shell, navigation, and the &ldquo;view&rdquo; model.</h3>
+
+    <p>The staff app is a <strong>two-pane shell</strong>: collapsible left rail (icons + labels, 240px / 56px collapsed), main content area. There is no top bar &mdash; clinic identifier and user menu live at the foot of the left rail, where they belong (Linear pattern). This buys us 56px of vertical height on every screen, which is the most expensive real estate in the app.</p>
+
+    <h4>Left rail — top to bottom</h4>
+    <ul class="dash tight">
+      <li><strong>Inbox</strong> &mdash; the default landing surface, with sub-items for saved views (<em>My open · Unassigned · Urgent · Today · Mentions · All</em>).</li>
+      <li><strong>Reminders</strong> &mdash; full reminder list view.</li>
+      <li><strong>Reports</strong> &mdash; AI usage, response times, volume. Admin only.</li>
+      <li><strong>Settings</strong> &mdash; clinic, integrations, members, audit log, AI usage cap.</li>
+      <li>&mdash; spacer &mdash;</li>
+      <li><strong>Clinic identifier</strong> + user avatar at the foot.</li>
+    </ul>
+
+    <h4>The view model</h4>
+    <p>Following Linear / Height: each item in the left rail under <em>Inbox</em> is a saved <em>view</em> &mdash; a stored filter + sort + grouping. Users add custom views with <kbd>⌘ ⇧ V</kbd>. The five lifecycle states from the brief (<em>New, Urgent, Waiting Staff, Waiting Owner, Resolved</em>) become the default views, but the surface is a single dense list per view, not five columns. Kanban is a toggle (<kbd>⌘ ⇧ B</kbd>), not the default. <em>See P1 push-back.</em></p>
+
+    <h4>Owner surface IA</h4>
+    <p>Single page, single column, no navigation. The owner is in WhatsApp 95% of the time; the web fallback at <code>clinic.petcura.app/intake</code> mirrors the WhatsApp flow as a vertical wizard with one question per screen on mobile, all-in-one on desktop. No tabs. No menu. There is one branch only: &ldquo;Is this an emergency?&rdquo; → either continue, or short-circuit to the clinic phone number with explicit copy.</p>
+  </section>
+
+
+  <!-- ======================== 05 SURFACES ======================== -->
+  <section id="surfaces">
+    <h2><span class="n">05</span>Surfaces</h2>
+    <h3>Four surfaces, with hierarchy intent and state plan.</h3>
+
+    <!-- Surface A -->
+    <h4 style="margin-top:8px">A &nbsp;·&nbsp; Owner intake (WhatsApp + web fallback)</h4>
+
+    <p><strong>Hierarchy.</strong> Owner sees one question at a time. We do not show progress bars (they imply effort); we show a <em>quiet step indicator</em> &ldquo;Step 2 of 4&rdquo; in muted grey. Each question has: question, helper copy, single input, primary action. Nothing else.</p>
+
+    <p><strong>Locale-first.</strong> First screen is locale selection (EN / ET / RU) with the device default pre-selected. Subsequent copy mirrors WhatsApp tone: short, second-person, no jargon. <em>&ldquo;Mis on lemmiku nimi?&rdquo;</em>, not <em>&ldquo;Please enter your pet's name.&rdquo;</em></p>
+
+    <p><strong>States.</strong> default · loading (skeleton on the question card, not a spinner) · empty (irrelevant — never empty) · error (inline red helper text, no toast, no dialog).</p>
+
+<div class="wire"><span class="c">┌──────────────────────────────────────────────────────────┐</span>
+<span class="c">│</span>  <span class="h">PetCura</span> · Tartu Loomakliinik                       <span class="c">│</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span>  <span class="c">Step 2 of 4 ───────────────────</span>                       <span class="c">│</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span>  <span class="h">What is happening with your pet?</span>                   <span class="c">│</span>
+<span class="c">│</span>  <span class="c">A short description helps us route this faster.</span>      <span class="c">│</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span>  ┌────────────────────────────────────────────────────┐  <span class="c">│</span>
+<span class="c">│</span>  │ Mira is limping on her back left leg since this   │  <span class="c">│</span>
+<span class="c">│</span>  │ morning. She still wants to eat.                   │  <span class="c">│</span>
+<span class="c">│</span>  └────────────────────────────────────────────────────┘  <span class="c">│</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span>  📎 Add photo or short video <span class="c">(optional)</span>            <span class="c">│</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span>                              <span class="a">[ Continue ⏎ ]</span>          <span class="c">│</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span>  <span class="r">▲ Emergency? Call +372 555 0144</span>                       <span class="c">│</span>
+<span class="c">└──────────────────────────────────────────────────────────┘</span></div>
+
+    <p><strong>Rationale.</strong> The emergency CTA is at the bottom and uses red because in a true emergency, owners should bail out of the form and call. The form converts <em>against</em> the call; we should not optimise it past safety.</p>
+
+    <!-- Surface B -->
+    <h4>B &nbsp;·&nbsp; Clinic inbox</h4>
+
+    <p><strong>Hierarchy.</strong> Top: a single search/command bar (<kbd>/</kbd> focuses). Below: a left rail of saved views. Right: a single dense list, one row per request, ~44px tall. Row reads as: <em>status pill</em> · <em>urgency dot</em> · <em>pet name</em> · <em>owner name</em> · <em>category tag</em> · <em>last message preview</em> · <em>elapsed time</em> · <em>assignee avatar</em>. Hover reveals quick actions on the right edge (assign, snooze, resolve). <kbd>j</kbd>/<kbd>k</kbd> moves selection. <kbd>⏎</kbd> opens detail.</p>
+
+    <p><strong>Real-time presence.</strong> A subtle 4×4 dot in the assignee column when a colleague has the request open. Hover for the name. No avatars stacking, no &ldquo;Liis is typing&rdquo; spinner — that's noise.</p>
+
+<div class="wire"><span class="c">┌─ Inbox · My open ─ 24 ───────────────────── ⌘K · / ───┐</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span> <span class="c">●</span> <span class="y">today</span>  <span class="h">Mira</span>           Kask P.   limp · video    <span class="c">12m</span>  <span class="a">LK</span>  <span class="c">│</span>
+<span class="c">│</span> <span class="c">◐</span> waiting <span class="h">Tipu</span>           Ivanov V. vaccine          <span class="c">42m</span>  <span class="a">JR</span>  <span class="c">│</span>
+<span class="c">│</span> <span class="r">●</span> <span class="r">now</span>    <span class="h">Reks</span>           Saar M.   bleeding         <span class="c">2m</span>   <span class="a">··</span>  <span class="c">│</span>
+<span class="c">│</span> <span class="c">◌</span> waiting <span class="h">Kasper</span>         Tamm K.   refill            <span class="c">1h</span>   <span class="a">LK</span>  <span class="c">│</span>
+<span class="c">│</span> <span class="c">●</span> new     <span class="h">Pelmen</span>         Petrova   skin · 3 photos   <span class="c">3m</span>   <span class="a">··</span>  <span class="c">│</span>
+<span class="c">│</span> <span class="c">●</span> new     <span class="h">Muki</span>           Lepp A.   diet question     <span class="c">5m</span>   <span class="a">··</span>  <span class="c">│</span>
+<span class="c">│</span> <span class="c">◐</span> waiting <span class="h">Roosa</span>          Mägi T.   post-op check     <span class="c">2h</span>   <span class="a">JR</span>  <span class="c">│</span>
+<span class="c">│</span>                                                          <span class="c">│</span>
+<span class="c">│</span> <span class="c">— 17 more —</span>                                              <span class="c">│</span>
+<span class="c">└──────────────────────────────────────────────────────────┘</span>
+   <span class="c">j/k nav · ⏎ open · a assign · u urgency · e resolve · / search</span></div>
+
+    <p><strong>States.</strong></p>
+    <ul class="dash tight">
+      <li><em>Default populated</em> — as above. 25-50 rows visible at 1080p without scrolling at <code>t/base</code>.</li>
+      <li><em>Loading</em> — 8 skeleton rows, no spinner. Skeletons match the row template.</li>
+      <li><em>Empty</em> — &ldquo;No open requests in this view.&rdquo; + a single secondary action (&ldquo;Show all statuses&rdquo;). No mascot. No celebration. The empty state is information, not reward.</li>
+      <li><em>Error</em> — inline banner above the list: &ldquo;Couldn't load requests. <em>Retry</em>.&rdquo; The list area dims, doesn't disappear &mdash; previous data stays usable.</li>
+    </ul>
+
+    <!-- Surface C -->
+    <h4>C &nbsp;·&nbsp; Request detail</h4>
+
+    <p><strong>Layout.</strong> Two-pane. Left pane (~58%): conversation thread with translation toggle, internal notes interleaved with timestamps but visually separated. Right pane (~42%): pet card, owner card, AI summary, status timeline, action bar pinned to bottom. The right pane is <em>collapsible</em> (<kbd>⌘ ]</kbd>) for full-width thread view.</p>
+
+    <p><strong>Action bar.</strong> Bottom of left pane, sticky. Reply textarea + the seven actions from the brief, ordered by frequency: <em>Reply</em> primary · <em>Insert AI draft</em> · <em>Assign</em> · <em>Set urgency</em> · <em>Create reminder</em> · <em>Mark resolved</em> · overflow: <em>Export PDF</em>, <em>Add note</em>, <em>Reopen</em>.</p>
+
+    <p><strong>Audit trail.</strong> Status timeline is rendered inline in the right pane, collapsed to last 3 events; expand reveals all. Each line: monospace timestamp + actor + verb + previous→new. This is the trust surface; it's not in settings.</p>
+
+<div class="wire"><span class="c">┌─ ← back   Mira · Kask Pille · req_8412 ───────── ⌘] ─┐</span>
+<span class="c">│</span> ┌─ thread ────────────────────┐ ┌─ pet ──────────────┐<span class="c">│</span>
+<span class="c">│</span> │  09:02  Owner               │ │ <span class="h">Mira</span>               │<span class="c">│</span>
+<span class="c">│</span> │  Mira limps on back left.   │ │ Border Collie · 4y │<span class="c">│</span>
+<span class="c">│</span> │  Wants to eat.    [📷 1]    │ │ 18 kg · spayed     │<span class="c">│</span>
+<span class="c">│</span> │  <span class="c">─ et → en (auto)</span>            │ │ <span class="c">last visit · 12 Apr</span> │<span class="c">│</span>
+<span class="c">│</span> │                              │ ├────────────────────┤<span class="c">│</span>
+<span class="c">│</span> │  09:04  <span class="h">— internal note —</span>  │ │ <span class="h">Kask Pille</span>         │<span class="c">│</span>
+<span class="c">│</span> │  Looks like sprain, not     │ │ +372 555 0188      │<span class="c">│</span>
+<span class="c">│</span> │  fracture — JR              │ │ kask@…  · ET       │<span class="c">│</span>
+<span class="c">│</span> │                              │ ├────────────────────┤<span class="c">│</span>
+<span class="c">│</span> │  09:06  <span class="a">▲ AI summary</span>        │ │ <span class="a">▲ AI summary</span>        │<span class="c">│</span>
+<span class="c">│</span> │  see right pane             │ │ Lameness, back-L,  │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ 4h. Eating normal. │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ Photo shows mild   │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ swelling.          │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ <span class="c">conf 0.78 · v3</span>     │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ [accept] [edit] ↺  │<span class="c">│</span>
+<span class="c">│</span> │                              │ ├────────────────────┤<span class="c">│</span>
+<span class="c">│</span> │                              │ │ <span class="c">timeline</span>           │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ 09:02 created      │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ 09:04 note · JR    │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ 09:06 ai_summary   │<span class="c">│</span>
+<span class="c">│</span> │                              │ │ <span class="c">— show all (4) —</span>   │<span class="c">│</span>
+<span class="c">│</span> ├──────────────────────────────┤ └────────────────────┘<span class="c">│</span>
+<span class="c">│</span> │ <span class="a">[ Reply ⏎ ]</span> [AI draft] [···] │                       <span class="c">│</span>
+<span class="c">│</span> └──────────────────────────────┘                       <span class="c">│</span>
+<span class="c">└──────────────────────────────────────────────────────────┘</span></div>
+
+    <p><strong>Translation.</strong> Toggle is per-message <em>and</em> per-thread. Original text always retrievable (hover, or <kbd>⌥</kbd> hold). Translation is rendered inline, with a hairline rule and the source language label. AI translation cards carry the same provenance affordance as summaries.</p>
+
+    <!-- Surface D -->
+    <h4>D &nbsp;·&nbsp; Reminders</h4>
+
+    <p><strong>List view.</strong> Same density grammar as the inbox: dense list, one row per reminder, status pill leading. Columns: <em>state</em> · <em>pet</em> · <em>owner</em> · <em>title</em> · <em>scheduled at</em> · <em>channel</em> · <em>created by</em>. <kbd>n</kbd> creates new.</p>
+
+    <p><strong>Creation flow.</strong> From any request: <kbd>r</kbd> opens an inline composer at the bottom of the right pane (not a modal — modals interrupt). Fields: title, body (with locale per channel), schedule, channel (WhatsApp / SMS), repeat. AI suggests title and body, marked as draft. Save commits to <code>scheduled</code>.</p>
+
+    <p><strong>State chips.</strong> <em>Scheduled · Sent · Acknowledged · Completed · Missed</em> (per brief) + <strong><em>Snoozed · Cancelled</em></strong> (per P5).</p>
+  </section>
+
+
+  <!-- ======================== 06 AI ======================== -->
+  <section id="ai">
+    <h2><span class="n">06</span>AI assistance</h2>
+    <h3>The single most consequential pattern in this product.</h3>
+
+    <p class="lede">Three rules: AI output is <em>visually distinct</em>, AI output is <em>provenanced</em>, AI output is <em>never auto-sent</em>. Every AI artefact in the staff UI is rendered in an <strong>AI card</strong> with these elements:</p>
+
+<div class="wire"><span class="a">▲</span> <span class="h">AI summary</span>            <span class="c">model · v3 · conf 0.78 · 14:02</span>
+   ────────────────────────────────────
+   Lameness, back-left, ~4h onset. Eating
+   normal. Photo shows mild swelling.
+
+   <span class="c">[ accept ]  [ edit ]  [ ↺ regenerate ]  [ × reject ]</span></div>
+
+    <ul class="dash tight">
+      <li><strong>Marker.</strong> Left-edge accent (teal at <code>conf ≥ 0.7</code>, amber at <code>0.4–0.7</code>, muted-grey below). The accent is the AI signature; no other element in the UI uses a left-edge accent.</li>
+      <li><strong>Provenance line.</strong> Monospace, muted, 11px. Contains: <em>model</em>, <em>prompt_version</em>, <em>confidence</em>, <em>generated_at</em>. From <code>ai-output-contracts.md</code>. Click for full <code>ai_logs</code> entry.</li>
+      <li><strong>Actions.</strong> Always four: <em>accept</em>, <em>edit</em>, <em>regenerate</em>, <em>reject</em>. Single-keystroke shortcuts within the card (<kbd>a</kbd> / <kbd>e</kbd> / <kbd>g</kbd> / <kbd>r</kbd>) once focused.</li>
+      <li><strong>Diff on regenerate.</strong> When a user regenerates, the previous output is held in a side-by-side diff (added in green dot, removed in muted strikethrough). One-keystroke accept of either version.</li>
+      <li><strong>Insertion.</strong> Accepting an AI <em>reply draft</em> moves the text into the staff Reply textarea — it does not send. The send action is a <em>second</em> deliberate keystroke, by a human.</li>
+      <li><strong>Cost meter.</strong> Per <code>ai-safety</code>: a small monospace indicator in the right-pane footer shows <em>AI usage this month</em> as a percentage of cap. Three states: under 80% (muted), 80&ndash;100% (amber), over (red, with a non-blocking inline note in the AI card: &ldquo;Cap reached. Regeneration disabled until reset.&rdquo;).</li>
+    </ul>
+
+    <p><strong>What we explicitly will not do.</strong> No animated &ldquo;sparkles.&rdquo; No purple gradients. No streaming text in the staff UI for short outputs (it implies authority and slows the workflow); we render in one frame after a 600ms shimmer skeleton. Streaming is reserved for long reply drafts where the user actively waits.</p>
+  </section>
+
+
+  <!-- ======================== 07 COMPONENTS ======================== -->
+  <section id="components">
+    <h2><span class="n">07</span>Components</h2>
+    <h3>Scope, approach, and state coverage.</h3>
+
+    <p>Component library lives in <code>packages/ui</code>. Three primitives already exist (<em>Button, Badge, Panel, Metric</em>); we'll extend, not replace. Headless behaviour lifted from <em>Radix</em>; visuals are token-driven.</p>
+
+    <p>States covered for every component: <em>default · hover · focus-visible · active · disabled · loading · error · selected · readonly</em>. Where a state is not meaningful (Avatar has no &ldquo;disabled&rdquo;), we say so explicitly in the spec.</p>
+
+    <table>
+      <thead><tr><th>Group</th><th>Components</th></tr></thead>
+      <tbody>
+        <tr><td>Form</td>     <td>Button, IconButton, Input, Textarea, Select, Combobox, Checkbox, Radio, Switch, FormField, FormError</td></tr>
+        <tr><td>Display</td>  <td>Avatar, Badge, Tag, StatusPill, Card, Panel, Banner, Skeleton, EmptyState, Toast</td></tr>
+        <tr><td>Layout</td>   <td>AppShell, SidebarRail, Pane, SplitView, Sheet, Dialog</td></tr>
+        <tr><td>Nav</td>      <td>Tabs, Breadcrumb, Pagination, KeyboardShortcut, CommandPalette</td></tr>
+        <tr><td>Data</td>     <td>Table, DataRow, Column header, EmptyRow, BulkActionBar</td></tr>
+        <tr><td>Overlay</td>  <td>Tooltip, Popover, Menu, ContextMenu, Dialog, Sheet</td></tr>
+        <tr><td>Domain</td>   <td>InboxRow, MessageBubble (Owner / Staff / System / AI), AISuggestionCard, AttachmentChip, ReminderCard, AuditTimelineItem, UrgencySelector, AssignmentPicker, TranslationToggle, AIUsageMeter, PresenceDot</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+
+  <!-- ======================== 08 KEYBOARD ======================== -->
+  <section id="shortcuts">
+    <h2><span class="n">08</span>Keyboard model</h2>
+    <h3>Global, contextual, and palette commands.</h3>
+
+    <table>
+      <thead><tr><th>Shortcut</th><th>Context</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="mono"><kbd>⌘ K</kbd></td><td>global</td><td>Command palette</td></tr>
+        <tr><td class="mono"><kbd>/</kbd></td><td>global</td><td>Focus search</td></tr>
+        <tr><td class="mono"><kbd>g</kbd> <kbd>i</kbd></td><td>global</td><td>Go to Inbox</td></tr>
+        <tr><td class="mono"><kbd>g</kbd> <kbd>r</kbd></td><td>global</td><td>Go to Reminders</td></tr>
+        <tr><td class="mono"><kbd>j</kbd> / <kbd>k</kbd></td><td>list</td><td>Next / previous</td></tr>
+        <tr><td class="mono"><kbd>⏎</kbd></td><td>list</td><td>Open selected</td></tr>
+        <tr><td class="mono"><kbd>x</kbd></td><td>list</td><td>Multi-select</td></tr>
+        <tr><td class="mono"><kbd>r</kbd></td><td>request</td><td>Reply</td></tr>
+        <tr><td class="mono"><kbd>a</kbd></td><td>request</td><td>Assign</td></tr>
+        <tr><td class="mono"><kbd>u</kbd></td><td>request</td><td>Set urgency</td></tr>
+        <tr><td class="mono"><kbd>n</kbd></td><td>request</td><td>Add internal note</td></tr>
+        <tr><td class="mono"><kbd>m</kbd></td><td>request</td><td>Create reminder</td></tr>
+        <tr><td class="mono"><kbd>e</kbd></td><td>request</td><td>Mark resolved</td></tr>
+        <tr><td class="mono"><kbd>t</kbd></td><td>request</td><td>Toggle translation</td></tr>
+        <tr><td class="mono"><kbd>⌘ ]</kbd></td><td>request</td><td>Toggle right pane</td></tr>
+        <tr><td class="mono"><kbd>⌘ ⇧ B</kbd></td><td>inbox</td><td>Toggle board / list</td></tr>
+        <tr><td class="mono"><kbd>?</kbd></td><td>global</td><td>Show shortcut sheet</td></tr>
+      </tbody>
+    </table>
+
+    <p>Shortcuts are <em>visible</em>: tooltips show them on hover, the palette lists them inline, and a <kbd>?</kbd> sheet enumerates them. Discoverability is part of the spec, not a follow-up.</p>
+  </section>
+
+
+  <!-- ======================== 09 OPEN QUESTIONS ======================== -->
+  <section id="questions">
+    <h2><span class="n">09</span>Open questions</h2>
+    <h3>Answer these before I start v0.2 (high-fi).</h3>
+
+    <p>Priority: <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);vertical-align:1px"></span> blocking · <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);vertical-align:1px"></span> shapes the system · <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);vertical-align:1px"></span> can defer.</p>
+
+    <div class="q p1">
+      <div class="id"><span class="pri"></span>Q-01</div>
+      <div class="body">
+        <p class="ask">Inbox layout: dense list (default) with kanban toggle, or true five-column kanban?</p>
+        <p class="why">My recommendation in §00 P1 is list-first. Lock this before component-state work; the InboxRow vs ColumnCard primitives diverge significantly.</p>
+      </div>
+    </div>
+
+    <div class="q p1">
+      <div class="id"><span class="pri"></span>Q-02</div>
+      <div class="body">
+        <p class="ask">Geist Sans &mdash; OK to commit, or fall back to Inter?</p>
+        <p class="why">If there's any procurement / legal hesitation around Geist's licence terms, I'd rather know now than redraw 18 mocks.</p>
+      </div>
+    </div>
+
+    <div class="q p1">
+      <div class="id"><span class="pri"></span>Q-03</div>
+      <div class="body">
+        <p class="ask">Dark mode in v1 or v1.1?</p>
+        <p class="why">Per P4, I want v1. Costs ~5% extra design time. Decision impacts token spec sign-off.</p>
+      </div>
+    </div>
+
+    <div class="q p1">
+      <div class="id"><span class="pri"></span>Q-04</div>
+      <div class="body">
+        <p class="ask">Three urgency tiers (per contract) or four in the UI (Routine / Today / Now / Critical)?</p>
+        <p class="why">Per P3. If we keep three, &ldquo;Critical&rdquo; becomes a flag, not a tier &mdash; affects status pill, urgency selector, and pager integration.</p>
+      </div>
+    </div>
+
+    <div class="q p2">
+      <div class="id"><span class="pri"></span>Q-05</div>
+      <div class="body">
+        <p class="ask">Translation toggle default: <em>auto-translate to staff locale</em> or <em>show source, translate on demand</em>?</p>
+        <p class="why">Auto-translate is faster but loses original tone signal (worried owner vs polite owner reads differently). I lean source-first; you may have user research that says otherwise.</p>
+      </div>
+    </div>
+
+    <div class="q p2">
+      <div class="id"><span class="pri"></span>Q-06</div>
+      <div class="body">
+        <p class="ask">Multi-tenant chrome: clinic name only, or clinic name + a small clinic-chosen accent colour?</p>
+        <p class="why">A 4px clinic accent on the left rail helps disambiguate when staff serve multiple clinics. Risk: dilutes the system. Recommend the accent only when a user has access to ≥ 2 clinics.</p>
+      </div>
+    </div>
+
+    <div class="q p2">
+      <div class="id"><span class="pri"></span>Q-07</div>
+      <div class="body">
+        <p class="ask">Real-time presence: viewer dots only, or also &ldquo;X is replying&rdquo; banner?</p>
+        <p class="why">Banner prevents collisions but is the most distracting kind of motion. Recommend: dot only, with a non-modal toast at the moment of conflict (&ldquo;Liis just sent a reply.&rdquo;).</p>
+      </div>
+    </div>
+
+    <div class="q p2">
+      <div class="id"><span class="pri"></span>Q-08</div>
+      <div class="body">
+        <p class="ask">AI usage cap behaviour at 100%: hard-stop regeneration, or soft-warn and continue?</p>
+        <p class="why">Hard-stop respects metering, soft-warn respects clinical urgency. Recommend hard-stop with an admin-only override (<kbd>⌘ ⇧ G</kbd>) audited.</p>
+      </div>
+    </div>
+
+    <div class="q p2">
+      <div class="id"><span class="pri"></span>Q-09</div>
+      <div class="body">
+        <p class="ask">Reminder additions: ship <em>Snoozed</em> and <em>Cancelled</em> in v1, or only Snoozed?</p>
+        <p class="why">Snoozed is the higher-value add (owner-driven). Cancelled can be expressed as a <em>completed</em> with a reason in v1 if we want to defer.</p>
+      </div>
+    </div>
+
+    <div class="q p3">
+      <div class="id"><span class="pri"></span>Q-10</div>
+      <div class="body">
+        <p class="ask">Owner-side branding: clinic logo allowed in the WhatsApp/web flow header?</p>
+        <p class="why">Clinics will ask. I'd allow a single 1-line clinic name in a chosen weight; no logo upload in v1 to avoid an arms race over header design.</p>
+      </div>
+    </div>
+
+    <div class="q p3">
+      <div class="id"><span class="pri"></span>Q-11</div>
+      <div class="body">
+        <p class="ask">PDF export visual treatment: identical to in-app, or print-optimised (no colour, monochrome timeline)?</p>
+        <p class="why">Recommend: print-optimised. PDFs are forwarded to PMS; colour is wasted ink and can survey-print poorly.</p>
+      </div>
+    </div>
+
+    <div class="q p3">
+      <div class="id"><span class="pri"></span>Q-12</div>
+      <div class="body">
+        <p class="ask">Variation breadth: one direction in high-fi, or two parallel directions (e.g. ultra-dense Linear-style vs slightly-warmer Stripe-style) for comparison?</p>
+        <p class="why">If you want to validate the density bet against a less aggressive option, two directions is cheap on tokens but doubles screen-state work. Default to one unless you ask.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>PetCura · Design Brief v0.1</span>
+    <span>10 May 2026 · awaiting confirmation</span>
+  </footer>
+
+</main>
+
+</body>
+</html>

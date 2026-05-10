@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PetCura — Design Canvas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    /* Subtle cream-to-sage wash, mirrors the live /design page body gradient. */
+    background:
+      linear-gradient(180deg, rgba(74, 107, 63, 0.06), transparent 260px),
+      var(--paper, #f6f4ef);
+    font-family: var(--font-sans, "Montserrat", system-ui, sans-serif);
+  }
+</style>
+
+<!-- Live design tokens — mirrors apps/web/app/globals.css. -->
+<link rel="stylesheet" href="./tokens.css" />
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="design-canvas-content.jsx"></script>
+
+<script type="text/babel">
+const { CoverCard, TokenCard, TypeCard, PrinciplesCard, ComponentsCard, Iframe, SurfaceTile } = window.PetCuraDC;
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="cover" title="PetCura · Foundation Review" subtitle="Direction B locked · May 2026">
+        <DCArtboard id="hero" label="Cover" width={1200} height={680}>
+          <CoverCard />
+        </DCArtboard>
+        <DCArtboard id="principles" label="Six principles" width={760} height={680}>
+          <PrinciplesCard />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="brand" title="Brand & tokens" subtitle="Color, type, the moves we'll keep using">
+        <DCArtboard id="color" label="Color · Light + Dark" width={760} height={780}>
+          <TokenCard />
+        </DCArtboard>
+        <DCArtboard id="type" label="Type scale" width={760} height={780}>
+          <TypeCard />
+        </DCArtboard>
+        <DCArtboard id="components" label="Component primitives" width={620} height={780}>
+          <ComponentsCard />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="clinic" title="Surface 1 · Clinic inbox" subtitle="Live prototype — light + dark, three viewports">
+        <DCArtboard id="clinic-desktop-light" label="Desktop · Light" width={1320} height={820}>
+          <Iframe src="Clinic Prototype.html#viewport=desktop&theme=light" width={1320} height={820} scale={1} />
+        </DCArtboard>
+        <DCArtboard id="clinic-desktop-dark" label="Desktop · Dark" width={1320} height={820}>
+          <Iframe src="Clinic Prototype.html#viewport=desktop&theme=dark" width={1320} height={820} scale={1} />
+        </DCArtboard>
+        <DCArtboard id="clinic-tablet" label="Tablet · Light" width={820} height={1080}>
+          <Iframe src="Clinic Prototype.html#viewport=tablet&theme=light" width={820} height={1080} scale={1} />
+        </DCArtboard>
+        <DCArtboard id="clinic-mobile" label="Phone · Dark" width={420} height={860}>
+          <Iframe src="Clinic Prototype.html#viewport=phone&theme=dark" width={420} height={860} scale={1} />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="intake" title="Surface 2 · Owner intake" subtitle="Mobile-first · WhatsApp + Web · Estonian primary">
+        <DCArtboard id="wa-light" label="WhatsApp · Light" width={420} height={860}>
+          <Iframe src="Owner Intake.html#channel=whatsapp&theme=light" width={420} height={860} scale={1} />
+        </DCArtboard>
+        <DCArtboard id="wa-dark" label="WhatsApp · Dark" width={420} height={860}>
+          <Iframe src="Owner Intake.html#channel=whatsapp&theme=dark" width={420} height={860} scale={1} />
+        </DCArtboard>
+        <DCArtboard id="web-step" label="Web intake · Step 2" width={420} height={860}>
+          <Iframe src="Owner Intake.html#channel=web&step=1" width={420} height={860} scale={1} />
+        </DCArtboard>
+        <DCArtboard id="web-review" label="Web intake · Review" width={420} height={860}>
+          <Iframe src="Owner Intake.html#channel=web&step=4" width={420} height={860} scale={1} />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="patterns" title="Cross-surface patterns" subtitle="Where the system shows up consistently">
+        <DCArtboard id="ai-trust" label="AI trust pattern" width={520} height={520}>
+          <SurfaceTile
+            title="AI is a draft"
+            locale="P2"
+            body={`Every AI artifact carries:\n\n• Source span (which message)\n• Confidence (0.0–1.0)\n• Locale (in/out)\n• Accept · Edit · Reject\n\nNothing reaches the owner without a staff send.\nEvery use is logged with actor + raw input + final output.`}
+          />
+        </DCArtboard>
+        <DCArtboard id="locale" label="Trilingual model" width={520} height={520}>
+          <SurfaceTile
+            title="EE · EN · RU"
+            locale="P3"
+            body={`Source language detected on every inbound message.\nTranslation is a per-bubble toggle, not a separate flow.\nAI replies generated in source language.\nAudit log preserves source AND translation.`}
+          />
+        </DCArtboard>
+        <DCArtboard id="kbd" label="Keyboard model" width={520} height={520}>
+          <SurfaceTile
+            title="⌘K is the spine"
+            locale="P4"
+            body={`⌘K  Command palette\nJ/K Navigate threads\nE   Resolve\nA   Assign\nR   Reply (focus composer)\nT   Translate thread\n⌘↵  Send reply\n?   Show all shortcuts`}
+          />
+        </DCArtboard>
+        <DCArtboard id="urgency" label="Urgency model" width={520} height={520}>
+          <SurfaceTile
+            title="Four tiers, never five"
+            locale="contracts/request-lifecycle"
+            body={`urgent  · within 1h\ntoday   · within 8h\nweek    · within 5d\nroutine · best effort\n\nUrgency is a request property, not a status.\nStaff can override AI urgency at any time.`}
+          />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="next" title="Open & next" subtitle="What's locked, what's still up for review">
+        <DCArtboard id="locked" label="Locked v1" width={620} height={520}>
+          <div style={{ width: "100%", height: "100%", padding: 28, background: "#e2ead6", fontFamily: "Montserrat" }}>
+            <div style={{ fontFamily: "JetBrains Mono", fontSize: 10.5, letterSpacing: 0.06, color: "#3a5530", fontWeight: 600, textTransform: "uppercase", marginBottom: 14 }}>Locked for v1</div>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                ["Direction", "B · Warm sage on cream"],
+                ["Type", "Montserrat (UI) + JetBrains Mono (meta)"],
+                ["Themes", "Light & Dark — both v1"],
+                ["Layout", "Inbox-first list, kanban toggle"],
+                ["Selected row", "Dot only (no avatars in row)"],
+                ["Urgency", "Four tiers"],
+                ["Locales", "EE · EN · RU"],
+                ["AI", "Draft-only, with source/conf/accept-edit-reject"],
+              ].map(([k, v]) => (
+                <li key={k} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 14, alignItems: "baseline" }}>
+                  <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: "#4a6b3f", fontWeight: 600 }}>{k}</span>
+                  <span style={{ fontSize: 13, color: "#29261b" }}>{v}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="open" label="Still open" width={620} height={520}>
+          <div style={{ width: "100%", height: "100%", padding: 28, background: "#f5e7c8", fontFamily: "Montserrat" }}>
+            <div style={{ fontFamily: "JetBrains Mono", fontSize: 10.5, letterSpacing: 0.06, color: "#7e571d", fontWeight: 600, textTransform: "uppercase", marginBottom: 14 }}>Open questions</div>
+            <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 14, counterReset: "q" }}>
+              {[
+                "Reminder model — opt-in per request, or rules-based per pet?",
+                "Multi-clinic switcher — top-level org rail or per-account?",
+                "AI categories — fixed taxonomy or learned per clinic?",
+                "Web intake → WhatsApp handoff — automatic or staff-triggered?",
+                "Owner-side notifications when staff are typing?",
+                "Bulk-resolve flow — kanban-only, or list multi-select too?",
+              ].map((q, i) => (
+                <li key={i} style={{ counterIncrement: "q", display: "grid", gridTemplateColumns: "28px 1fr", gap: 8 }}>
+                  <span style={{ fontFamily: "JetBrains Mono", fontSize: 11, color: "#7e571d", fontWeight: 600 }}>Q{i+1}</span>
+                  <span style={{ fontSize: 13, color: "#29261b", lineHeight: 1.45 }}>{q}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="links" label="Files in this canvas" width={520} height={520}>
+          <div style={{ width: "100%", height: "100%", padding: 28, background: "#f6f4ef", fontFamily: "Montserrat", color: "#29261b" }}>
+            <div style={{ fontFamily: "JetBrains Mono", fontSize: 10.5, letterSpacing: 0.06, color: "#847e6b", fontWeight: 600, textTransform: "uppercase", marginBottom: 14 }}>Open standalone</div>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+              <li><a href="Design Brief.html" target="_blank" style={linkStyle}>📄 Design Brief.html</a></li>
+              <li><a href="Clinic Prototype.html" target="_blank" style={linkStyle}>🩺 Clinic Prototype.html</a></li>
+              <li><a href="Owner Intake.html" target="_blank" style={linkStyle}>📱 Owner Intake.html</a></li>
+            </ul>
+            <p style={{ fontSize: 12.5, color: "#4d4738", lineHeight: 1.5, marginTop: 22 }}>
+              Drag artboards to reorder. Click any artboard to focus full-screen. ←/→ to step through, Esc to exit. Pan with drag, zoom with ⌘+scroll.
+            </p>
+          </div>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+const linkStyle = {
+  display: "block",
+  padding: "10px 12px",
+  background: "#ede9df",
+  border: "1px solid #e2dccc",
+  borderRadius: 6,
+  fontSize: 13,
+  color: "#29261b",
+  textDecoration: "none",
+  fontFamily: "Montserrat",
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

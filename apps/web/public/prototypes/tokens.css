@@ -1,0 +1,83 @@
+/* PetCura · Direction B tokens — mirrored from apps/web/app/globals.css.
+ *
+ * This file is the bridge between the live web app and the standalone HTML
+ * prototypes that ship under /prototypes/. The HTML prototypes link to this
+ * stylesheet AFTER their own <style> block, so the values below override the
+ * prototype's :root for any token the live source has tuned (amber, muted,
+ * muted-2, line-2, primary, paper, etc.) while leaving prototype-only tokens
+ * (--row-h, --radius-1, --kbd-bg, --shadow-1, --font-display) untouched.
+ *
+ * To keep the prototypes honest, when you change a token in
+ * apps/web/app/globals.css, mirror the change here. There is no automated
+ * sync; the canonical source remains globals.css and Tailwind's :root.
+ *
+ * Direction A (cool teal) is unaffected — it is scoped via
+ * [data-direction="A"] and has higher specificity than :root.
+ */
+
+:root,
+[data-theme="light"] {
+  --ink: #29261b;
+  --ink-2: #4d4738;
+  /* AA-tuned: --muted darkened from #847e6b to #5e5847 to clear 4.5:1 on --soft. */
+  --muted: #5e5847;
+  --muted-2: #a39b86;
+  --paper: #f6f4ef;
+  --soft: #ede9df;
+  --line: #e2dccc;
+  /* --line-2: one tonal step darker than --line for owner-bubble outlines and
+     side-block dividers. Decorative, well below text contrast. */
+  --line-2: #d6cfb8;
+  --primary: #4a6b3f;
+  --primary-strong: #3a5530;
+  --primary-soft: #e2ead6;
+  /* AA-tuned: --amber darkened from #b07d2c to #8a611f to clear 4.5:1 on --amber-soft. */
+  --amber: #8a611f;
+  --amber-soft: #f5e7c8;
+  --red: #a64a3c;
+  --red-soft: #f3dfd8;
+  --green: #4a6b3f;
+  --green-soft: #d9e6cc;
+}
+
+.dark,
+[data-theme="dark"] {
+  --ink: #ece8de;
+  --ink-2: #c9c4b6;
+  --muted: #8a8270;
+  /* AA-tuned: --muted-2 lightened from #6e6757 to #9a9180 to clear 4.5:1 on dark --paper. */
+  --muted-2: #9a9180;
+  --paper: #1c1a16;
+  --soft: #221f19;
+  --line: #2a2620;
+  /* --line-2 in dark: one step lighter than --line so dividers/outlines remain
+     visible on near-black --paper without crossing into text contrast. */
+  --line-2: #3a342a;
+  --primary: #87a87f;
+  --primary-strong: #9bb892;
+  --primary-soft: #1f2a1d;
+  --amber: #d4a872;
+  --amber-soft: #2a2218;
+  --red: #d49080;
+  --red-soft: #2a1c18;
+  --green: #9bb892;
+  --green-soft: #1f2a1d;
+}
+
+/* Visible focus ring — sage-tinted at 32% alpha. Mirrors globals.css. */
+:focus-visible {
+  outline: 3px solid rgba(74, 107, 63, 0.32);
+  outline-offset: 2px;
+}
+
+/* Honor user motion preference. Mirrors globals.css. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import {
+  Badge,
   Button,
   StatusPill,
   UrgencyDot
@@ -154,11 +155,16 @@ const OPEN_QUESTIONS = [
   "Bulk-resolve flow — kanban-only, or list multi-select too?"
 ];
 
+// Iframes target the prototypes under apps/web/public/prototypes/, which now
+// link to ./tokens.css (mirrored from globals.css). The prototypes read state
+// from the hash fragment (#viewport=…&theme=…). The live /inbox and /intake
+// routes are auth-gated and would just redirect to /login inside an iframe;
+// the prototypes are public and self-contained for design review.
 const CLINIC_ARTBOARDS = [
   {
     id: "clinic-desktop-light",
     label: "Desktop · Light",
-    src: "/inbox?theme=light&viewport=desktop",
+    src: "/prototypes/Clinic%20Prototype.html#viewport=desktop&theme=light",
     width: 1320,
     height: 820,
     dark: false
@@ -166,7 +172,7 @@ const CLINIC_ARTBOARDS = [
   {
     id: "clinic-desktop-dark",
     label: "Desktop · Dark",
-    src: "/inbox?theme=dark&viewport=desktop",
+    src: "/prototypes/Clinic%20Prototype.html#viewport=desktop&theme=dark",
     width: 1320,
     height: 820,
     dark: true
@@ -174,7 +180,7 @@ const CLINIC_ARTBOARDS = [
   {
     id: "clinic-tablet",
     label: "Tablet · Light",
-    src: "/inbox?theme=light&viewport=tablet",
+    src: "/prototypes/Clinic%20Prototype.html#viewport=tablet&theme=light",
     width: 820,
     height: 1080,
     dark: false
@@ -182,7 +188,7 @@ const CLINIC_ARTBOARDS = [
   {
     id: "clinic-mobile",
     label: "Phone · Dark",
-    src: "/inbox?theme=dark&viewport=phone",
+    src: "/prototypes/Clinic%20Prototype.html#viewport=phone&theme=dark",
     width: 420,
     height: 860,
     dark: true
@@ -193,7 +199,7 @@ const INTAKE_ARTBOARDS = [
   {
     id: "wa-light",
     label: "WhatsApp · Light",
-    src: "/intake?channel=whatsapp&theme=light",
+    src: "/prototypes/Owner%20Intake.html#channel=whatsapp&theme=light",
     width: 420,
     height: 860,
     dark: false
@@ -201,7 +207,7 @@ const INTAKE_ARTBOARDS = [
   {
     id: "wa-dark",
     label: "WhatsApp · Dark",
-    src: "/intake?channel=whatsapp&theme=dark",
+    src: "/prototypes/Owner%20Intake.html#channel=whatsapp&theme=dark",
     width: 420,
     height: 860,
     dark: true
@@ -209,7 +215,7 @@ const INTAKE_ARTBOARDS = [
   {
     id: "web-step",
     label: "Web intake · Step 2",
-    src: "/intake?channel=web&step=1",
+    src: "/prototypes/Owner%20Intake.html#channel=web&step=1",
     width: 420,
     height: 860,
     dark: false
@@ -217,7 +223,7 @@ const INTAKE_ARTBOARDS = [
   {
     id: "web-review",
     label: "Web intake · Review",
-    src: "/intake?channel=web&step=4",
+    src: "/prototypes/Owner%20Intake.html#channel=web&step=4",
     width: 420,
     height: 860,
     dark: false
@@ -226,7 +232,13 @@ const INTAKE_ARTBOARDS = [
 
 export default function DesignCanvasPage() {
   return (
-    <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
+    <main
+      className="min-h-screen text-[var(--ink)]"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(74, 107, 63, 0.06), transparent 320px), var(--paper)"
+      }}
+    >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-24 px-8 py-16 lg:px-14">
         <CoverSection />
         <Section
@@ -533,6 +545,13 @@ function Components() {
         <StatusPill status="waiting-owner" />
         <StatusPill status="resolved" />
         <StatusPill status="urgent" />
+      </Group>
+
+      <Group title="Badges">
+        <Badge tone="teal">WhatsApp</Badge>
+        <Badge tone="neutral">AI assist</Badge>
+        <Badge tone="amber">Today</Badge>
+        <Badge tone="red">Urgent</Badge>
       </Group>
 
       <Group title="Buttons">

@@ -8,7 +8,10 @@ export default [
       "**/dist/**",
       "**/coverage/**",
       "playwright-report/**",
-      "test-results/**"
+      "test-results/**",
+      // Static handoff prototypes — vanilla React-via-Babel-standalone, not
+      // production source. Linted patterns differ; served as-is from /public.
+      "apps/web/public/prototypes/**"
     ]
   },
   ...nextVitals
