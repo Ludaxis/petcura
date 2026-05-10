@@ -3,6 +3,8 @@ import { JetBrains_Mono, Montserrat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getRequestLocale } from "@/lib/locale";
+import { getResolvedThemeForSSR } from "@/lib/theme";
+import { ThemeBootstrap } from "./_components/ThemeBootstrap";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -30,12 +32,18 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getRequestLocale();
+  const resolvedTheme = await getResolvedThemeForSSR();
 
   return (
     <html
       lang={locale}
+      data-theme={resolvedTheme === "dark" ? "dark" : undefined}
       className={`${montserrat.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeBootstrap />
+      </head>
       <body>
         {children}
         <Analytics />

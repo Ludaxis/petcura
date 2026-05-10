@@ -5,7 +5,8 @@ const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
 export default defineConfig({
-  testDir: "./tests/e2e",
+  testDir: ".",
+  testMatch: ["**/tests/e2e/**/*.spec.ts", "**/e2e/**/*.spec.ts"],
   timeout: 60_000,
   expect: {
     timeout: 10_000
@@ -15,12 +16,14 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3100",
     trace: "retain-on-failure"
   },
-  webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
-    url: "http://127.0.0.1:3100",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000
-  },
+  webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
+    ? undefined
+    : {
+        command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
+        url: "http://127.0.0.1:3100",
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000
+      },
   projects: [
     {
       name: "chromium",
