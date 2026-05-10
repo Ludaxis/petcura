@@ -33,67 +33,111 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
   const admin = adminClient();
   const unique = Date.now();
   const staffEmail = `petcura-e2e-${unique}@example.test`;
+  const ownerPhone = `+372${unique}`;
   const ownerName = `E2E Owner ${unique}`;
   const petName = `Luna ${unique}`;
   const message = "Luna has not eaten since yesterday and seems tired.";
+  let clinicId: string | undefined;
+  let staffUserId: string | undefined;
 
-  const { data: clinic, error: clinicError } = await admin
-    .from("clinics")
-    .select("id")
-    .eq("slug", defaultClinicSlug)
-    .single();
+  try {
+    const { data: clinic, error: clinicError } = await admin
+      .from("clinics")
+      .select("id")
+      .eq("slug", defaultClinicSlug)
+      .single();
 
-  expect(clinicError).toBeNull();
-  expect(clinic?.id).toBeTruthy();
+    expect(clinicError).toBeNull();
+    expect(clinic?.id).toBeTruthy();
+    clinicId = clinic!.id;
 
-  const { data: staffUser, error: userError } =
-    await admin.auth.admin.createUser({
-      email: staffEmail,
-      email_confirm: true
-    });
+    const { data: staffUser, error: userError } =
+      await admin.auth.admin.createUser({
+        email: staffEmail,
+        email_confirm: true
+      });
 
-  expect(userError).toBeNull();
-  expect(staffUser.user?.id).toBeTruthy();
+    expect(userError).toBeNull();
+    expect(staffUser.user?.id).toBeTruthy();
+    staffUserId = staffUser.user!.id;
 
-  await admin.from("clinic_staff").upsert(
-    {
-      clinic_id: clinic!.id,
-      user_id: staffUser.user!.id,
-      role: "admin",
-      is_active: true
-    },
-    { onConflict: "clinic_id,user_id" }
-  );
+    await admin.from("clinic_staff").upsert(
+      {
+        clinic_id: clinicId,
+        user_id: staffUserId,
+        role: "admin",
+        is_active: true
+      },
+      { onConflict: "clinic_id,user_id" }
+    );
 
-  await page.goto("/intake?lang=et");
-  await page.getByLabel("Sinu nimi").fill(ownerName);
-  await page.getByLabel("Telefoninumber").fill(`+372${unique}`);
-  await page.getByLabel("Lemmiku nimi").fill(petName);
-  await page.getByLabel("Liik").fill("Kass");
-  await page.getByLabel("Mis toimub?").fill(message);
-  await page.getByRole("button", { name: "Saada pöördumine" }).click();
-  await expect(page.getByText("Pöördumine saadetud")).toBeVisible();
+    await page.goto("/intake?lang=et");
+    await page.getByLabel("Sinu nimi").fill(ownerName);
+    await page.getByLabel("Telefoninumber").fill(ownerPhone);
+    await page.getByLabel("Lemmiku nimi").fill(petName);
+    await page.getByLabel("Liik").fill("Kass");
+    await page.getByLabel("Mis toimub?").fill(message);
+    await page.getByRole("button", { name: "Saada pöördumine" }).click();
+    await expect(page.getByText("Pöördumine saadetud")).toBeVisible();
 
-  const { data: link, error: linkError } =
-    await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email: staffEmail,
-      options: {
-        redirectTo: `${baseURL}/auth/callback?next=/inbox&lang=en`
+    const { data: link, error: linkError } =
+      await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email: staffEmail,
+        options: {
+          redirectTo: `${baseURL}/auth/callback?next=/inbox&lang=en`
+        }
+      });
+
+    expect(linkError).toBeNull();
+    expect(link.properties?.action_link).toBeTruthy();
+
+    await page.goto(link.properties!.action_link);
+    await expect(
+      page.getByRole("heading", { name: "ClientOps inbox" })
+    ).toBeVisible();
+    await expect(page.getByText(petName)).toBeVisible();
+
+    await page.getByText(petName).click();
+    await expect(page.getByRole("heading", { name: petName })).toBeVisible();
+    await expect(page.getByText(ownerName)).toBeVisible();
+    await expect(page.getByText(message)).toBeVisible();
+  } finally {
+    if (clinicId) {
+      const { data: owners } = await admin
+        .from("owners")
+        .select("id")
+        .eq("clinic_id", clinicId)
+        .eq("phone", ownerPhone);
+      const ownerIds = owners?.map((owner) => owner.id) ?? [];
+
+      if (ownerIds.length > 0) {
+        await admin
+          .from("requests")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .in("owner_id", ownerIds);
+        await admin
+          .from("owner_channel_identities")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .in("owner_id", ownerIds);
+        await admin
+          .from("pets")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .in("owner_id", ownerIds);
+        await admin
+          .from("owners")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .in("id", ownerIds);
       }
-    });
+    }
 
-  expect(linkError).toBeNull();
-  expect(link.properties?.action_link).toBeTruthy();
-
-  await page.goto(link.properties!.action_link);
-  await expect(
-    page.getByRole("heading", { name: "ClientOps inbox" })
-  ).toBeVisible();
-  await expect(page.getByText(petName)).toBeVisible();
-
-  await page.getByText(petName).click();
-  await expect(page.getByRole("heading", { name: petName })).toBeVisible();
-  await expect(page.getByText(ownerName)).toBeVisible();
-  await expect(page.getByText(message)).toBeVisible();
+    if (staffUserId) {
+      await admin.from("clinic_staff").delete().eq("user_id", staffUserId);
+      await admin.auth.admin.deleteUser(staffUserId);
+    }
+  }
 });
