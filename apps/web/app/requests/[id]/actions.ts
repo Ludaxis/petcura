@@ -15,6 +15,8 @@ import {
   staffReplySchema
 } from "@petcura/validation";
 import { requireStaffContext } from "@/lib/auth/staff";
+import { sendWhatsAppStaffMessage } from "@/lib/twilio/outbound";
+import { getTwilioDeliveryEventId } from "@/lib/twilio/whatsapp";
 
 function requestPath(
   requestId: string,
@@ -53,6 +55,13 @@ function eventTypeForStatusChange(
   return "status_changed";
 }
 
+type RequestForAction = Pick<
+  Database["public"]["Tables"]["requests"]["Row"],
+  "id" | "status" | "urgency" | "assigned_staff_id" | "channel"
+> & {
+  owners: Pick<Database["public"]["Tables"]["owners"]["Row"], "phone"> | null;
+};
+
 async function loadRequestForAction(
   supabase: Awaited<ReturnType<typeof requireStaffContext>>["supabase"],
   clinicId: string,
@@ -60,7 +69,7 @@ async function loadRequestForAction(
 ) {
   const { data, error } = await supabase
     .from("requests")
-    .select("id, status, urgency, assigned_staff_id")
+    .select("id, status, urgency, assigned_staff_id, channel, owners(phone)")
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
     .maybeSingle();
@@ -69,7 +78,7 @@ async function loadRequestForAction(
     throw new Error(`Could not load request for action: ${error.message}`);
   }
 
-  return data;
+  return data as unknown as RequestForAction | null;
 }
 
 type RequestEventInsert =
@@ -105,6 +114,29 @@ export async function sendStaffReply(formData: FormData) {
     redirectToRequest(requestId, locale, { action_error: "not_found" });
   }
 
+  let delivery:
+    | Awaited<ReturnType<typeof sendWhatsAppStaffMessage>>
+    | null = null;
+
+  if (request.channel === "whatsapp") {
+    const ownerPhone = request.owners?.phone;
+
+    if (!ownerPhone) {
+      redirectToRequest(requestId, locale, { action_error: "delivery" });
+    }
+
+    try {
+      delivery = await sendWhatsAppStaffMessage({
+        supabase: staffContext.supabase,
+        clinicId: staffContext.clinic.id,
+        toPhone: ownerPhone,
+        body
+      });
+    } catch {
+      redirectToRequest(requestId, locale, { action_error: "delivery" });
+    }
+  }
+
   const { data: message, error: messageError } = await staffContext.supabase
     .from("messages")
     .insert({
@@ -113,7 +145,8 @@ export async function sendStaffReply(formData: FormData) {
       sender_type: "staff",
       sender_id: staffContext.user.id,
       body,
-      source_locale: locale
+      source_locale: locale,
+      external_id: delivery?.sid ?? null
     })
     .select("id")
     .single();
@@ -136,6 +169,31 @@ export async function sendStaffReply(formData: FormData) {
     throw new Error(`Could not update request after reply: ${updateError.message}`);
   }
 
+  if (delivery) {
+    const { error: deliveryError } = await staffContext.supabase
+      .from("message_delivery_events")
+      .insert({
+        message_id: message.id,
+        clinic_id: staffContext.clinic.id,
+        channel: "whatsapp",
+        status: delivery.status,
+        provider: "twilio",
+        external_event_id: getTwilioDeliveryEventId(
+          delivery.sid,
+          delivery.rawStatus
+        ),
+        payload_json: {
+          provider_status: delivery.rawStatus
+        }
+      });
+
+    if (deliveryError) {
+      throw new Error(
+        `Could not record WhatsApp delivery event: ${deliveryError.message}`
+      );
+    }
+  }
+
   const events: RequestEventInsert[] = [
     {
       clinic_id: staffContext.clinic.id,
@@ -145,7 +203,10 @@ export async function sendStaffReply(formData: FormData) {
       event_type: "message_sent",
       payload_json: {
         message_id: message.id,
-        staff_id: staffContext.membership.id
+        staff_id: staffContext.membership.id,
+        channel: request.channel,
+        external_id: delivery?.sid ?? null,
+        delivery_status: delivery?.status ?? null
       }
     }
   ];
