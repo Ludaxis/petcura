@@ -6,9 +6,10 @@ import {
   cn
 } from "@petcura/ui";
 import {
+  createTranslator,
   getRequestCategoryLabel,
+  getRequestStatusLabel,
   getUrgencyLabel,
-  withLocale,
   type SupportedLocale
 } from "@petcura/shared";
 import type { InboxRowData } from "@/lib/inbox/queries";
@@ -38,6 +39,16 @@ function statusPillKind(row: InboxRowData) {
   return "resolved";
 }
 
+function statusLocaleKey(
+  row: InboxRowData
+): "new" | "urgent" | "waiting_staff" | "waiting_owner" | "resolved" {
+  if (row.tier === "urgent" && row.status !== "resolved") return "urgent";
+  if (row.status === "new") return "new";
+  if (row.status === "waiting_staff") return "waiting_staff";
+  if (row.status === "waiting_owner") return "waiting_owner";
+  return "resolved";
+}
+
 export function InboxRow({
   row,
   locale,
@@ -47,13 +58,18 @@ export function InboxRow({
   href,
   index
 }: InboxRowProps) {
-  const tierLabel = getUrgencyLabel(
-    row.tier === "urgent"
-      ? "high"
-      : row.tier === "today"
-        ? "medium"
-        : "low",
-    locale
+  const t = createTranslator(locale);
+  const urgencyKey =
+    row.tier === "urgent" ? "high" : row.tier === "today" ? "medium" : "low";
+  const tierLabel = getUrgencyLabel(urgencyKey, locale);
+  const urgencyAriaLabel = t("request.urgency.label").replace(
+    "{urgency}",
+    tierLabel
+  );
+  const statusLabel = getRequestStatusLabel(statusLocaleKey(row), locale);
+  const statusAriaLabel = t("request.status.label").replace(
+    "{status}",
+    statusLabel
   );
   const categoryLabel = getRequestCategoryLabel(row.category, locale);
   const showTranslate = row.ownerLanguage !== locale;
@@ -74,22 +90,17 @@ export function InboxRow({
       className={cn(
         "group relative grid items-center gap-3 border-b border-[var(--line)] px-4 transition-colors",
         "hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)]",
-        selected && "bg-[var(--primary-soft)]",
+        "data-[selected=true]:bg-[var(--primary-soft)]",
         isCompact ? "py-2.5 sm:py-3" : "py-3.5 sm:py-4",
         // grid: dot | pet/owner | preview | status | meta | caret
         "grid-cols-[14px_minmax(110px,max-content)_minmax(0,1fr)_auto_auto_18px]",
         "max-md:grid-cols-[14px_minmax(0,1fr)_auto]"
       )}
-      style={
-        selected
-          ? { boxShadow: "inset 2px 0 0 0 var(--primary)" }
-          : undefined
-      }
     >
       <span className="flex items-center justify-center">
         <UrgencyDot
           level={tierToUrgencyLevel[row.tier]}
-          label={tierLabel}
+          label={urgencyAriaLabel}
         />
       </span>
 
@@ -122,7 +133,7 @@ export function InboxRow({
           {row.preview}
         </span>
         <span className="flex items-center gap-2">
-          <StatusPill status={status} />
+          <StatusPill status={status} aria-label={statusAriaLabel} />
           {showTranslate ? (
             <span
               className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted-2)]"
@@ -139,7 +150,7 @@ export function InboxRow({
       </span>
 
       <span className="hidden md:block">
-        <StatusPill status={status} />
+        <StatusPill status={status} aria-label={statusAriaLabel} />
       </span>
 
       <span

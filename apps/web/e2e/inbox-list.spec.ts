@@ -132,13 +132,21 @@ test.describe("Inbox list view", () => {
 
       // Stream filter — Urgent
       await page
-        .getByRole("tab", { name: /^Urgent/ })
+        .getByRole("radio", { name: /^Urgent/ })
         .click();
       await expect(page).toHaveURL(/[?&]stream=urgent/);
       await expect(seededRow).toBeVisible();
 
-      // Reset to All
-      await page.getByRole("tab", { name: /^All/ }).click();
+      // Routine should hide the urgent-tier seeded row.
+      await page.getByRole("radio", { name: /^Routine/ }).click();
+      await expect(page.locator("[data-row-id]")).toHaveCount(0);
+
+      // All — at least one row visible again.
+      await page.getByRole("radio", { name: /^All/ }).click();
+      await expect(page.locator("[data-row-id]").first()).toBeVisible();
+      expect(await page.locator("[data-row-id]").count()).toBeGreaterThanOrEqual(
+        1
+      );
 
       // J / K keyboard navigation moves focus
       await page.keyboard.press("j");
@@ -147,37 +155,93 @@ test.describe("Inbox list view", () => {
       const focusable = page.locator('[data-row-id][tabindex="0"]');
       await expect(focusable.first()).toBeVisible();
 
-      // ⌘K opens the palette
+      // E on the focused row resolves it; the StatusPill aria-label updates.
+      // Seed focus through the deep-link path so the keyboard shell and SSR
+      // roving tabindex agree even when other clinic rows already exist.
+      const seededRowId = await seededRow.first().getAttribute("data-row-id");
+      expect(seededRowId).toBeTruthy();
+      await page.goto(`${baseURL}/inbox?lang=en&id=${seededRowId}`);
+      const focusedSeededRow = page.locator(`[data-row-id="${seededRowId}"]`);
+      await expect(focusedSeededRow).toHaveAttribute("tabindex", "0", {
+        timeout: 5_000
+      });
+      await focusedSeededRow.focus();
+      // Allow the client shell's keydown listener to install before the
+      // first keystroke (turbopack hydration race).
+      await page.waitForTimeout(400);
+      await expect(async () => {
+        await focusedSeededRow.focus();
+        await page.keyboard.press("e");
+        const count = await focusedSeededRow
+          .locator(
+            '[role="img"][aria-label*="resolved" i], [role="img"][aria-label*="lahendat" i], [role="img"][aria-label*="реше" i]'
+          )
+          .count();
+        expect(count).toBeGreaterThanOrEqual(1);
+      }).toPass({ timeout: 20_000, intervals: [600, 1500, 3000] });
+
+      // ⌘K opens the palette; type a partial pet name → ArrowDown + Enter
+      // navigates into the request detail.
       const ctrlOrMeta =
         process.platform === "darwin" ? "Meta+k" : "Control+k";
       await page.keyboard.press(ctrlOrMeta);
-      await expect(
-        page.getByRole("dialog", { name: /command palette/i })
-      ).toBeVisible();
-      await page.keyboard.press("Escape");
+      const palette = page.getByRole("dialog", {
+        name: /command palette|käsupalett|палитра команд/i
+      });
+      await expect(palette).toBeVisible();
+      await palette.locator("[data-cmdk-input]").fill(petName.slice(0, 5));
+      await expect(palette.getByRole("option").first()).toBeVisible();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/\/requests\/[0-9a-f-]{8,}/i);
+      // Use a fresh inbox load (avoid back-forward cache rehydration races
+      // that can leave React event handlers stale).
+      await page.goto(`${baseURL}/inbox?lang=en`);
 
-      // Theme toggle — pick dark
-      await page
-        .getByRole("radio", { name: /dark/i })
-        .first()
+      // Pick dark inside the Theme radiogroup specifically so we don't match
+      // any other "dark"-named radio.
+      const themeGroup = page
+        .getByRole("radiogroup", { name: /^Theme$|^Teema$|^Тема$/i });
+      await expect(themeGroup).toBeVisible();
+      await themeGroup
+        .getByRole("radio", { name: /^Dark$|^Tume$|^Тёмная$/i })
         .click();
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-
-      // Persist across reload
       await page.reload();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      await page.goto(`${baseURL}/?lang=en`);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      await page.goto(`${baseURL}/inbox?lang=en`);
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
       // Board view via toggle preserves regression
-      await page.getByRole("tab", { name: /board/i }).click();
+      await page.getByRole("radio", { name: /board|tahvel|доска/i }).click();
       await expect(page).toHaveURL(/[?&]view=board/);
 
-      // ? opens the shortcuts sheet
-      await page.getByRole("tab", { name: /list/i }).click();
+      // ? opens the shortcuts sheet — must list J/K, E, A.
+      await page.getByRole("radio", { name: /^list|loend|список/i }).click();
       await page.keyboard.press("?");
-      await expect(
-        page.getByRole("dialog", { name: /shortcuts|kombinats|сокраще/i })
-      ).toBeVisible();
+      const sheet = page.getByRole("dialog", {
+        name: /shortcuts|kombinats|сокраще/i
+      });
+      await expect(sheet).toBeVisible();
+      await expect(sheet).toContainText(/J\s*\/\s*K/);
+      // E and A are in <kbd> tags within their list rows.
+      await expect(sheet.locator("kbd").filter({ hasText: /^E$/ })).toHaveCount(
+        1
+      );
+      await expect(sheet.locator("kbd").filter({ hasText: /^A$/ })).toHaveCount(
+        1
+      );
       await page.keyboard.press("Escape");
+
+      // Mobile viewport — no horizontal page overflow.
+      await page.setViewportSize({ width: 390, height: 844 });
+      const noOverflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <= window.innerWidth + 1
+      );
+      expect(noOverflow).toBe(true);
     } finally {
       if (clinicId && ownerId) {
         await admin

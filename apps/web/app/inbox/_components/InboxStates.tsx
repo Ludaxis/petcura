@@ -1,8 +1,12 @@
 import { Inbox } from "lucide-react";
 
-export function InboxSkeleton() {
+export function InboxSkeleton({ label }: { label?: string } = {}) {
   return (
-    <ul aria-busy="true" aria-label="Loading inbox" className="flex flex-col">
+    <ul
+      aria-busy="true"
+      aria-label={label ?? "Loading inbox"}
+      className="flex flex-col"
+    >
       {Array.from({ length: 10 }).map((_, i) => (
         <li
           key={i}
@@ -20,7 +24,13 @@ export function InboxSkeleton() {
   );
 }
 
-export function InboxEmptyState({ message }: { message: string }) {
+export function InboxEmptyState({
+  message,
+  body
+}: {
+  message: string;
+  body: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
       <span
@@ -31,7 +41,7 @@ export function InboxEmptyState({ message }: { message: string }) {
       </span>
       <p className="text-[15px] font-medium text-[var(--ink)]">{message}</p>
       <p className="max-w-xs text-[12.5px] leading-[1.5] text-[var(--muted)]">
-        When messages come in via WhatsApp or web intake they land here.
+        {body}
       </p>
     </div>
   );

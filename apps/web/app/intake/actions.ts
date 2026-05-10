@@ -1,7 +1,6 @@
 "use server";
 
 import { intakeRequestSchema } from "@petcura/validation";
-import { createOwnerRequest } from "@/lib/intake/create-owner-request";
 
 export type IntakeFormState = {
   ok: boolean;
@@ -33,6 +32,9 @@ export async function submitOwnerIntake(
     };
   }
 
+  const { createOwnerRequest } = await import(
+    "@/lib/intake/create-owner-request"
+  );
   const result = await createOwnerRequest({
     ...parsed.data,
     channel: "web"

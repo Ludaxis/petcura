@@ -91,6 +91,12 @@ type StatusPillStatus =
 type StatusPillProps = {
   status: StatusPillStatus;
   children?: ReactNode;
+  /**
+   * Accessible label for screen readers. Should be a localized string of the
+   * shape "status: waiting on staff" — the visual mono-pill on its own is
+   * decorative.
+   */
+  "aria-label"?: string;
 };
 
 const statusPillTones: Record<StatusPillStatus, string> = {
@@ -109,7 +115,11 @@ const statusPillLabels: Record<StatusPillStatus, string> = {
   urgent: "urgent"
 };
 
-export function StatusPill({ status, children }: StatusPillProps) {
+export function StatusPill({
+  status,
+  children,
+  "aria-label": ariaLabel
+}: StatusPillProps) {
   return (
     <span
       className={cn(
@@ -117,8 +127,12 @@ export function StatusPill({ status, children }: StatusPillProps) {
         statusPillTones[status]
       )}
       style={{ fontFamily: "var(--font-mono)" }}
+      role={ariaLabel ? "img" : undefined}
+      aria-label={ariaLabel}
     >
-      {children ?? statusPillLabels[status]}
+      <span aria-hidden={ariaLabel ? "true" : undefined}>
+        {children ?? statusPillLabels[status]}
+      </span>
     </span>
   );
 }
@@ -126,6 +140,11 @@ export function StatusPill({ status, children }: StatusPillProps) {
 type UrgencyDotProps = {
   level: "urgent" | "today" | "week" | "routine";
   label?: string;
+  /**
+   * Accessible label for screen readers. Localized "urgency: urgent" string.
+   * Falls back to `label` and then to the raw level for backwards compat.
+   */
+  "aria-label"?: string;
 };
 
 const urgencyDotColors: Record<UrgencyDotProps["level"], string> = {
@@ -135,14 +154,19 @@ const urgencyDotColors: Record<UrgencyDotProps["level"], string> = {
   routine: "var(--muted-2)"
 };
 
-export function UrgencyDot({ level, label }: UrgencyDotProps) {
+export function UrgencyDot({
+  level,
+  label,
+  "aria-label": ariaLabel
+}: UrgencyDotProps) {
+  const resolvedLabel = ariaLabel ?? label ?? level;
   return (
     <span
       className="inline-block h-2.5 w-2.5 rounded-full"
       style={{ backgroundColor: urgencyDotColors[level] }}
       role="img"
-      aria-label={label ?? level}
-      title={label ?? level}
+      aria-label={resolvedLabel}
+      title={resolvedLabel}
     />
   );
 }

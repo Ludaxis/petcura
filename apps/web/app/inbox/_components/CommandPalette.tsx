@@ -44,6 +44,7 @@ type CommandPaletteProps = {
   currentRowId: string | null;
   locale: string;
   labels: {
+    dialogLabel: string;
     placeholder: string;
     empty: string;
     threadsHeading: string;
@@ -55,6 +56,9 @@ type CommandPaletteProps = {
     themeLight: string;
     themeDark: string;
     themeSystem: string;
+    themeAnnounceLight: string;
+    themeAnnounceDark: string;
+    themeAnnounceSystem: string;
     resolveCurrent: string;
     assignCurrent: string;
     resolved: string;
@@ -86,15 +90,26 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
     const [query, setQuery] = useState("");
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const lastFocusedRef = useRef<HTMLElement | null>(null);
+    const liveRef = useRef<HTMLDivElement>(null);
     const [, startTransition] = useTransition();
 
     const openPalette = useCallback(() => {
+      lastFocusedRef.current = document.activeElement as HTMLElement | null;
       setOpen(true);
       setQuery("");
       setActive(0);
       requestAnimationFrame(() => inputRef.current?.focus());
     }, []);
-    const closePalette = useCallback(() => setOpen(false), []);
+    const closePalette = useCallback(() => {
+      setOpen(false);
+      // Restore focus to whatever opened the palette.
+      const target = lastFocusedRef.current;
+      if (target && typeof target.focus === "function") {
+        target.focus();
+      }
+    }, []);
 
     useImperativeHandle(
       ref,
@@ -125,15 +140,35 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
       [router]
     );
 
-    const setTheme = useCallback((pref: ThemePreference) => {
-      persistThemePreference(pref);
-      applyThemePreference(pref);
-      void fetch("/api/theme", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ theme: pref })
-      });
-    }, []);
+    const announceTheme = useCallback(
+      (pref: ThemePreference) => {
+        if (!liveRef.current) return;
+        const msg =
+          pref === "dark"
+            ? labels.themeAnnounceDark
+            : pref === "light"
+              ? labels.themeAnnounceLight
+              : labels.themeAnnounceSystem;
+        // Reset then assign so SR re-announces if same theme picked twice.
+        liveRef.current.textContent = "";
+        liveRef.current.textContent = msg;
+      },
+      [labels]
+    );
+
+    const setTheme = useCallback(
+      (pref: ThemePreference) => {
+        persistThemePreference(pref);
+        applyThemePreference(pref);
+        announceTheme(pref);
+        void fetch("/api/theme", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ theme: pref })
+        });
+      },
+      [announceTheme]
+    );
 
     const commands: Command[] = useMemo(() => {
       const list: Command[] = [];
@@ -165,7 +200,8 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
           hint: "E",
           perform: () =>
             startTransition(async () => {
-              await resolveInboxRequest(currentRowId, locale);
+              const result = await resolveInboxRequest(currentRowId, locale);
+              if (result.ok) router.refresh();
             })
         });
         list.push({
@@ -175,7 +211,8 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
           hint: "A",
           perform: () =>
             startTransition(async () => {
-              await assignInboxRequestToMe(currentRowId, locale);
+              const result = await assignInboxRequestToMe(currentRowId, locale);
+              if (result.ok) router.refresh();
             })
         });
       }
@@ -229,14 +266,43 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Command palette"
+        aria-label={labels.dialogLabel}
         className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-4 pt-[12vh]"
-        onClick={() => setOpen(false)}
+        onClick={closePalette}
+        onKeyDown={(e) => {
+          if (e.key !== "Tab") return;
+          const container = dialogRef.current;
+          if (!container) return;
+          const focusable = container.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusable.length === 0) return;
+          const first = focusable.item(0);
+          const last = focusable.item(focusable.length - 1);
+          if (!first || !last) return;
+          const activeEl = document.activeElement as HTMLElement | null;
+          if (e.shiftKey) {
+            if (activeEl === first || !container.contains(activeEl)) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else if (activeEl === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }}
       >
         <div
+          ref={dialogRef}
           className="w-full max-w-xl overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--paper)] shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
+          <div
+            ref={liveRef}
+            aria-live="polite"
+            aria-atomic="true"
+            className="sr-only"
+          />
           <div className="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2.5">
             <Search aria-hidden="true" size={14} className="text-[var(--muted)]" />
             <input
@@ -261,7 +327,7 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
                   e.preventDefault();
-                  setOpen(false);
+                  closePalette();
                   return;
                 }
                 if (e.key === "ArrowDown") {
@@ -280,7 +346,7 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
                   e.preventDefault();
                   const cmd = filtered[clampedActive];
                   if (cmd) {
-                    setOpen(false);
+                    closePalette();
                     void cmd.perform();
                   }
                   return;
@@ -310,7 +376,7 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
                 aria-selected={i === clampedActive}
                 onMouseEnter={() => setActive(i)}
                 onClick={() => {
-                  setOpen(false);
+                  closePalette();
                   void cmd.perform();
                 }}
                 className={cn(

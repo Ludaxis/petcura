@@ -4,7 +4,9 @@
 :root {
   --ink: #29261b;
   --ink-2: #4d4738;
-  --muted: #847e6b;
+  /* --muted darkened from #847e6b (~3.5:1 on --soft) to reach AA on small mono
+     pill text. */
+  --muted: #5e5847;
   --muted-2: #a39b86;
   --paper: #f6f4ef;
   --soft: #ede9df;
@@ -12,7 +14,8 @@
   --primary: #4a6b3f;
   --primary-strong: #3a5530;
   --primary-soft: #e2ead6;
-  --amber: #b07d2c;
+  /* --amber darkened from #b07d2c (~4.0:1 on --amber-soft) to AA. */
+  --amber: #8a611f;
   --amber-soft: #f5e7c8;
   --red: #a64a3c;
   --red-soft: #f3dfd8;
@@ -39,7 +42,8 @@
   --ink: #ece8de;
   --ink-2: #c9c4b6;
   --muted: #8a8270;
-  --muted-2: #6e6757;
+  /* --muted-2 lightened from #6e6757 (~3.4:1 on dark --paper) to AA. */
+  --muted-2: #9a9180;
   --paper: #1c1a16;
   --soft: #221f19;
   --line: #2a2620;
@@ -89,4 +93,15 @@ textarea {
 :focus-visible {
   outline: 3px solid rgba(74, 107, 63, 0.32);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

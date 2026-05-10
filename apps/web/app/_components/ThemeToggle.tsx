@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { cn } from "@petcura/ui";
 
@@ -15,6 +15,9 @@ type ThemeToggleProps = {
     dark: string;
     system: string;
     label: string;
+    announceLight: string;
+    announceDark: string;
+    announceSystem: string;
   };
   variant?: "chip" | "menu";
 };
@@ -60,6 +63,17 @@ export function ThemeToggle({
     () => (typeof document === "undefined" ? initial : readCookie() ?? initial)
   );
   const [, startTransition] = useTransition();
+  const groupRef = useRef<HTMLDivElement>(null);
+  const liveRef = useRef<HTMLDivElement>(null);
+  const prefRef = useRef(pref);
+
+  useEffect(() => {
+    groupRef.current?.setAttribute("data-theme-toggle-ready", "true");
+  }, []);
+
+  useEffect(() => {
+    prefRef.current = pref;
+  }, [pref]);
 
   // Subscribe to OS color-scheme changes only when tracking system.
   useEffect(() => {
@@ -71,9 +85,21 @@ export function ThemeToggle({
   }, [pref]);
 
   const setTheme = (next: ThemePreference) => {
+    if (prefRef.current === next) return;
+    prefRef.current = next;
     setPref(next);
     persistThemePreference(next);
     applyThemePreference(next);
+    if (liveRef.current) {
+      // Reset then assign so SR re-announces if the same option is picked twice.
+      liveRef.current.textContent = "";
+      liveRef.current.textContent =
+        next === "dark"
+          ? labels.announceDark
+          : next === "light"
+            ? labels.announceLight
+            : labels.announceSystem;
+    }
     startTransition(() => {
       void fetch("/api/theme", {
         method: "POST",
@@ -90,43 +116,53 @@ export function ThemeToggle({
   ];
 
   return (
-    <div
-      role="radiogroup"
-      aria-label={labels.label}
-      className={cn(
-        "inline-flex items-center gap-0.5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-0.5",
-        variant === "menu" && "w-full"
-      )}
-    >
-      {options.map((option) => {
-        const Icon = option.icon;
-        const active = pref === option.value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
+    <>
+      <div ref={liveRef} aria-live="polite" aria-atomic="true" className="sr-only" />
+      <div
+        ref={groupRef}
+        role="radiogroup"
+        aria-label={labels.label}
+        className={cn(
+          "inline-flex items-center gap-0.5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-0.5",
+          variant === "menu" && "w-full"
+        )}
+      >
+        {options.map((option) => {
+          const Icon = option.icon;
+          const active = pref === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
             aria-label={option.label}
             title={option.label}
+            onPointerDown={() => setTheme(option.value)}
             onClick={() => setTheme(option.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              setTheme(option.value);
+            }}
             className={cn(
-              "inline-flex h-7 items-center justify-center gap-1.5 rounded-[5px] px-2 text-[11.5px] font-medium transition",
-              active
-                ? "bg-[var(--primary)] text-[var(--paper)]"
-                : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]",
-              variant === "menu" && "flex-1"
-            )}
-          >
-            <Icon aria-hidden="true" size={13} />
-            {variant === "menu" ? (
-              <span>{option.label}</span>
-            ) : (
-              <span className="sr-only">{option.label}</span>
-            )}
-          </button>
-        );
-      })}
-    </div>
+                "inline-flex h-7 items-center justify-center gap-1.5 rounded-[5px] px-2 text-[11.5px] font-medium transition",
+                active
+                  ? "bg-[var(--primary)] text-[var(--paper)]"
+                  : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]",
+                variant === "menu" && "flex-1"
+              )}
+            >
+              <Icon aria-hidden="true" size={13} />
+              {variant === "menu" ? (
+                <span>{option.label}</span>
+              ) : (
+                <span className="sr-only">{option.label}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
