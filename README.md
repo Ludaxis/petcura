@@ -19,8 +19,8 @@ The app runs at `http://localhost:3000`.
 Fill `.env.local` with the hosted Supabase project values before wiring live data:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` for server-only jobs and migrations
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for browser and SSR clients
+- `SUPABASE_SECRET_KEY` for server-only admin jobs and intake writes
 
 ## Scripts
 

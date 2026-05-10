@@ -3,17 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@petcura/shared";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const secretKey = process.env.SUPABASE_SECRET_KEY;
 const defaultClinicSlug =
   process.env.PETCURA_DEFAULT_CLINIC_SLUG ?? "alex-vet-demo";
 
 function adminClient() {
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !secretKey) {
     throw new Error("Missing Supabase env.");
   }
 
-  return createClient<Database>(supabaseUrl, serviceRoleKey, {
+  return createClient<Database>(supabaseUrl, secretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
@@ -26,8 +26,8 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
   baseURL
 }) => {
   test.skip(
-    !supabaseUrl || !anonKey || !serviceRoleKey,
-    "Supabase env is required for the live intake happy path."
+    !supabaseUrl || !publishableKey || !secretKey,
+    "Supabase publishable and secret env is required for the live intake happy path."
   );
 
   const admin = adminClient();
@@ -87,7 +87,9 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
   expect(link.properties?.action_link).toBeTruthy();
 
   await page.goto(link.properties!.action_link);
-  await expect(page.getByRole("heading", { name: "ClientOps inbox" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "ClientOps inbox" })
+  ).toBeVisible();
   await expect(page.getByText(petName)).toBeVisible();
 
   await page.getByText(petName).click();

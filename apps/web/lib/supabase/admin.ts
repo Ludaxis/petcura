@@ -8,15 +8,15 @@ let adminClient: ReturnType<typeof createSupabaseClient<Database>> | null = null
 
 export function createAdminClient() {
   const env = requirePublicEnv();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-  if (!serviceRoleKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY for server-side writes.");
+  if (!secretKey) {
+    throw new Error("Missing SUPABASE_SECRET_KEY for server-side writes.");
   }
 
   adminClient ??= createSupabaseClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
-    serviceRoleKey,
+    secretKey,
     {
       auth: {
         autoRefreshToken: false,

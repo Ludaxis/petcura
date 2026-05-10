@@ -59,7 +59,7 @@ If a command does not exist yet, add or update the appropriate package script as
 - PetCura is processor; the clinic is controller.
 - Primary application data must be hosted in EU regions.
 - Document subprocessors, transfer mechanisms, retention periods, and AI inference settings in compliance docs.
-- Never expose service-role keys to client code.
+- Never expose Supabase `sb_secret_...` keys or legacy service-role keys to client code.
 - Never commit secrets, real owner PII, clinic credentials, or production exports.
 - Webhooks must verify signatures and be idempotent.
 - GDPR erasure/export flows must preserve audit requirements while minimizing retained PII.

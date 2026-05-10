@@ -3,7 +3,12 @@ import { z } from "zod";
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20)
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
+    .string()
+    .regex(
+      /^sb_publishable_/,
+      "Use the current Supabase publishable key, not the legacy anon key."
+    )
 });
 
 export const requestCategorySchema = z.enum([

@@ -26,7 +26,10 @@ Configured in Vercel for Production, Preview, and Development:
 
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
+- `PETCURA_DEFAULT_CLINIC_SLUG`
+- `PETCURA_BOOTSTRAP_STAFF_EMAILS`
 
 Do not commit Vercel environment values or `.vercel/`. The local project link lives in `.vercel/project.json`, which is intentionally gitignored.
 
