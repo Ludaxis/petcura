@@ -6,7 +6,14 @@ export type TwilioWhatsAppPayload = {
   body: string;
   messageSid?: string | undefined;
   profileName?: string | undefined;
+  media: TwilioWhatsAppMedia[];
   preferredLanguage: SupportedLocale;
+};
+
+export type TwilioWhatsAppMedia = {
+  index: number;
+  url: string;
+  contentType: string;
 };
 
 export function stripTwilioWhatsAppPrefix(value: string) {
@@ -47,6 +54,18 @@ export function parseTwilioWhatsAppPayload(
   const messageSid =
     params.get("MessageSid") ?? params.get("SmsMessageSid") ?? undefined;
   const profileName = params.get("ProfileName")?.trim() || undefined;
+  const mediaCount = Number.parseInt(params.get("NumMedia") ?? "0", 10);
+  const media = Array.from(
+    { length: Number.isFinite(mediaCount) && mediaCount > 0 ? mediaCount : 0 },
+    (_, index) => {
+      const url = params.get(`MediaUrl${index}`)?.trim() ?? "";
+      const contentType =
+        params.get(`MediaContentType${index}`)?.trim() ||
+        "application/octet-stream";
+
+      return url ? { index, url, contentType } : null;
+    }
+  ).filter((item): item is TwilioWhatsAppMedia => item !== null);
   const preferredLanguage = normalizeLocale(fallbackLocale);
 
   if (!from) {
@@ -63,6 +82,7 @@ export function parseTwilioWhatsAppPayload(
     body,
     messageSid,
     profileName,
+    media,
     preferredLanguage
   };
 }

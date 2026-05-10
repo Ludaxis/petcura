@@ -29,8 +29,40 @@ describe("Twilio WhatsApp helpers", () => {
       body: "My cat is not eating",
       messageSid: "SM123",
       profileName: "Reza",
+      media: [],
       preferredLanguage: "et"
     });
+  });
+
+  it("parses WhatsApp media metadata", () => {
+    const params = new URLSearchParams({
+      From: "whatsapp:+37258046666",
+      To: "whatsapp:+37255550123",
+      Body: "",
+      MessageSid: "SM456",
+      NumMedia: "2",
+      MediaUrl0:
+        "https://api.twilio.com/2010-04-01/Accounts/ac/Messages/SM/Media/ME0",
+      MediaContentType0: "image/jpeg",
+      MediaUrl1:
+        "https://api.twilio.com/2010-04-01/Accounts/ac/Messages/SM/Media/ME1",
+      MediaContentType1: "video/mp4"
+    });
+
+    expect(parseTwilioWhatsAppPayload(params, "en").media).toEqual([
+      {
+        index: 0,
+        url:
+          "https://api.twilio.com/2010-04-01/Accounts/ac/Messages/SM/Media/ME0",
+        contentType: "image/jpeg"
+      },
+      {
+        index: 1,
+        url:
+          "https://api.twilio.com/2010-04-01/Accounts/ac/Messages/SM/Media/ME1",
+        contentType: "video/mp4"
+      }
+    ]);
   });
 
   it("keeps all Twilio params for signature validation", () => {

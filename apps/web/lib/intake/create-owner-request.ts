@@ -26,6 +26,14 @@ export type CreateOwnerRequestInput = {
   channel: RequestChannel;
   channelExternalId?: string | undefined;
   externalMessageId?: string | undefined;
+  attachments?: CreateOwnerRequestAttachmentInput[] | undefined;
+};
+
+export type CreateOwnerRequestAttachmentInput = {
+  storagePath: string;
+  mimeType: string;
+  sizeBytes?: number | undefined;
+  providerUrl?: string | undefined;
 };
 
 export type CreateOwnerRequestResult =
@@ -249,6 +257,32 @@ export async function createOwnerRequest(
     return { ok: false, message: messageError.message };
   }
 
+  let attachmentIds: string[] = [];
+  const attachments = input.attachments ?? [];
+
+  if (attachments.length > 0) {
+    const { data: insertedAttachments, error: attachmentError } = await admin
+      .from("attachments")
+      .insert(
+        attachments.map((attachment) => ({
+          request_id: request.id,
+          clinic_id: clinic.id,
+          message_id: message.id,
+          storage_path: attachment.storagePath,
+          mime_type: attachment.mimeType,
+          size_bytes: attachment.sizeBytes ?? 0,
+          uploaded_by: owner.id
+        }))
+      )
+      .select("id");
+
+    if (attachmentError) {
+      return { ok: false, message: attachmentError.message };
+    }
+
+    attachmentIds = insertedAttachments.map((attachment) => attachment.id);
+  }
+
   const { error: eventError } = await admin.from("request_events").insert([
     {
       request_id: request.id,
@@ -259,7 +293,8 @@ export async function createOwnerRequest(
       payload_json: {
         category: input.category,
         channel: input.channel,
-        preferred_language: normalizeLocale(input.preferredLanguage)
+        preferred_language: normalizeLocale(input.preferredLanguage),
+        attachment_count: attachments.length
       }
     },
     {
@@ -271,13 +306,34 @@ export async function createOwnerRequest(
       payload_json: {
         message_id: message.id,
         external_id: input.externalMessageId,
-        source_locale: normalizeLocale(input.preferredLanguage)
+        source_locale: normalizeLocale(input.preferredLanguage),
+        attachment_ids: attachmentIds
       }
     }
   ]);
 
   if (eventError) {
     return { ok: false, message: eventError.message };
+  }
+
+  const { error: auditError } = await admin.from("audit_logs").insert({
+    clinic_id: clinic.id,
+    actor_id: null,
+    action: "owner_request_created",
+    entity_type: "request",
+    entity_id: request.id,
+    payload_json: {
+      channel: input.channel,
+      owner_id: owner.id,
+      pet_id: petId,
+      message_id: message.id,
+      external_id: input.externalMessageId,
+      attachment_count: attachments.length
+    }
+  });
+
+  if (auditError) {
+    return { ok: false, message: auditError.message };
   }
 
   return {

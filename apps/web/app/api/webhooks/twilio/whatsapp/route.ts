@@ -25,6 +25,14 @@ function serverError(message: string) {
   return new Response(message, { status: 500 });
 }
 
+function getTwilioMediaStoragePath(
+  messageSid: string | undefined,
+  index: number
+) {
+  const messageKey = messageSid?.replace(/[^a-zA-Z0-9_-]/g, "") || "unknown";
+  return `twilio/${messageKey}/${index}`;
+}
+
 export async function POST(request: Request) {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
 
@@ -81,7 +89,13 @@ export async function POST(request: Request) {
       preferredLanguage: normalizeLocale(clinic.locale),
       channel: "whatsapp",
       channelExternalId: payload.from,
-      externalMessageId: payload.messageSid
+      externalMessageId: payload.messageSid,
+      attachments: payload.media.map((media) => ({
+        storagePath: getTwilioMediaStoragePath(payload.messageSid, media.index),
+        mimeType: media.contentType,
+        sizeBytes: 0,
+        providerUrl: media.url
+      }))
     },
     clinic
   );

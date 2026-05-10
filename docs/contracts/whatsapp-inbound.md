@@ -27,6 +27,8 @@ Twilio form fields:
 - `Body`: initial owner message
 - `MessageSid` or `SmsMessageSid`: stored as `messages.external_id`
 - `ProfileName`: owner display name fallback
+- `NumMedia`, `MediaUrl{n}`, `MediaContentType{n}`: stored as attachment
+  metadata rows linked to the initial message
 
 Clinic resolution:
 
@@ -47,6 +49,10 @@ Request creation:
   - `urgency = low`
 - The first owner message is stored in `messages`.
 - `request_events.created` and `request_events.message_received` are written.
+- Attachment metadata is stored in `attachments` using a Twilio storage path
+  placeholder (`twilio/{messageSid}/{index}`) until media download/storage is
+  enabled.
+- `audit_logs.owner_request_created` records the system-side intake action.
 
 Idempotency:
 
@@ -62,6 +68,6 @@ Response:
 
 - Category suggestion from message text.
 - Structured intake follow-up questions.
-- Media attachment ingestion.
+- Media download into Supabase Storage and malware/content checks.
 - Owner language detection for EN/ET/RU instead of clinic-locale fallback.
 - Outbound WhatsApp staff replies from request detail.
