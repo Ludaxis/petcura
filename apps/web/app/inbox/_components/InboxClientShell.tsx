@@ -65,6 +65,20 @@ export function InboxClientShell({
       });
   }, [rowIds, safeFocusedIndex]);
 
+  // Bridge: AppSidebar's "Search" row dispatches a window event so the
+  // sidebar can stay decoupled from the inbox-only CommandPalette. Other
+  // surfaces that don't mount the palette (e.g. /reports) get a noop —
+  // they listen for nothing.
+  useEffect(() => {
+    const onOpen = () => paletteRef.current?.toggle();
+    window.addEventListener("petcura:open-cmdk", onOpen as EventListener);
+    return () =>
+      window.removeEventListener(
+        "petcura:open-cmdk",
+        onOpen as EventListener
+      );
+  }, []);
+
   const currentRowId = rowIds[safeFocusedIndex] ?? null;
 
   return (

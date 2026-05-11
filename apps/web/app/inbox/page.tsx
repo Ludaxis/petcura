@@ -1,7 +1,4 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { Suspense } from "react";
-import { Badge, Button } from "@petcura/ui";
 import {
   createTranslator,
   withLocale,
@@ -10,22 +7,18 @@ import {
 import { getRequestLocale } from "@/lib/locale";
 import { requireStaffContext } from "@/lib/auth/staff";
 import {
-  getInboxStreamCounts,
   isInboxStream,
   isInboxView,
   listInboxRequests,
   type InboxStream,
   type InboxView
 } from "@/lib/inbox/queries";
-import { getThemePreference } from "@/lib/theme";
-import { signOutStaff } from "./actions";
+import { AppShell } from "@/app/_components/AppShell";
 import { InboxRow } from "./_components/InboxRow";
-import { StreamFilter } from "./_components/StreamFilter";
 import { InboxToolbarControls } from "./_components/InboxToolbarControls";
 import { InboxClientShell } from "./_components/InboxClientShell";
 import { InboxBoard } from "./_components/InboxBoard";
 import { InboxEmptyState, InboxSkeleton } from "./_components/InboxStates";
-import { UserMenu } from "@/app/_components/UserMenu";
 
 type InboxPageProps = {
   searchParams?: Promise<{
@@ -46,6 +39,7 @@ const STREAM_KEYS: Record<
   | "inbox.streams.routine"
   | "inbox.streams.mine"
   | "inbox.streams.unassigned"
+  | "inbox.streams.resolved"
 > = {
   all: "inbox.streams.all",
   urgent: "inbox.streams.urgent",
@@ -53,7 +47,8 @@ const STREAM_KEYS: Record<
   week: "inbox.streams.week",
   routine: "inbox.streams.routine",
   mine: "inbox.streams.mine",
-  unassigned: "inbox.streams.unassigned"
+  unassigned: "inbox.streams.unassigned",
+  resolved: "inbox.streams.resolved"
 };
 
 function makeRelativeFormatter(locale: SupportedLocale) {
@@ -88,21 +83,18 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
   const density: "comfortable" | "compact" =
     densityRaw === "compact" ? "compact" : "comfortable";
 
-  const themePreference = await getThemePreference();
-
-  const [rows, counts] = await Promise.all([
-    listInboxRequests(staffContext.supabase, staffContext.clinic.id, {
+  // Counts now live in AppShell so the sidebar renders them everywhere; this
+  // page only needs the filtered rows for the current stream.
+  const rows = await listInboxRequests(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    {
       stream,
       view,
       locale,
       staffMembershipId: staffContext.membership.id
-    }),
-    getInboxStreamCounts(
-      staffContext.supabase,
-      staffContext.clinic.id,
-      staffContext.membership.id
-    )
-  ]);
+    }
+  );
 
   const formatRelative = makeRelativeFormatter(locale);
   const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
@@ -151,171 +143,147 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
       week: "inbox.list.heading.week",
       routine: "inbox.list.heading.routine",
       mine: "inbox.list.heading.mine",
-      unassigned: "inbox.list.heading.unassigned"
+      unassigned: "inbox.list.heading.unassigned",
+      resolved: "inbox.list.heading.resolved"
     } as const
   )[stream];
   const listHeading = t(listHeadingKey).replace("{count}", String(rows.length));
+  // Friendly title for the in-pane heading. "All open · 9" style, mirrors
+  // the count badge from the sidebar parent so users get visual continuity.
+  const streamTitle = t(STREAM_KEYS[stream]);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-6 sm:py-5 lg:px-8">
-      <header className="flex flex-col gap-3 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Button asChild variant="ghost">
-            <Link href={withLocale("/", locale)}>
-              <ArrowLeft aria-hidden="true" size={16} />
-              {t("nav.back")}
-            </Link>
-          </Button>
-          <div>
-            <p className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--primary)]">
-              {t("inbox.kicker")}
-            </p>
-            <h1 className="text-[22px] font-semibold">
-              {t("inbox.title")}
-            </h1>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="teal">{staffContext.clinic.name}</Badge>
-          <Badge tone="neutral">{t("inbox.liveBadge")}</Badge>
-        </div>
-      </header>
-
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <StreamFilter
-            stream={stream}
-            counts={counts}
-            labels={streamLabels}
-            groupLabel={t("inbox.streams.label")}
-          />
-          <div className="shrink-0">
-            <InboxToolbarControls
-              view={view}
-              density={density}
-              labels={{
-                list: t("inbox.view.list"),
-                board: t("inbox.view.board"),
-                comfortable: t("inbox.density.comfortable"),
-                compact: t("inbox.density.compact"),
-                viewGroup: t("inbox.view.label"),
-                densityGroup: t("inbox.density.label")
-              }}
-            />
-          </div>
-        </div>
-
-        {view === "board" ? (
-          <Suspense fallback={<InboxSkeleton label={t("inbox.loading.label")} />}>
-            <InboxBoard
-              rows={rows}
-              locale={locale}
-              formatDateTime={formatDateTime}
-            />
-          </Suspense>
-        ) : rows.length === 0 ? (
-          <>
-            <h2 className="sr-only">{listHeading}</h2>
-            <InboxEmptyState
-              message={t("inbox.empty")}
-              body={t("inbox.emptyBody")}
-            />
-          </>
-        ) : (
-          <>
-            {/* Heading-level landmark for screen readers navigating by H2. */}
-            <h2 className="sr-only">{listHeading}</h2>
-            <div
-              aria-label={t("inbox.title")}
-              className="overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)]"
-            >
-              {rows.map((row, i) => (
-                <InboxRow
-                  key={row.id}
-                  row={row}
-                  index={i}
-                  locale={locale}
-                  selected={i === initialFocusedIndex}
-                  density={density}
-                  formatRelative={formatRelative}
-                  href={hrefForRow[row.id] ?? `/requests/${row.id}`}
-                />
-              ))}
+    <AppShell locale={locale} inboxStream={stream} currentPath="/inbox">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-6 sm:py-5 lg:px-8">
+        {/*
+          The persistent sidebar carries identity now, so the inbox no longer
+          needs a top header bar (Back/title chips were absorbed into the
+          sidebar brand block). The lightweight inline heading below echoes
+          the active stream + count so the user always knows where they are.
+        */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="flex items-baseline gap-2 text-[18px] font-semibold text-[var(--ink)]">
+                <span className="truncate">{streamTitle}</span>
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-[11.5px] text-[var(--muted-2)]"
+                >
+                  · {rows.length}
+                </span>
+              </h1>
             </div>
-          </>
-        )}
-      </section>
+            <div className="shrink-0">
+              <InboxToolbarControls
+                view={view}
+                density={density}
+                labels={{
+                  list: t("inbox.view.list"),
+                  board: t("inbox.view.board"),
+                  comfortable: t("inbox.density.comfortable"),
+                  compact: t("inbox.density.compact"),
+                  viewGroup: t("inbox.view.label"),
+                  densityGroup: t("inbox.density.label")
+                }}
+              />
+            </div>
+          </div>
 
-      <InboxClientShell
-        clinicId={staffContext.clinic.id}
-        rowIds={rowIds}
-        hrefForRow={hrefForRow}
-        threads={rows.map((r) => ({
-          id: r.id,
-          petName: r.petName,
-          ownerName: r.ownerName,
-          preview: r.preview,
-          href: hrefForRow[r.id] ?? `/requests/${r.id}`
-        }))}
-        streams={(Object.keys(STREAM_KEYS) as InboxStream[]).map((value) => ({
-          value,
-          label: streamLabels[value]
-        }))}
-        locale={locale}
-        paletteLabels={{
-          dialogLabel: t("inbox.cmdk.dialogLabel"),
-          placeholder: t("inbox.cmdk.placeholder"),
-          empty: t("inbox.cmdk.empty"),
-          threadsHeading: t("inbox.cmdk.threads"),
-          streamsHeading: t("inbox.cmdk.streams"),
-          actionsHeading: t("inbox.cmdk.actions"),
-          appearanceHeading: t("inbox.cmdk.appearance"),
-          openThread: t("inbox.cmdk.openThread"),
-          filterStreamPrefix: t("inbox.cmdk.filterStream").replace(
-            " {stream}",
-            ""
-          ),
-          themeLight: t("inbox.cmdk.themeLight"),
-          themeDark: t("inbox.cmdk.themeDark"),
-          themeSystem: t("inbox.cmdk.themeSystem"),
-          themeAnnounceLight: t("inbox.cmdk.themeAnnounceLight"),
-          themeAnnounceDark: t("inbox.cmdk.themeAnnounceDark"),
-          themeAnnounceSystem: t("inbox.cmdk.themeAnnounceSystem"),
-          resolveCurrent: t("inbox.cmdk.resolveCurrent"),
-          assignCurrent: t("inbox.cmdk.assignCurrent"),
-          resolved: t("inbox.toast.resolved"),
-          assigned: t("inbox.toast.assigned")
-        }}
-        keyboardLabels={{
-          sheetTitle: t("inbox.kbdSheet.title"),
-          close: t("inbox.kbdSheet.close"),
-          resolved: t("inbox.toast.resolved"),
-          assigned: t("inbox.toast.assigned"),
-          errorResolve: t("inbox.toast.resolveError"),
-          errorAssign: t("inbox.toast.assignError")
-        }}
-        shortcuts={shortcuts}
-      />
-      <UserMenu
-        email={staffContext.user.email ?? ""}
-        clinicName={staffContext.clinic.name}
-        locale={locale}
-        currentPath="/inbox"
-        initialTheme={themePreference}
-        labels={{
-          ariaLabel: t("menu.ariaLabel"),
-          signedInAs: t("menu.signedInAs"),
-          theme: t("menu.theme"),
-          themeLight: t("menu.themeLight"),
-          themeDark: t("menu.themeDark"),
-          themeSystem: t("menu.themeSystem"),
-          language: t("menu.language"),
-          help: t("menu.help"),
-          helpHref: "mailto:support@petcura.app",
-          signOut: t("auth.logout")
-        }}
-        signOutAction={signOutStaff}
-      />
-    </main>
+          {view === "board" ? (
+            <Suspense
+              fallback={<InboxSkeleton label={t("inbox.loading.label")} />}
+            >
+              <InboxBoard
+                rows={rows}
+                locale={locale}
+                formatDateTime={formatDateTime}
+              />
+            </Suspense>
+          ) : rows.length === 0 ? (
+            <>
+              <h2 className="sr-only">{listHeading}</h2>
+              <InboxEmptyState
+                message={t("inbox.empty")}
+                body={t("inbox.emptyBody")}
+              />
+            </>
+          ) : (
+            <>
+              {/* Heading-level landmark for screen readers navigating by H2. */}
+              <h2 className="sr-only">{listHeading}</h2>
+              <div
+                aria-label={t("inbox.title")}
+                className="overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)]"
+              >
+                {rows.map((row, i) => (
+                  <InboxRow
+                    key={row.id}
+                    row={row}
+                    index={i}
+                    locale={locale}
+                    selected={i === initialFocusedIndex}
+                    density={density}
+                    formatRelative={formatRelative}
+                    href={hrefForRow[row.id] ?? `/requests/${row.id}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+
+        <InboxClientShell
+          clinicId={staffContext.clinic.id}
+          rowIds={rowIds}
+          hrefForRow={hrefForRow}
+          threads={rows.map((r) => ({
+            id: r.id,
+            petName: r.petName,
+            ownerName: r.ownerName,
+            preview: r.preview,
+            href: hrefForRow[r.id] ?? `/requests/${r.id}`
+          }))}
+          streams={(Object.keys(STREAM_KEYS) as InboxStream[]).map((value) => ({
+            value,
+            label: streamLabels[value]
+          }))}
+          locale={locale}
+          paletteLabels={{
+            dialogLabel: t("inbox.cmdk.dialogLabel"),
+            placeholder: t("inbox.cmdk.placeholder"),
+            empty: t("inbox.cmdk.empty"),
+            threadsHeading: t("inbox.cmdk.threads"),
+            streamsHeading: t("inbox.cmdk.streams"),
+            actionsHeading: t("inbox.cmdk.actions"),
+            appearanceHeading: t("inbox.cmdk.appearance"),
+            openThread: t("inbox.cmdk.openThread"),
+            filterStreamPrefix: t("inbox.cmdk.filterStream").replace(
+              " {stream}",
+              ""
+            ),
+            themeLight: t("inbox.cmdk.themeLight"),
+            themeDark: t("inbox.cmdk.themeDark"),
+            themeSystem: t("inbox.cmdk.themeSystem"),
+            themeAnnounceLight: t("inbox.cmdk.themeAnnounceLight"),
+            themeAnnounceDark: t("inbox.cmdk.themeAnnounceDark"),
+            themeAnnounceSystem: t("inbox.cmdk.themeAnnounceSystem"),
+            resolveCurrent: t("inbox.cmdk.resolveCurrent"),
+            assignCurrent: t("inbox.cmdk.assignCurrent"),
+            resolved: t("inbox.toast.resolved"),
+            assigned: t("inbox.toast.assigned")
+          }}
+          keyboardLabels={{
+            sheetTitle: t("inbox.kbdSheet.title"),
+            close: t("inbox.kbdSheet.close"),
+            resolved: t("inbox.toast.resolved"),
+            assigned: t("inbox.toast.assigned"),
+            errorResolve: t("inbox.toast.resolveError"),
+            errorAssign: t("inbox.toast.assignError")
+          }}
+          shortcuts={shortcuts}
+        />
+      </div>
+    </AppShell>
   );
 }

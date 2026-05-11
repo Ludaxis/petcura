@@ -121,28 +121,37 @@ test.describe("Inbox list view", () => {
       );
       await page.goto(callbackUrl.toString());
 
-      // List view by default with a row for our seeded pet
+      // Sidebar-shell heading reflects the active stream. Default = "All".
       await expect(
-        page.getByRole("heading", { name: "ClientOps inbox" })
+        page.getByRole("heading", { level: 1, name: /^All/ })
       ).toBeVisible();
       const seededRow = page.locator(`[data-row-id]`).filter({
         hasText: petName
       });
       await expect(seededRow).toBeVisible();
 
-      // Stream filter — Urgent
+      // Stream filter — Urgent. Sidebar replaces the old chip radiogroup;
+      // streams are now `<Link>` rows. The link is named after the stream
+      // label and writes the `stream` query param via Next router.
       await page
-        .getByRole("radio", { name: /^Urgent/ })
+        .getByRole("navigation")
+        .getByRole("link", { name: /Urgent/ })
         .click();
       await expect(page).toHaveURL(/[?&]stream=urgent/);
       await expect(seededRow).toBeVisible();
 
-      // Routine should hide the urgent-tier seeded row.
-      await page.getByRole("radio", { name: /^Routine/ }).click();
+      // Resolved should hide the urgent-tier seeded row (it's still open).
+      await page
+        .getByRole("navigation")
+        .getByRole("link", { name: /Resolved/ })
+        .click();
       await expect(page.locator("[data-row-id]")).toHaveCount(0);
 
       // All — at least one row visible again.
-      await page.getByRole("radio", { name: /^All/ }).click();
+      await page
+        .getByRole("navigation")
+        .getByRole("link", { name: /^All/ })
+        .click();
       await expect(page.locator("[data-row-id]").first()).toBeVisible();
       expect(await page.locator("[data-row-id]").count()).toBeGreaterThanOrEqual(
         1

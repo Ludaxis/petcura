@@ -19,7 +19,8 @@ export type InboxStream =
   | "week"
   | "routine"
   | "mine"
-  | "unassigned";
+  | "unassigned"
+  | "resolved";
 
 export type InboxView = "list" | "board";
 
@@ -148,9 +149,15 @@ function applyStreamFilter(rows: InboxRowData[], stream: InboxStream) {
       return rows.filter(
         (r) => r.assignedStaffId === null && r.status !== "resolved"
       );
+    case "resolved":
+      // "Resolved" is a real stream now, not an absent-status edge case.
+      // It surfaces the cool-down lane and feeds the new sidebar tab.
+      return rows.filter((r) => r.status === "resolved");
     case "all":
     default:
-      return rows;
+      // "All open" hides resolved threads — keep this lane focused on work
+      // that still needs attention. Resolved has its own stream.
+      return rows.filter((r) => r.status !== "resolved");
   }
 }
 
@@ -214,7 +221,8 @@ export async function getInboxStreamCounts(
     week: 0,
     routine: 0,
     mine: 0,
-    unassigned: 0
+    unassigned: 0,
+    resolved: 0
   };
 
   for (const row of data ?? []) {
@@ -226,10 +234,14 @@ export async function getInboxStreamCounts(
       now
     });
 
-    counts.all += 1;
     if (row.status === "resolved") {
+      // Resolved threads live in their own stream now — they no longer
+      // inflate the top-level "All open" count shown next to Inbox in the
+      // sidebar.
+      counts.resolved += 1;
       continue;
     }
+    counts.all += 1;
     counts[tier] += 1;
     if (row.assigned_staff_id === null) {
       counts.unassigned += 1;
@@ -248,9 +260,16 @@ export async function getInboxStreamCounts(
 export function isInboxStream(value: unknown): value is InboxStream {
   return (
     typeof value === "string" &&
-    ["all", "urgent", "today", "week", "routine", "mine", "unassigned"].includes(
-      value
-    )
+    [
+      "all",
+      "urgent",
+      "today",
+      "week",
+      "routine",
+      "mine",
+      "unassigned",
+      "resolved"
+    ].includes(value)
   );
 }
 

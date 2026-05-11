@@ -154,7 +154,12 @@ export default async function RequestDetailPage({
     week: t("inbox.streams.week"),
     routine: t("inbox.streams.routine"),
     mine: t("inbox.streams.mine"),
-    unassigned: t("inbox.streams.unassigned")
+    unassigned: t("inbox.streams.unassigned"),
+    // "resolved" stream landed in PR Slice A as a real inbox lane. The
+    // request detail screen consumes the same labels map for its breadcrumb
+    // back-to-stream chip — pick up the new key so the cool-down lane has
+    // a label.
+    resolved: t("inbox.streams.resolved")
   };
 
   const shortcuts = [

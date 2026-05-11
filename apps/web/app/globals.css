@@ -1,5 +1,54 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+/*
+ * shadcn/ui primitives (button, dropdown-menu, sheet, sidebar, tooltip,
+ * separator) reference Tailwind utility classes like `bg-sidebar`,
+ * `text-popover-foreground`, `bg-border`, etc. In Tailwind v4 those classes
+ * are wired through `@theme inline` to CSS variables. We map shadcn's
+ * expected variables to PetCura's Direction-B tokens so shadcn primitives
+ * read our paper/ink/line/sage palette instead of shadcn's neutral defaults.
+ *
+ * Any utility/class added by shadcn must be representable through one of the
+ * mappings below — if not, the right move is to extend this block, not to
+ * fork the primitive.
+ */
+@custom-variant dark (&:is([data-theme="dark"] *, .dark *));
+
+@theme inline {
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-card: var(--paper);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--paper);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--paper);
+  --color-secondary: var(--soft);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--soft);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--primary-soft);
+  --color-accent-foreground: var(--primary-strong);
+  --color-destructive: var(--red);
+  --color-destructive-foreground: var(--paper);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--primary);
+  --color-sidebar: var(--paper);
+  --color-sidebar-foreground: var(--ink);
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-primary-foreground: var(--paper);
+  --color-sidebar-accent: var(--primary-soft);
+  --color-sidebar-accent-foreground: var(--primary-strong);
+  --color-sidebar-border: var(--line);
+  --color-sidebar-ring: var(--primary);
+  --radius-sm: 6px;
+  --radius-md: 7px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
 
 :root {
   --ink: #29261b;

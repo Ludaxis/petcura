@@ -6,7 +6,8 @@ import {
   useRef,
   useState,
   useTransition,
-  type ReactNode
+  type ReactNode,
+  type ReactElement
 } from "react";
 import Link from "next/link";
 import {
@@ -44,6 +45,8 @@ export type UserMenuLabels = {
   signOut: string;
 };
 
+type UserMenuVariant = "floating" | "sidebar-card";
+
 type UserMenuProps = {
   email: string;
   displayName?: string;
@@ -54,6 +57,14 @@ type UserMenuProps = {
   labels: UserMenuLabels;
   /** Server action for signing out. Takes a hidden `lang` field. */
   signOutAction: (formData: FormData) => void | Promise<void>;
+  /**
+   * "floating" (default, legacy) — fixed bottom-left avatar chip.
+   * "sidebar-card" — used inside the AppSidebar identity card. The trigger
+   * spans `cardSlot` and the popover anchors above the card.
+   */
+  variant?: UserMenuVariant;
+  /** Custom trigger contents for `variant="sidebar-card"`. */
+  cardSlot?: ReactElement;
 };
 
 type Panel = "root" | "theme" | "language";
@@ -76,7 +87,9 @@ export function UserMenu({
   currentPath,
   initialTheme,
   labels,
-  signOutAction
+  signOutAction,
+  variant = "floating",
+  cardSlot
 }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>("root");
@@ -166,36 +179,62 @@ export function UserMenu({
       .join("") || "?";
   })();
 
-  return (
-    <div className="pointer-events-none fixed bottom-4 left-16 z-40 sm:bottom-5 sm:left-20">
-      <div className="pointer-events-auto relative">
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-label={labels.ariaLabel}
-          onClick={() => setOpen((v) => !v)}
-          className={cn(
-            "group flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--paper)] shadow-md transition hover:bg-[var(--soft)]",
-            "focus-visible:ring-0"
-          )}
-        >
-          <span
-            className="text-[12px] font-semibold text-[var(--ink)]"
-            style={{ fontFamily: "var(--font-sans)" }}
-          >
-            {initials}
-          </span>
-        </button>
+  const isSidebar = variant === "sidebar-card";
 
-        {open ? (
-          <div
-            ref={popoverRef}
-            role="menu"
-            aria-label={labels.ariaLabel}
-            className="absolute bottom-[52px] left-0 w-[280px] origin-bottom-left overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--paper)] shadow-xl"
-          >
+  const trigger = isSidebar ? (
+    <button
+      ref={triggerRef}
+      type="button"
+      aria-haspopup="menu"
+      aria-expanded={open}
+      aria-label={labels.ariaLabel}
+      onClick={() => setOpen((v) => !v)}
+      // The sidebar identity card uses cardSlot for its visible body; the
+      // <button> wraps it so the entire row is the popover trigger.
+      className={cn(
+        "block w-full text-left transition",
+        "hover:bg-[var(--soft)]",
+        open && "bg-[var(--soft)]"
+      )}
+    >
+      {cardSlot}
+    </button>
+  ) : (
+    <button
+      ref={triggerRef}
+      type="button"
+      aria-haspopup="menu"
+      aria-expanded={open}
+      aria-label={labels.ariaLabel}
+      onClick={() => setOpen((v) => !v)}
+      className={cn(
+        "group flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--paper)] shadow-md transition hover:bg-[var(--soft)]",
+        "focus-visible:ring-0"
+      )}
+    >
+      <span
+        className="text-[12px] font-semibold text-[var(--ink)]"
+        style={{ fontFamily: "var(--font-sans)" }}
+      >
+        {initials}
+      </span>
+    </button>
+  );
+
+  const popover = open ? (
+    <div
+      ref={popoverRef}
+      role="menu"
+      aria-label={labels.ariaLabel}
+      className={cn(
+        "w-[280px] overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--paper)] shadow-xl",
+        isSidebar
+          ? // Anchor above the identity card. left:0 keeps it flush with the
+            // sidebar's left edge; the +8px adds a small visual gap.
+            "absolute bottom-[calc(100%+8px)] left-2 origin-bottom-left z-50"
+          : "absolute bottom-[52px] left-0 origin-bottom-left"
+      )}
+    >
             {/* Identity header */}
             <div className="border-b border-[var(--line)] px-4 py-3">
               <p
@@ -336,8 +375,23 @@ export function UserMenu({
                 })}
               </SubPanel>
             ) : null}
-          </div>
-        ) : null}
+    </div>
+  ) : null;
+
+  if (isSidebar) {
+    return (
+      <div className="relative w-full">
+        {trigger}
+        {popover}
+      </div>
+    );
+  }
+
+  return (
+    <div className="pointer-events-none fixed bottom-4 left-16 z-40 sm:bottom-5 sm:left-20">
+      <div className="pointer-events-auto relative">
+        {trigger}
+        {popover}
       </div>
     </div>
   );

@@ -423,7 +423,20 @@ export const uiCopy = {
     "request.detail.list": "Threads",
     "request.detail.notFound": "Request not found.",
     "request.kbd.send": "Send reply",
-    "request.kbd.translate": "Toggle translation"
+    "request.kbd.translate": "Toggle translation",
+    "menu.search": "Search",
+    "nav.reminders": "Reminders",
+    "nav.reports": "Reports",
+    "nav.settings": "Settings",
+    "nav.section.inbox": "Inbox",
+    "nav.sidebarLabel": "Primary navigation",
+    "nav.identityAria": "Account and preferences",
+    "nav.skipToContent": "Skip to main content",
+    "inbox.streams.resolved": "Resolved",
+    "inbox.list.heading.resolved": "Resolved threads — {count} results",
+    "comingSoon.title": "Coming soon",
+    "comingSoon.body":
+      "This area is part of the PetCura roadmap. The shell is in place so the navigation feels stable; the live workflow lands in a later slice."
   },
   et: {
     "nav.back": "Tagasi",
@@ -698,7 +711,20 @@ export const uiCopy = {
     "request.detail.list": "Vestlused",
     "request.detail.notFound": "Pöördumist ei leitud.",
     "request.kbd.send": "Saada vastus",
-    "request.kbd.translate": "Lülita tõlge"
+    "request.kbd.translate": "Lülita tõlge",
+    "menu.search": "Otsi",
+    "nav.reminders": "Meeldetuletused",
+    "nav.reports": "Aruanded",
+    "nav.settings": "Seaded",
+    "nav.section.inbox": "Postkast",
+    "nav.sidebarLabel": "Põhinavigatsioon",
+    "nav.identityAria": "Konto ja eelistused",
+    "nav.skipToContent": "Hüppa põhisisule",
+    "inbox.streams.resolved": "Lahendatud",
+    "inbox.list.heading.resolved": "Lahendatud vestlused — {count} tulemust",
+    "comingSoon.title": "Tuleb varsti",
+    "comingSoon.body":
+      "See osa on PetCura tegevuskavas. Raamistik on juba paigas, et navigeerimine tunduks stabiilne; tegelik töövoog tuleb hiljem."
   },
   ru: {
     "nav.back": "Назад",
@@ -974,7 +1000,20 @@ export const uiCopy = {
     "request.detail.list": "Запросы",
     "request.detail.notFound": "Запрос не найден.",
     "request.kbd.send": "Отправить ответ",
-    "request.kbd.translate": "Переключить перевод"
+    "request.kbd.translate": "Переключить перевод",
+    "menu.search": "Поиск",
+    "nav.reminders": "Напоминания",
+    "nav.reports": "Отчёты",
+    "nav.settings": "Настройки",
+    "nav.section.inbox": "Входящие",
+    "nav.sidebarLabel": "Основная навигация",
+    "nav.identityAria": "Аккаунт и настройки",
+    "nav.skipToContent": "Перейти к содержимому",
+    "inbox.streams.resolved": "Решено",
+    "inbox.list.heading.resolved": "Решённые запросы — {count} результатов",
+    "comingSoon.title": "Скоро",
+    "comingSoon.body":
+      "Этот раздел в плане PetCura. Каркас уже на месте — навигация стабильна; реальный рабочий процесс появится позже."
   }
 } satisfies Record<SupportedLocale, Record<string, string>>;
 

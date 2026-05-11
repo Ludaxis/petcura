@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Montserrat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { getRequestLocale } from "@/lib/locale";
 import { getResolvedThemeForSSR } from "@/lib/theme";
 import { ThemeBootstrap } from "./_components/ThemeBootstrap";
@@ -45,7 +46,7 @@ export default async function RootLayout({
         <ThemeBootstrap />
       </head>
       <body>
-        {children}
+        <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
         <Analytics />
         <SpeedInsights />
       </body>
