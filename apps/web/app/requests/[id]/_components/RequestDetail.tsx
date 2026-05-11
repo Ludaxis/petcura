@@ -74,7 +74,7 @@ export function RequestDetail({
       {/* Detail header — pet identity + crumbs + actions row */}
       <header
         data-detail-head
-        className="flex flex-col gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
+        className="flex shrink-0 flex-col gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -290,14 +290,14 @@ export function RequestDetail({
         data-detail-body
         className="flex min-h-0 flex-1 overflow-hidden"
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {paneShell}
           {/* Tablet (md–xl): inline accordions below the thread so users
               don't lose the side blocks when the right column is hidden. */}
           <aside
             aria-label={t("request.detail.sidePanel")}
             data-side-panel="inline"
-            className="hidden border-t border-[var(--line)] bg-[var(--paper)] md:block xl:hidden"
+            className="hidden shrink-0 border-t border-[var(--line)] bg-[var(--paper)] md:block xl:hidden"
           >
             <SideBlocks
               request={request}
@@ -312,15 +312,20 @@ export function RequestDetail({
         <aside
           aria-label={t("request.detail.sidePanel")}
           data-side-panel="rail"
-          className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto overscroll-contain border-l border-[var(--line)] bg-[var(--paper)] xl:block"
+          className="hidden h-full min-h-0 w-[280px] shrink-0 overflow-hidden border-l border-[var(--line)] bg-[var(--paper)] xl:flex xl:flex-col"
         >
-          <SideBlocks
-            request={request}
-            locale={locale}
-            formatDateTime={formatDateTime}
-            t={t}
-            idSuffix="rail"
-          />
+          <div
+            data-side-panel-scroll
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          >
+            <SideBlocks
+              request={request}
+              locale={locale}
+              formatDateTime={formatDateTime}
+              t={t}
+              idSuffix="rail"
+            />
+          </div>
         </aside>
       </div>
 

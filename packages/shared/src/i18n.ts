@@ -396,8 +396,7 @@ export const uiCopy = {
     "request.channel": "Channel",
     "request.aiSummary": "AI summary",
     "request.draft": "draft",
-    "request.aiNotice":
-      "AI output is advisory until staff review is stored in `ai_outputs`.",
+    "request.aiNotice": "AI summary is advisory until clinic staff review it.",
     "request.aiRiskFlags": "Risk flags",
     "request.aiUrgencySuggestion": "Suggested urgency",
     "request.aiVersion": "Prompt {version}",
@@ -747,7 +746,7 @@ export const uiCopy = {
     "request.aiSummary": "AI kokkuvõte",
     "request.draft": "mustand",
     "request.aiNotice":
-      "AI väljund on abistav, kuni töötaja ülevaatus salvestatakse tabelisse `ai_outputs`.",
+      "AI kokkuvõte on nõuandev, kuni kliiniku töötaja selle üle vaatab.",
     "request.aiRiskFlags": "Riskimärgid",
     "request.aiUrgencySuggestion": "Soovitatud kiireloomulisus",
     "request.aiVersion": "Prompt {version}",
@@ -1098,7 +1097,7 @@ export const uiCopy = {
     "request.aiSummary": "AI-резюме",
     "request.draft": "черновик",
     "request.aiNotice":
-      "AI-результат является вспомогательным, пока проверка сотрудника не сохранена в `ai_outputs`.",
+      "AI-резюме носит справочный характер, пока его не проверит сотрудник клиники.",
     "request.aiRiskFlags": "Факторы риска",
     "request.aiUrgencySuggestion": "Предложенная срочность",
     "request.aiVersion": "Промпт {version}",

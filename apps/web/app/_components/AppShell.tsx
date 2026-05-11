@@ -153,7 +153,10 @@ export async function AppShell({
         matches the Claude/Linear UX and prevents the "dead space below
         content" bug when the page is scrolled.
       */}
-      <main className="flex h-svh min-h-0 w-full flex-1 flex-col overflow-hidden bg-[var(--paper)]">
+      <main
+        data-app-shell
+        className="flex h-dvh max-h-dvh min-h-0 w-full flex-1 flex-col overflow-hidden bg-[var(--paper)]"
+      >
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-[var(--paper)] focus:px-3 focus:py-2 focus:text-[var(--ink)] focus:shadow"

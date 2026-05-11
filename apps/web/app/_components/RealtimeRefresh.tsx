@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   createDebouncedRefresh,
@@ -22,9 +22,6 @@ export function RealtimeRefresh({
   pollMs
 }: RealtimeRefreshProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const searchKey = searchParams.toString();
   const [refreshCount, setRefreshCount] = useState(0);
   const [subscriptionStatus, setSubscriptionStatus] = useState("idle");
   const targetKey = JSON.stringify(targets);
@@ -34,8 +31,6 @@ export function RealtimeRefresh({
     const { cancel, schedule } = createDebouncedRefresh(() => {
       setRefreshCount((count) => count + 1);
       router.refresh();
-      const href = searchKey ? `${pathname}?${searchKey}` : pathname;
-      router.replace(href, { scroll: false });
     }, debounceMs);
     const parsedTargets = JSON.parse(targetKey) as RealtimeRefreshTarget[];
     const channel = supabase.channel(channelName);
@@ -102,7 +97,7 @@ export function RealtimeRefresh({
       stopPolling();
       void supabase.removeChannel(channel);
     };
-  }, [channelName, debounceMs, pathname, pollMs, router, searchKey, targetKey]);
+  }, [channelName, debounceMs, pollMs, router, targetKey]);
 
   return (
     <span
