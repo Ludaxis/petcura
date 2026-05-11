@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- PetCura favicon. Sage-soft tile with a serif "P" lockup so the
+       tab matches the brand block in the sidebar. -->
+  <rect width="32" height="32" rx="7" fill="#E7EFE8"/>
+  <text x="16" y="22" text-anchor="middle"
+        font-family="Georgia, serif" font-size="20" font-weight="600"
+        fill="#3D6F4F">P</text>
+</svg>

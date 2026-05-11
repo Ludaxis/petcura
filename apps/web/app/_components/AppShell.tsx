@@ -16,6 +16,7 @@ import { signOutStaff } from "@/app/inbox/actions";
 import { getOpenReminderCount } from "@/lib/reminders";
 import { AppSidebar } from "./AppSidebar";
 import { MobileShellHeader } from "./MobileShellHeader";
+import { MobileBottomNav } from "./MobileBottomNav";
 import type { NavCounts } from "@/lib/nav/sidebar-nav";
 
 /**
@@ -56,6 +57,15 @@ function clinicInitialsFrom(name: string) {
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
   return initials || name.slice(0, 2).toUpperCase();
+}
+
+function userInitialsFrom(email: string) {
+  // Mirrors the sidebar identity-card derivation so the bottom-nav "Me"
+  // avatar matches what the user already sees in the rail.
+  const source = email.trim();
+  const parts = source.split(/[\s.@_-]+/).filter(Boolean).slice(0, 2);
+  const joined = parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+  return joined || "?";
 }
 
 export async function AppShell({
@@ -152,9 +162,23 @@ export async function AppShell({
           title={pageTitle ?? t("nav.headerTitle.inbox")}
           openMenuLabel={t("nav.openMenu")}
         />
-        <div id="main-content" className="flex flex-1 flex-col">
+        {/*
+          Pad the bottom on mobile so content never sits under the
+          persistent MobileBottomNav. The `md:pb-0` reset prevents the
+          inset bleeding into the desktop layout, where the rail sidebar
+          replaces the bottom nav entirely.
+        */}
+        <div
+          id="main-content"
+          className="flex flex-1 flex-col pb-16 md:pb-0"
+        >
           {children}
         </div>
+        <MobileBottomNav
+          locale={locale}
+          meInitials={userInitialsFrom(staffContext.user.email ?? "")}
+          meAriaLabel={t("menu.ariaLabel")}
+        />
       </main>
     </SidebarProvider>
   );

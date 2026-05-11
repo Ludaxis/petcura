@@ -252,6 +252,20 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
             label: streamLabels[value]
           }))}
           locale={locale}
+          bulkLabels={{
+            selected: t("inbox.bulk.selected"),
+            resolve: t("inbox.bulk.resolve"),
+            assign: t("inbox.bulk.assign"),
+            cancel: t("inbox.bulk.cancel"),
+            resolveDone: t("inbox.bulk.resolveDone"),
+            assignDone: t("inbox.bulk.assignDone"),
+            error: t("inbox.bulk.error"),
+            rowToggleLabel: t("inbox.bulk.rowToggleLabel")
+          }}
+          realtimeToastLabel={t("inbox.realtime.newRequest")}
+          ownerNameByRowId={Object.fromEntries(
+            rows.map((r) => [r.id, r.ownerName])
+          )}
           paletteLabels={{
             dialogLabel: t("inbox.cmdk.dialogLabel"),
             placeholder: t("inbox.cmdk.placeholder"),

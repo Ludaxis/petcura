@@ -104,6 +104,26 @@ export function UserMenu({
     setPanel("root");
   }, []);
 
+  // Bridge: MobileBottomNav "Me" tab dispatches `petcura:open-user-menu` so
+  // we have a single UserMenu instance (the sidebar identity card) handle
+  // both the desktop click and the mobile tap. Toggling instead of just
+  // opening keeps tap-to-close on the same tab working.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onOpen = () => {
+      setOpen((v) => !v);
+      // Focus the trigger so the popover anchors and Esc restores focus
+      // back to a stable element when the user dismisses it.
+      requestAnimationFrame(() => triggerRef.current?.focus());
+    };
+    window.addEventListener("petcura:open-user-menu", onOpen as EventListener);
+    return () =>
+      window.removeEventListener(
+        "petcura:open-user-menu",
+        onOpen as EventListener
+      );
+  }, []);
+
   // Manage focus + Escape + click-outside while open.
   useEffect(() => {
     if (!open) return;

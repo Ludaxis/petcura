@@ -535,7 +535,20 @@ export const uiCopy = {
     "reminders.error": "Could not update reminder",
     "comingSoon.title": "Coming soon",
     "comingSoon.body":
-      "This area is part of the PetCura roadmap. The shell is in place so the navigation feels stable; the live workflow lands in a later slice."
+      "This area is part of the PetCura roadmap. The shell is in place so the navigation feels stable; the live workflow lands in a later slice.",
+    "inbox.bulk.selected": "{count} selected",
+    "inbox.bulk.resolve": "Resolve",
+    "inbox.bulk.assign": "Assign to me",
+    "inbox.bulk.cancel": "Cancel",
+    "inbox.bulk.resolveDone": "Resolved {count}",
+    "inbox.bulk.assignDone": "Assigned {count} to you",
+    "inbox.bulk.rowToggleLabel": "Select request",
+    "inbox.bulk.error": "Bulk action failed",
+    "inbox.realtime.newRequest": "New request from {name}",
+    "nav.bottom.label": "Primary mobile navigation",
+    "nav.bottom.inbox": "Inbox",
+    "nav.bottom.search": "Search",
+    "nav.bottom.me": "Me"
   },
   et: {
     "nav.back": "Tagasi",
@@ -870,7 +883,20 @@ export const uiCopy = {
     "reminders.error": "Meeldetuletust ei saanud uuendada",
     "comingSoon.title": "Tuleb varsti",
     "comingSoon.body":
-      "See osa on PetCura tegevuskavas. Raamistik on juba paigas, et navigeerimine tunduks stabiilne; tegelik töövoog tuleb hiljem."
+      "See osa on PetCura tegevuskavas. Raamistik on juba paigas, et navigeerimine tunduks stabiilne; tegelik töövoog tuleb hiljem.",
+    "inbox.bulk.selected": "Valitud: {count}",
+    "inbox.bulk.resolve": "Märgi lahendatuks",
+    "inbox.bulk.assign": "Määra mulle",
+    "inbox.bulk.cancel": "Tühista",
+    "inbox.bulk.resolveDone": "Lahendatud: {count}",
+    "inbox.bulk.assignDone": "Sulle määratud: {count}",
+    "inbox.bulk.rowToggleLabel": "Vali pöördumine",
+    "inbox.bulk.error": "Hulgitoiming ebaõnnestus",
+    "inbox.realtime.newRequest": "Uus pöördumine: {name}",
+    "nav.bottom.label": "Põhinavigatsioon mobiilis",
+    "nav.bottom.inbox": "Postkast",
+    "nav.bottom.search": "Otsi",
+    "nav.bottom.me": "Mina"
   },
   ru: {
     "nav.back": "Назад",
@@ -1206,7 +1232,20 @@ export const uiCopy = {
     "reminders.error": "Не удалось обновить напоминание",
     "comingSoon.title": "Скоро",
     "comingSoon.body":
-      "Этот раздел в плане PetCura. Каркас уже на месте — навигация стабильна; реальный рабочий процесс появится позже."
+      "Этот раздел в плане PetCura. Каркас уже на месте — навигация стабильна; реальный рабочий процесс появится позже.",
+    "inbox.bulk.selected": "Выбрано: {count}",
+    "inbox.bulk.resolve": "Закрыть",
+    "inbox.bulk.assign": "Назначить мне",
+    "inbox.bulk.cancel": "Отменить",
+    "inbox.bulk.resolveDone": "Закрыто: {count}",
+    "inbox.bulk.assignDone": "Назначено вам: {count}",
+    "inbox.bulk.rowToggleLabel": "Выбрать запрос",
+    "inbox.bulk.error": "Не удалось выполнить действие",
+    "inbox.realtime.newRequest": "Новый запрос от {name}",
+    "nav.bottom.label": "Основная мобильная навигация",
+    "nav.bottom.inbox": "Входящие",
+    "nav.bottom.search": "Поиск",
+    "nav.bottom.me": "Я"
   }
 } satisfies Record<SupportedLocale, Record<string, string>>;
 

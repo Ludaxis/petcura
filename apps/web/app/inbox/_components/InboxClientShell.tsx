@@ -6,6 +6,12 @@ import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
 import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
 import { CommandPalette, type CommandPaletteRef } from "./CommandPalette";
 import { InboxKeyboard } from "./InboxKeyboard";
+import { InboxBulkProvider } from "./InboxBulkContext";
+import {
+  InboxBulkLayer,
+  type InboxBulkLayerLabels
+} from "./InboxBulkLayer";
+import { useInboxRealtime } from "./useInboxRealtime";
 import type { InboxStream } from "@/lib/inbox/queries";
 
 type InboxClientShellProps = {
@@ -24,6 +30,13 @@ type InboxClientShellProps = {
   paletteLabels: React.ComponentProps<typeof CommandPalette>["labels"];
   keyboardLabels: React.ComponentProps<typeof InboxKeyboard>["labels"];
   shortcuts: React.ComponentProps<typeof InboxKeyboard>["shortcuts"];
+  bulkLabels: InboxBulkLayerLabels;
+  realtimeToastLabel: string; // "New request from {name}"
+  /** Indexed by row id — used by useInboxRealtime to look up owner name
+   *  for the toast when a new INSERT arrives that we already have a
+   *  row for. New inserts beyond the rendered page fall back to a
+   *  generic name. */
+  ownerNameByRowId: Record<string, string>;
 };
 
 export function InboxClientShell({
@@ -35,7 +48,10 @@ export function InboxClientShell({
   locale,
   paletteLabels,
   keyboardLabels,
-  shortcuts
+  shortcuts,
+  bulkLabels,
+  realtimeToastLabel,
+  ownerNameByRowId
 }: InboxClientShellProps) {
   const paletteRef = useRef<CommandPaletteRef>(null);
   const searchParams = useSearchParams();
@@ -81,6 +97,18 @@ export function InboxClientShell({
 
   const currentRowId = rowIds[safeFocusedIndex] ?? null;
 
+  // Realtime toast + favicon dot. Lives next to the RealtimeRefresh which
+  // already drives the list re-render; this hook adds the in-app surfaces
+  // (sage-soft toast in the lower right + favicon notification when the
+  // tab is unfocused). The visible-tab guard avoids double-announcing
+  // while RealtimeRefresh refreshes the page on focus.
+  useInboxRealtime({
+    clinicId,
+    rowIds,
+    ownerNameByRowId,
+    toastLabelTemplate: realtimeToastLabel
+  });
+
   return (
     <>
       <RealtimeRefresh
@@ -92,6 +120,14 @@ export function InboxClientShell({
         pollMs={45_000}
         reloadFallbackMs={1_500}
       />
+
+      <InboxBulkProvider rowIds={rowIds}>
+        <InboxBulkLayer
+          locale={locale}
+          rowIds={rowIds}
+          labels={bulkLabels}
+        />
+      </InboxBulkProvider>
 
       <InboxKeyboard
         rowIds={rowIds}
