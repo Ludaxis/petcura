@@ -18,6 +18,9 @@ import { listAdminClinics } from "@/lib/admin/bootstrap";
 import { requireSuperAdminContext } from "@/lib/auth/super-admin";
 import { requirePublicEnv } from "@/lib/env";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { getThemePreference } from "@/lib/theme";
+import { signOutStaff } from "@/app/inbox/actions";
+import { UserMenu } from "@/app/_components/UserMenu";
 import {
   addClinicStaff,
   createClinic,
@@ -61,6 +64,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const superAdmin = await requireSuperAdminContext(locale);
   const clinics = await listAdminClinics();
   const env = requirePublicEnv();
+  const themePreference = await getThemePreference();
   const statusKey = getStatusCopy(getSearchParam(params?.admin_status));
   const hasError = Boolean(getSearchParam(params?.admin_error));
   const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -370,6 +374,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           );
         })}
       </section>
+      <UserMenu
+        email={superAdmin.email}
+        locale={locale}
+        currentPath="/admin"
+        initialTheme={themePreference}
+        labels={{
+          ariaLabel: t("menu.ariaLabel"),
+          signedInAs: t("menu.signedInAs"),
+          theme: t("menu.theme"),
+          themeLight: t("menu.themeLight"),
+          themeDark: t("menu.themeDark"),
+          themeSystem: t("menu.themeSystem"),
+          language: t("menu.language"),
+          help: t("menu.help"),
+          helpHref: "mailto:support@petcura.app",
+          signOut: t("auth.logout")
+        }}
+        signOutAction={signOutStaff}
+      />
     </main>
   );
 }

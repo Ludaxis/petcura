@@ -27,6 +27,7 @@ import { InboxClientShell } from "./_components/InboxClientShell";
 import { InboxBoard } from "./_components/InboxBoard";
 import { InboxEmptyState, InboxSkeleton } from "./_components/InboxStates";
 import { ThemeToggle } from "@/app/_components/ThemeToggle";
+import { UserMenu } from "@/app/_components/UserMenu";
 
 type InboxPageProps = {
   searchParams?: Promise<{
@@ -320,6 +321,26 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
           errorAssign: t("inbox.toast.assignError")
         }}
         shortcuts={shortcuts}
+      />
+      <UserMenu
+        email={staffContext.user.email ?? ""}
+        clinicName={staffContext.clinic.name}
+        locale={locale}
+        currentPath="/inbox"
+        initialTheme={themePreference}
+        labels={{
+          ariaLabel: t("menu.ariaLabel"),
+          signedInAs: t("menu.signedInAs"),
+          theme: t("menu.theme"),
+          themeLight: t("menu.themeLight"),
+          themeDark: t("menu.themeDark"),
+          themeSystem: t("menu.themeSystem"),
+          language: t("menu.language"),
+          help: t("menu.help"),
+          helpHref: "mailto:support@petcura.app",
+          signOut: t("auth.logout")
+        }}
+        signOutAction={signOutStaff}
       />
     </main>
   );

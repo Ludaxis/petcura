@@ -15,6 +15,8 @@ import { RequestDetail } from "./_components/RequestDetail";
 import { RequestPaneShell } from "./_components/RequestPaneShell";
 import type { ThreadMessage } from "./_components/Thread";
 import type { DraftPayload } from "./_components/AiDraftCard";
+import { signOutStaff } from "@/app/inbox/actions";
+import { UserMenu } from "@/app/_components/UserMenu";
 
 type RequestDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -319,6 +321,26 @@ export default async function RequestDetailPage({
         formatDateTime={formatDateTime}
         currentStaffUserId={staffContext.user.id}
         paneShell={paneShell}
+      />
+      <UserMenu
+        email={staffContext.user.email ?? ""}
+        clinicName={staffContext.clinic.name}
+        locale={locale}
+        currentPath={`/requests/${id}`}
+        initialTheme={themePreference}
+        labels={{
+          ariaLabel: t("menu.ariaLabel"),
+          signedInAs: t("menu.signedInAs"),
+          theme: t("menu.theme"),
+          themeLight: t("menu.themeLight"),
+          themeDark: t("menu.themeDark"),
+          themeSystem: t("menu.themeSystem"),
+          language: t("menu.language"),
+          help: t("menu.help"),
+          helpHref: "mailto:support@petcura.app",
+          signOut: t("auth.logout")
+        }}
+        signOutAction={signOutStaff}
       />
     </main>
   );
