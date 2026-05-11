@@ -21,8 +21,13 @@ export type GatewayJsonResult<T> =
       latencyMs: number;
     };
 
+function readToken(name: "AI_GATEWAY_API_KEY" | "VERCEL_OIDC_TOKEN") {
+  const token = process.env[name]?.trim();
+  return token ? token : null;
+}
+
 export function getAiGatewayToken() {
-  return process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN ?? null;
+  return readToken("AI_GATEWAY_API_KEY") ?? readToken("VERCEL_OIDC_TOKEN");
 }
 
 export function hasAiGatewayCredentials() {

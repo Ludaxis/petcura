@@ -17,6 +17,7 @@ import { generateJsonWithGateway } from "./gateway";
 const supportedLocales = ["en", "et", "ru"] as const satisfies readonly SupportedLocale[];
 const summaryPromptVersion = "summary.v1.2026-05-11";
 const translationPromptVersion = "translation.v1.2026-05-11";
+const defaultAnthropicHaikuModel = "anthropic/claude-haiku-4.5";
 const fallbackSummaryModel = "petcura/rules-fallback";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -52,13 +53,11 @@ export type OwnerMessageAiResult = {
 };
 
 function getSummaryModel() {
-  return process.env.PETCURA_AI_SUMMARY_MODEL ?? "anthropic/claude-sonnet-4.6";
+  return process.env.PETCURA_AI_SUMMARY_MODEL ?? defaultAnthropicHaikuModel;
 }
 
 function getTranslationModel() {
-  return (
-    process.env.PETCURA_AI_TRANSLATION_MODEL ?? "anthropic/claude-sonnet-4.6"
-  );
+  return process.env.PETCURA_AI_TRANSLATION_MODEL ?? defaultAnthropicHaikuModel;
 }
 
 function toJson(value: unknown): Json {
