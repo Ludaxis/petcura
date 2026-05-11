@@ -35,9 +35,9 @@ export function RequestList({
   return (
     <nav
       aria-label={ariaLabel}
-      className="hidden h-full w-[320px] shrink-0 flex-col overflow-hidden border-r border-[var(--line)] bg-[var(--paper)] lg:flex"
+      className="hidden min-h-0 w-[320px] shrink-0 flex-col self-stretch overflow-hidden border-r border-[var(--line)] bg-[var(--paper)] lg:flex"
     >
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {rows.length === 0 ? (
           <p className="px-4 py-6 text-[12.5px] text-[var(--muted)]">
             {emptyLabel}

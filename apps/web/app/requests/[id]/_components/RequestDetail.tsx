@@ -70,7 +70,7 @@ export function RequestDetail({
       : staff.role;
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col self-stretch overflow-hidden bg-[var(--paper)]">
       {/* Detail header — pet identity + crumbs + actions row */}
       <header
         data-detail-head
@@ -290,7 +290,7 @@ export function RequestDetail({
         data-detail-body
         className="flex min-h-0 flex-1 overflow-hidden"
       >
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {paneShell}
           {/* Tablet (md–xl): inline accordions below the thread so users
               don't lose the side blocks when the right column is hidden. */}
@@ -312,7 +312,7 @@ export function RequestDetail({
         <aside
           aria-label={t("request.detail.sidePanel")}
           data-side-panel="rail"
-          className="hidden w-[280px] shrink-0 overflow-y-auto border-l border-[var(--line)] bg-[var(--paper)] xl:block"
+          className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto overscroll-contain border-l border-[var(--line)] bg-[var(--paper)] xl:block"
         >
           <SideBlocks
             request={request}
