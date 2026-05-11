@@ -198,13 +198,22 @@ test.describe("Inbox list view", () => {
       // that can leave React event handlers stale).
       await page.goto(`${baseURL}/inbox?lang=en`);
 
-      // Pick dark inside the Theme radiogroup specifically so we don't match
-      // any other "dark"-named radio.
-      const themeGroup = page
-        .getByRole("radiogroup", { name: /^Theme$|^Teema$|^Тема$/i });
-      await expect(themeGroup).toBeVisible();
-      await themeGroup
-        .getByRole("radio", { name: /^Dark$|^Tume$|^Тёмная$/i })
+      // Pick dark from the account menu. Theme and language now live in the
+      // bottom-left user menu instead of the top-right toolbar.
+      await page
+        .getByRole("button", {
+          name: /account menu|konto menüü|меню аккаунта/i
+        })
+        .click();
+      const accountMenu = page.getByRole("menu", {
+        name: /account menu|konto menüü|меню аккаунта/i
+      });
+      await expect(accountMenu).toBeVisible();
+      await accountMenu
+        .getByRole("menuitem", { name: /^Theme\b|^Teema\b|^Тема\b/i })
+        .click();
+      await accountMenu
+        .getByRole("menuitemradio", { name: /^Dark$|^Tume$|^Тёмная$/i })
         .click();
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       await page.reload();

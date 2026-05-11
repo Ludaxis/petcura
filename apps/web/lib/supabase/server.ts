@@ -2,6 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { requirePublicEnv } from "@/lib/env";
 
+const noStoreFetch: typeof fetch = (input, init) =>
+  fetch(input, { ...init, cache: "no-store" });
+
 export async function createClient() {
   const env = requirePublicEnv();
   const cookieStore = await cookies();
@@ -24,6 +27,9 @@ export async function createClient() {
             // them. Mutating routes and actions perform the actual write.
           }
         }
+      },
+      global: {
+        fetch: noStoreFetch
       }
     }
   );

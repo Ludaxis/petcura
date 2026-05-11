@@ -27,6 +27,9 @@ import { InboxBoard } from "./_components/InboxBoard";
 import { InboxEmptyState, InboxSkeleton } from "./_components/InboxStates";
 import { UserMenu } from "@/app/_components/UserMenu";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type InboxPageProps = {
   searchParams?: Promise<{
     lang?: string | string[];
