@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   createDebouncedRefresh,
@@ -13,45 +13,33 @@ type RealtimeRefreshProps = {
   targets: RealtimeRefreshTarget[];
   debounceMs?: number;
   pollMs?: number;
-  reloadFallbackMs?: number;
 };
 
 export function RealtimeRefresh({
   channelName,
   targets,
   debounceMs = 600,
-  pollMs,
-  reloadFallbackMs = 0
+  pollMs
 }: RealtimeRefreshProps) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchKey = searchParams.toString();
   const [refreshCount, setRefreshCount] = useState(0);
+  const [subscriptionStatus, setSubscriptionStatus] = useState("idle");
   const targetKey = JSON.stringify(targets);
 
   useEffect(() => {
     const supabase = createClient();
-    let reloadFallback: ReturnType<typeof setTimeout> | null = null;
-    const cancelReloadFallback = () => {
-      if (!reloadFallback) return;
-      clearTimeout(reloadFallback);
-      reloadFallback = null;
-    };
     const { cancel, schedule } = createDebouncedRefresh(() => {
-      if (document.visibilityState !== "visible") return;
       setRefreshCount((count) => count + 1);
-      startTransition(() => router.refresh());
-      cancelReloadFallback();
-      if (reloadFallbackMs > 0) {
-        reloadFallback = setTimeout(() => {
-          reloadFallback = null;
-          if (document.visibilityState === "visible") {
-            window.location.reload();
-          }
-        }, reloadFallbackMs);
-      }
+      router.refresh();
+      const href = searchKey ? `${pathname}?${searchKey}` : pathname;
+      router.replace(href, { scroll: false });
     }, debounceMs);
     const parsedTargets = JSON.parse(targetKey) as RealtimeRefreshTarget[];
     const channel = supabase.channel(channelName);
+    let disposed = false;
     const onPostgresChanges = channel.on.bind(channel) as (
       event: "postgres_changes",
       filter: {
@@ -82,7 +70,17 @@ export function RealtimeRefresh({
       onPostgresChanges("postgres_changes", postgresFilter, schedule);
     }
 
-    channel.subscribe();
+    void supabase.auth.getSession().then(({ data }) => {
+      if (disposed) return;
+      const accessToken = data.session?.access_token;
+      if (accessToken) {
+        supabase.realtime.setAuth(accessToken);
+      }
+
+      channel.subscribe((status) => {
+        setSubscriptionStatus(status);
+      });
+    });
 
     let interval: ReturnType<typeof setInterval> | null = null;
     const stopPolling = () => {
@@ -96,39 +94,21 @@ export function RealtimeRefresh({
         schedule();
       }, pollMs);
     };
-    const syncPolling = () => {
-      if (document.visibilityState === "visible") {
-        startPolling();
-        return;
-      }
-
-      stopPolling();
-    };
-
-    syncPolling();
-    document.addEventListener("visibilitychange", syncPolling);
+    startPolling();
 
     return () => {
+      disposed = true;
       cancel();
-      cancelReloadFallback();
       stopPolling();
-      document.removeEventListener("visibilitychange", syncPolling);
       void supabase.removeChannel(channel);
     };
-  }, [
-    channelName,
-    debounceMs,
-    pollMs,
-    reloadFallbackMs,
-    router,
-    startTransition,
-    targetKey
-  ]);
+  }, [channelName, debounceMs, pathname, pollMs, router, searchKey, targetKey]);
 
   return (
     <span
       data-realtime-channel={channelName}
       data-realtime-refresh-count={refreshCount}
+      data-realtime-status={subscriptionStatus}
       hidden
     />
   );

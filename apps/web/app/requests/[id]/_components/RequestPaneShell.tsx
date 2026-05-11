@@ -166,8 +166,7 @@ export function RequestPaneShell({
             filter: eqFilter("clinic_id", clinicId)
           }
         ]}
-        pollMs={30_000}
-        reloadFallbackMs={1_500}
+        pollMs={5_000}
       />
 
       <div
@@ -179,8 +178,9 @@ export function RequestPaneShell({
         {announce}
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Thread
+          key={requestId}
           requestId={requestId}
           messages={messages}
           locale={locale}

@@ -361,6 +361,53 @@ function SideBlocks({
     "font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]";
   return (
     <>
+      {request.aiSummary ? (
+        <details
+          open
+          data-ai-summary
+          className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+        >
+          <summary className="flex cursor-pointer items-center justify-between">
+            <h2 className={headingClass}>{t("request.aiSummary")}</h2>
+            <ChevronDown aria-hidden="true" size={12} />
+          </summary>
+          <div className="mt-2.5 rounded-[var(--radius)] border border-[var(--line-2)] bg-[var(--soft)] p-3">
+            <p className="break-words text-[12.5px] leading-5 text-[var(--ink-2)]">
+              {request.aiSummary}
+            </p>
+            {request.riskFlags.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {request.riskFlags.map((flag) => (
+                  <span
+                    key={flag}
+                    className="rounded-full bg-[var(--red-soft)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--red)]"
+                  >
+                    {flag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {request.urgencySuggestion ? (
+              <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                {t("request.aiUrgencySuggestion")}:{" "}
+                {getUrgencyLabel(request.urgencySuggestion, locale)}
+              </p>
+            ) : null}
+            <p className="mt-2 text-[11.5px] leading-5 text-[var(--muted)]">
+              {t("request.aiNotice")}
+            </p>
+            {request.aiSummaryVersion ? (
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+                {t("request.aiVersion").replace(
+                  "{version}",
+                  request.aiSummaryVersion
+                )}
+              </p>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
+
       <details
         open
         className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"

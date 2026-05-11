@@ -464,6 +464,9 @@ test.describe("Request detail tri-pane", () => {
       } else {
         await expect(rowLocator).toHaveCount(1);
       }
+      await expect(
+        page.locator('[data-side-panel="rail"] [data-ai-summary]')
+      ).toContainText(`${petName} has not eaten since yesterday.`);
       const aiCard = page.getByRole("region", {
         name: /AI draft suggestion|AI mustandi soovitus|Подсказка AI-черновика/i
       });
