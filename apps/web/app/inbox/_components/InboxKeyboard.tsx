@@ -8,13 +8,6 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogBody
-} from "@/components/ui/dialog";
-import {
   resolveInboxRequest,
   assignInboxRequestToMe
 } from "../_actions";
@@ -61,6 +54,30 @@ function isEditable(target: EventTarget | null): boolean {
   return false;
 }
 
+function trapTabKey(
+  event: KeyboardEvent,
+  container: HTMLElement | null
+) {
+  if (!container) return;
+  const focusable = container.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  if (focusable.length === 0) return;
+  const first = focusable.item(0);
+  const last = focusable.item(focusable.length - 1);
+  if (!first || !last) return;
+  const active = document.activeElement as HTMLElement | null;
+  if (event.shiftKey) {
+    if (active === first || !container.contains(active)) {
+      event.preventDefault();
+      last.focus();
+    }
+  } else if (active === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 export function InboxKeyboard({
   rowIds,
   hrefForRow,
@@ -76,6 +93,9 @@ export function InboxKeyboard({
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const liveRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   // Seed focused index from ?id= on mount and when the URL changes externally.
   useEffect(() => {
@@ -154,32 +174,35 @@ export function InboxKeyboard({
     }, 1500);
   }, [router]);
 
-  // Open/close the shortcut sheet. Focus trap, Escape handling, and focus
-  // restoration are owned by the Dialog primitive — call sites only flip
-  // open state.
+  // Open/close the shortcut sheet with focus restoration.
   const openSheet = useCallback(() => {
+    lastFocusedRef.current = document.activeElement as HTMLElement | null;
     setShowSheet(true);
   }, []);
   const closeSheet = useCallback(() => {
     setShowSheet(false);
+    const target = lastFocusedRef.current;
+    if (target && typeof target.focus === "function") {
+      target.focus();
+    }
   }, []);
+
+  // Auto-focus the close button when the sheet opens.
+  useEffect(() => {
+    if (!showSheet) return;
+    const id = window.setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [showSheet]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Dialog primitive owns Tab trapping, Escape, and focus restoration
-      // for the shortcut sheet. Global row-navigation hotkeys (J/K/E/A) must
-      // stay off while it's open so the cheat sheet doesn't double-fire.
-      if (showSheet) {
-        // ? toggles the sheet shut (otherwise typing ? in the sheet appears
-        // unresponsive). Everything else is allowed to bubble into the
-        // dialog where Radix handles Tab/Escape.
-        if (e.key === "?") {
-          e.preventDefault();
-          closeSheet();
-        }
+      // Trap Tab inside the sheet while it is open.
+      if (showSheet && e.key === "Tab") {
+        trapTabKey(e, sheetRef.current);
         return;
       }
-
       // Modal toggles always available
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -191,8 +214,16 @@ export function InboxKeyboard({
 
       if (e.key === "?") {
         e.preventDefault();
-        openSheet();
+        if (showSheet) closeSheet();
+        else openSheet();
         return;
+      }
+      if (e.key === "Escape") {
+        if (showSheet) {
+          e.preventDefault();
+          closeSheet();
+          return;
+        }
       }
 
       if (rowIds.length === 0) return;
@@ -290,26 +321,37 @@ export function InboxKeyboard({
           {toast}
         </div>
       ) : null}
-      <Dialog
-        open={showSheet}
-        onOpenChange={(next) => {
-          if (!next) closeSheet();
-        }}
-      >
-        <DialogContent
-          size="md"
+      {showSheet ? (
+        <div
+          role="dialog"
+          aria-modal="true"
           aria-label={labels.sheetTitle}
-          closeLabel={labels.close}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={closeSheet}
         >
-          <DialogHeader>
-            <DialogTitle>{labels.sheetTitle}</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
+          <div
+            ref={sheetRef}
+            className="w-full max-w-md rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-[var(--ink)]">
+                {labels.sheetTitle}
+              </h2>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={closeSheet}
+                className="rounded-[var(--radius)] px-2 py-1 text-[12px] text-[var(--muted)] hover:bg-[var(--soft)]"
+              >
+                {labels.close}
+              </button>
+            </div>
             <ul className="flex flex-col gap-1.5">
               {shortcuts.map((s) => (
                 <li
                   key={s.keys + s.description}
-                  className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 py-1.5 text-[12.5px] text-[var(--ink)] hover:bg-[var(--soft)]"
+                  className="flex items-center justify-between gap-3 rounded-[6px] px-2 py-1.5 text-[12.5px] text-[var(--ink)] hover:bg-[var(--soft)]"
                 >
                   <span>{s.description}</span>
                   <kbd className="rounded border border-[var(--line)] bg-[var(--soft)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--ink-2)]">
@@ -318,9 +360,9 @@ export function InboxKeyboard({
                 </li>
               ))}
             </ul>
-          </DialogBody>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -18,7 +18,7 @@ export function ComingSoonCard({
   comingSoonTitle: string;
 }) {
   return (
-    <section className="mx-auto flex w-full min-h-0 max-w-3xl flex-1 flex-col gap-4 overflow-y-auto px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <section className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-6 sm:p-8">
         <div className="flex items-center gap-3">
           <span

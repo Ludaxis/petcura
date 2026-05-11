@@ -23,7 +23,7 @@ const buttonVariants = {
 };
 
 const buttonSizes = {
-  sm: "h-7 px-2.5 text-[11.5px] rounded-[var(--radius-xs)]",
+  sm: "h-7 px-2.5 text-[11.5px] rounded-[5px]",
   md: "h-10 px-3 text-sm rounded-[var(--radius)]"
 };
 

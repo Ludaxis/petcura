@@ -303,12 +303,7 @@ export default async function RequestDetailPage({
         users land on the detail panel and use the sidebar to walk back
         to /inbox. RequestRail was removed; AppSidebar subsumes its job.
       */}
-      {/*
-        AppShell main is h-svh overflow-hidden, so this fills it (`h-full`)
-        instead of redoing the viewport calc. The list and detail own their
-        own scroll containers below.
-      */}
-      <div className="flex h-full w-full min-w-0 flex-1 overflow-hidden">
+      <div className="flex h-[calc(100svh-3rem)] w-full min-w-0 overflow-hidden md:h-svh">
         <RequestList
           rows={listRows}
           currentRequestId={request.id}

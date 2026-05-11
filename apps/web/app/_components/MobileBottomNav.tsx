@@ -105,7 +105,7 @@ export function MobileBottomNav({
   // the colour fade entirely.
   const tabClass = (active: boolean) =>
     cn(
-      "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-2 text-[10.5px] font-medium",
+      "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-2 text-[10.5px] font-medium",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]",
       !prefersReducedMotion && "transition-colors",
       active

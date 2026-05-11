@@ -47,20 +47,8 @@
   --color-sidebar-accent-foreground: var(--primary-strong);
   --color-sidebar-border: var(--line);
   --color-sidebar-ring: var(--primary);
-  /* shadcn's `rounded-sm/md/lg/xl` utilities resolve here. Aligned onto the
-     PetCura radius scale defined in `:root` below — that scale is what app
-     code reaches for via `rounded-[var(--radius-xs|sm|md|lg)]`, and the
-     mapping here keeps shadcn primitives (Button, Input, DropdownMenu,
-     Sidebar, Sheet — all of which ship `rounded-lg`) reading the same 8px
-     base so the surfaces don't drift.
-
-         shadcn --radius-sm  → PetCura --radius-sm  (6px)  tags, kbd
-         shadcn --radius-md  → PetCura --radius     (8px)  inputs, surfaces
-         shadcn --radius-lg  → PetCura --radius     (8px)  cards
-         shadcn --radius-xl  → PetCura --radius-lg  (12px) modals
-   */
   --radius-sm: 6px;
-  --radius-md: 8px;
+  --radius-md: 7px;
   --radius-lg: 8px;
   --radius-xl: 12px;
 }
@@ -95,28 +83,7 @@
   --surface: var(--paper);
   --surface-soft: var(--soft);
 
-  /* PetCura radius scale. `--radius` (the base) is used heavily across the
-   * app via `rounded-[var(--radius)]` — kept at 8px so nothing else moves.
-   * The xs/sm/md/lg siblings exist so component code can stop reaching for
-   * ad-hoc `rounded-[5px]` / `rounded-[10px]` / `rounded-[12px]` literals
-   * — those are now `rounded-[var(--radius-xs|md|lg)]` respectively.
-   *
-   *   xs = 5px   segmented-control segments, small chips, inline tags
-   *   sm = 6px   shortcut-row hover, tight pills            (= @theme inline)
-   *   base = 8px standard surfaces, inputs, buttons, cards   (= @theme inline)
-   *   md = 10px  composer textarea, owner bubbles, toast cards
-   *   lg = 12px  modals, dropdowns, large overlays           (= @theme inline)
-   *
-   * `--radius-sm` and `--radius-lg` are re-declared here for clarity even
-   * though `@theme inline` above already emits them — same value, single
-   * source of truth read by both shadcn (utility classes) and app code
-   * (`rounded-[var(--radius-sm)]`).
-   */
-  --radius-xs: 5px;
-  --radius-sm: 6px;
   --radius: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
 
   --font-sans:
     var(--font-montserrat), "Montserrat", ui-sans-serif, system-ui, -apple-system,

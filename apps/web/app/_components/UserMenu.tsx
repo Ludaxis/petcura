@@ -247,7 +247,7 @@ export function UserMenu({
       role="menu"
       aria-label={labels.ariaLabel}
       className={cn(
-        "w-[280px] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] shadow-xl",
+        "w-[280px] overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--paper)] shadow-xl",
         isSidebar
           ? // Anchor above the identity card. left:0 keeps it flush with the
             // sidebar's left edge; the +8px adds a small visual gap.
@@ -551,7 +551,7 @@ function SubPanel({
           type="button"
           onClick={onBack}
           aria-label="Back"
-          className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--muted)] transition hover:bg-[var(--soft)] hover:text-[var(--ink)]"
+          className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[var(--muted)] transition hover:bg-[var(--soft)] hover:text-[var(--ink)]"
         >
           <ChevronRight
             size={14}

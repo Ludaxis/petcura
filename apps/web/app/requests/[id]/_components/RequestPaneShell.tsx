@@ -166,7 +166,8 @@ export function RequestPaneShell({
             filter: eqFilter("clinic_id", clinicId)
           }
         ]}
-        pollMs={5_000}
+        pollMs={30_000}
+        reloadFallbackMs={1_500}
       />
 
       <div

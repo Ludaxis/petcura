@@ -7,18 +7,12 @@ import {
   useState
 } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogBody
-} from "@/components/ui/dialog";
+import { Button } from "@petcura/ui";
 import {
   resolveInboxRequest,
   assignInboxRequestToMe
 } from "@/app/inbox/_actions";
-import { isEditableTarget } from "@/app/_components/useFocusTrap";
+import { isEditableTarget, trapTabKey } from "@/app/_components/useFocusTrap";
 
 type Shortcut = {
   keys: string;
@@ -66,43 +60,58 @@ export function RequestKeyboard({
   const router = useRouter();
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 1500);
   }, []);
 
-  // Dialog primitive handles focus trap, Escape, focus restoration. The
-  // sheet itself only flips its open flag.
   const openSheet = useCallback(() => {
+    lastFocusedRef.current =
+      typeof document !== "undefined"
+        ? (document.activeElement as HTMLElement | null)
+        : null;
     setShowSheet(true);
   }, []);
   const closeSheet = useCallback(() => {
     setShowSheet(false);
+    const target = lastFocusedRef.current;
+    if (target && typeof target.focus === "function") {
+      target.focus();
+    }
   }, []);
 
   useEffect(() => {
+    if (!showSheet) return;
+    const id = window.setTimeout(() => {
+      const close = sheetRef.current?.querySelector<HTMLButtonElement>(
+        "[data-sheet-close]"
+      );
+      close?.focus();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [showSheet]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Block global hotkeys when ANY modal dialog is open (e.g. the AI
-      // draft Edit modal, the shortcut sheet, the command palette). Radix
-      // Dialog tags its content with `data-state="open"` while the dialog
-      // is visible; querying that lets us hand control back to the dialog
-      // and its own keyboard wiring.
+      // Block global hotkeys when ANOTHER modal dialog is open (e.g. the AI
+      // draft Edit modal). The shortcut sheet itself owns its keys via the
+      // showSheet branches below.
       if (typeof document !== "undefined") {
         const openDialog = document.querySelector(
-          '[data-slot="dialog-content"][data-state="open"]'
+          '[role="dialog"][aria-modal="true"]'
         );
-        if (openDialog) {
-          // ? still toggles the shortcut sheet shut even when it's the open
-          // dialog — the dialog primitive handles Tab/Escape automatically.
-          if (showSheet && e.key === "?") {
-            e.preventDefault();
-            closeSheet();
-          }
+        if (openDialog && openDialog !== sheetRef.current?.parentElement) {
           return;
         }
       }
 
+      if (showSheet && e.key === "Tab") {
+        trapTabKey(e, sheetRef.current);
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         onOpenPalette();
@@ -127,15 +136,18 @@ export function RequestKeyboard({
       if (isEditableTarget(e.target)) return;
 
       if (e.key === "?") {
-        // When the sheet is already open the guard above swallows this key
-        // and routes it back through closeSheet(). This branch only fires
-        // on opens.
         e.preventDefault();
-        openSheet();
+        if (showSheet) closeSheet();
+        else openSheet();
         return;
       }
-      // Escape, when the sheet is open, is handled by the Dialog primitive
-      // via its overlay/dismiss wiring.
+      if (e.key === "Escape") {
+        if (showSheet) {
+          e.preventDefault();
+          closeSheet();
+        }
+        return;
+      }
       if (e.key === "r" || e.key === "R") {
         e.preventDefault();
         onFocusComposer();
@@ -219,26 +231,38 @@ export function RequestKeyboard({
           {toast}
         </div>
       ) : null}
-      <Dialog
-        open={showSheet}
-        onOpenChange={(next) => {
-          if (!next) closeSheet();
-        }}
-      >
-        <DialogContent
-          size="md"
+      {showSheet ? (
+        <div
+          role="dialog"
+          aria-modal="true"
           aria-label={labels.sheetTitle}
-          closeLabel={labels.close}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={closeSheet}
         >
-          <DialogHeader>
-            <DialogTitle>{labels.sheetTitle}</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
+          <div
+            ref={sheetRef}
+            className="w-full max-w-md rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-[var(--ink)]">
+                {labels.sheetTitle}
+              </h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={closeSheet}
+                aria-label={labels.close}
+                data-sheet-close
+              >
+                {labels.close}
+              </Button>
+            </div>
             <ul className="flex flex-col gap-1.5">
               {shortcuts.map((s) => (
                 <li
                   key={s.keys + s.description}
-                  className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] px-2 py-1.5 text-[12.5px] text-[var(--ink)] hover:bg-[var(--soft)]"
+                  className="flex items-center justify-between gap-3 rounded-[6px] px-2 py-1.5 text-[12.5px] text-[var(--ink)] hover:bg-[var(--soft)]"
                 >
                   <span>{s.description}</span>
                   <kbd className="rounded border border-[var(--line)] bg-[var(--soft)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--ink-2)]">
@@ -247,9 +271,9 @@ export function RequestKeyboard({
                 </li>
               ))}
             </ul>
-          </DialogBody>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

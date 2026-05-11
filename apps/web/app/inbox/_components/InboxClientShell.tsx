@@ -117,7 +117,8 @@ export function InboxClientShell({
           { table: "requests", filter: eqFilter("clinic_id", clinicId) },
           { table: "messages", filter: eqFilter("clinic_id", clinicId) }
         ]}
-        pollMs={15_000}
+        pollMs={45_000}
+        reloadFallbackMs={1_500}
       />
 
       <InboxBulkProvider rowIds={rowIds}>

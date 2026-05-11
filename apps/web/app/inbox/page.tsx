@@ -157,13 +157,7 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
 
   return (
     <AppShell locale={locale} inboxStream={stream} currentPath="/inbox">
-      {/*
-        Inbox owns its own scroll: the page (main + this wrapper) stays
-        viewport-locked, the list scrolls inside. Without `overflow-y-auto`
-        here the list rows would clip at the viewport bottom because main is
-        h-svh overflow-hidden.
-      */}
-      <div className="mx-auto flex w-full min-h-0 max-w-7xl flex-1 flex-col gap-4 overflow-y-auto px-3 py-4 sm:gap-5 sm:px-6 sm:py-5 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-6 sm:py-5 lg:px-8">
         {/*
           The persistent sidebar carries identity now, so the inbox no longer
           needs a top header bar (Back/title chips were absorbed into the
