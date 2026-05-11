@@ -21,7 +21,7 @@ export type AdminClinic = ClinicRow & {
   staff: AdminStaffMember[];
 };
 
-async function listAuthUserEmails() {
+export async function listAuthUserEmails() {
   const admin = createAdminClient();
   const usersById = new Map<string, string>();
 

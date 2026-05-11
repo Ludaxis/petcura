@@ -4,7 +4,7 @@
 create extension if not exists "pgcrypto";
 
 do $$ begin
-  create type public.staff_role as enum ('owner', 'admin', 'vet', 'tech', 'reception');
+  create type public.staff_role as enum ('owner', 'admin', 'vet', 'tech', 'reception', 'viewer');
 exception
   when duplicate_object then null;
 end $$;

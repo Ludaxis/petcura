@@ -20,6 +20,10 @@ import {
   translationRevealSchema
 } from "@petcura/validation";
 import { requireStaffContext } from "@/lib/auth/staff";
+import {
+  hasStaffPermission,
+  requireStaffPermission
+} from "@/lib/auth/permissions";
 import { sendWhatsAppStaffMessage } from "@/lib/twilio/outbound";
 import { getTwilioDeliveryEventId } from "@/lib/twilio/whatsapp";
 
@@ -109,6 +113,9 @@ export async function sendStaffReply(formData: FormData) {
 
   const { requestId, body } = parsed.data;
   const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(staffContext, "requests:reply")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
   const request = await loadRequestForAction(
     staffContext.supabase,
     staffContext.clinic.id,
@@ -257,6 +264,9 @@ export async function addInternalNote(formData: FormData) {
 
   const { requestId, body } = parsed.data;
   const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(staffContext, "requests:manage")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
   const request = await loadRequestForAction(
     staffContext.supabase,
     staffContext.clinic.id,
@@ -327,6 +337,9 @@ export async function createReminder(formData: FormData) {
   }
 
   const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(staffContext, "reminders:manage")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
   const request = await loadRequestForAction(
     staffContext.supabase,
     staffContext.clinic.id,
@@ -399,6 +412,9 @@ export async function updateRequestStatus(formData: FormData) {
 
   const { requestId, status } = parsed.data;
   const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(staffContext, "requests:manage")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
   const request = await loadRequestForAction(
     staffContext.supabase,
     staffContext.clinic.id,
@@ -464,6 +480,9 @@ export async function updateRequestUrgency(formData: FormData) {
 
   const { requestId, urgency } = parsed.data;
   const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(staffContext, "requests:manage")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
   const request = await loadRequestForAction(
     staffContext.supabase,
     staffContext.clinic.id,
@@ -526,6 +545,9 @@ export async function assignRequest(formData: FormData) {
 
   const { requestId, staffMemberId } = parsed.data;
   const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(staffContext, "requests:manage")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
   const request = await loadRequestForAction(
     staffContext.supabase,
     staffContext.clinic.id,
@@ -637,6 +659,9 @@ export async function acceptAiDraft(input: {
 
   const { requestId, aiOutputId } = parsed.data;
   const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+  if (!hasStaffPermission(ctx, "requests:reply")) {
+    return { ok: false, error: "forbidden" };
+  }
   const { draft, error: loadError } = await loadDraftForAction(
     ctx.supabase,
     ctx.clinic.id,
@@ -693,6 +718,9 @@ export async function editAiDraft(input: {
 
   const { requestId, aiOutputId, editedText, saveOnly } = parsed.data;
   const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+  if (!hasStaffPermission(ctx, "requests:reply")) {
+    return { ok: false, error: "forbidden" };
+  }
   const { draft, error: loadError } = await loadDraftForAction(
     ctx.supabase,
     ctx.clinic.id,
@@ -759,6 +787,9 @@ export async function rejectAiDraft(input: {
 
   const { requestId, aiOutputId, reason } = parsed.data;
   const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+  if (!hasStaffPermission(ctx, "requests:reply")) {
+    return { ok: false, error: "forbidden" };
+  }
   const { draft, error: loadError } = await loadDraftForAction(
     ctx.supabase,
     ctx.clinic.id,
@@ -814,6 +845,7 @@ export async function logTranslationRevealed(input: {
 
   const { requestId, messageId, targetLocale } = parsed.data;
   const ctx = await requireStaffContext("en", `/requests/${requestId}`);
+  requireStaffPermission(ctx, "requests:view");
 
   // Confirm the message belongs to this clinic + request before we log.
   const { data: message, error: messageError } = await ctx.supabase

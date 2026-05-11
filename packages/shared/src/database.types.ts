@@ -934,7 +934,7 @@ export type Database = {
         | "admin"
       request_status: "new" | "waiting_staff" | "waiting_owner" | "resolved"
       request_urgency: "low" | "medium" | "high"
-      staff_role: "owner" | "admin" | "vet" | "tech" | "reception"
+      staff_role: "owner" | "admin" | "vet" | "tech" | "reception" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1073,7 +1073,7 @@ export const Constants = {
       ],
       request_status: ["new", "waiting_staff", "waiting_owner", "resolved"],
       request_urgency: ["low", "medium", "high"],
-      staff_role: ["owner", "admin", "vet", "tech", "reception"],
+      staff_role: ["owner", "admin", "vet", "tech", "reception", "viewer"],
     },
   },
 } as const

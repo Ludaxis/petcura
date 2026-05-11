@@ -39,7 +39,8 @@ export const staffRoleSchema = z.enum([
   "admin",
   "vet",
   "tech",
-  "reception"
+  "reception",
+  "viewer"
 ]);
 
 export const clinicSlugSchema = trimmedString
@@ -90,6 +91,11 @@ export const updateClinicStaffStatusSchema = z.object({
   isActive: z
     .enum(["true", "false"])
     .transform((value) => value === "true")
+});
+
+export const updateClinicStaffRoleSchema = z.object({
+  membershipId: uuidSchema,
+  role: staffRoleSchema
 });
 
 export const staffReplySchema = z.object({

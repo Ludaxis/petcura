@@ -2,6 +2,8 @@ import "server-only";
 import type { ReactNode } from "react";
 import {
   createTranslator,
+  type CopyKey,
+  type StaffRole,
   type SupportedLocale
 } from "@petcura/shared";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -46,6 +48,15 @@ export type AppShellProps = {
    * callers that don't pass it stay readable.
    */
   pageTitle?: string;
+};
+
+const roleCopyKeys: Record<StaffRole, CopyKey> = {
+  owner: "role.owner",
+  admin: "role.admin",
+  vet: "role.vet",
+  tech: "role.tech",
+  reception: "role.reception",
+  viewer: "role.viewer"
 };
 
 function clinicInitialsFrom(name: string) {
@@ -102,10 +113,8 @@ export async function AppShell({
     remindersTotal: openReminderCount
   };
 
-  // staff_role enum values render verbatim in the identity card subtitle.
-  // The nullish fallback keeps the row meaningful if a future role lands
-  // before this surface learns to translate it.
-  const roleLabel: string = staffContext.membership.role ?? "staff";
+  const role = staffContext.membership.role as StaffRole;
+  const roleLabel: string = roleCopyKeys[role] ? t(roleCopyKeys[role]) : role;
 
   return (
     <SidebarProvider defaultOpen>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { normalizeLocale } from "@petcura/shared";
 import { requireStaffContext } from "@/lib/auth/staff";
+import { hasStaffPermission } from "@/lib/auth/permissions";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 type StaffContext = Awaited<ReturnType<typeof requireStaffContext>>;
@@ -36,6 +37,9 @@ export async function resolveInboxRequest(
 ): Promise<ActionResult> {
   const lang = normalizeLocale(locale);
   const ctx = await requireStaffContext(lang, "/inbox");
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    return { ok: false, error: "forbidden" };
+  }
   const { request, error: loadError } = await loadRequestForInboxAction(
     ctx,
     requestId
@@ -110,6 +114,9 @@ export async function bulkResolveInboxRequests(
 ): Promise<BulkResult> {
   const lang = normalizeLocale(locale);
   const ctx = await requireStaffContext(lang, "/inbox");
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    return { ok: false, error: "forbidden" };
+  }
   const ids = Array.from(new Set(requestIds)).filter((value) =>
     typeof value === "string" && value.length > 0
   );
@@ -176,6 +183,9 @@ export async function bulkAssignInboxRequestsToMe(
 ): Promise<BulkResult> {
   const lang = normalizeLocale(locale);
   const ctx = await requireStaffContext(lang, "/inbox");
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    return { ok: false, error: "forbidden" };
+  }
   const ids = Array.from(new Set(requestIds)).filter((value) =>
     typeof value === "string" && value.length > 0
   );
@@ -238,6 +248,9 @@ export async function assignInboxRequestToMe(
 ): Promise<ActionResult> {
   const lang = normalizeLocale(locale);
   const ctx = await requireStaffContext(lang, "/inbox");
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    return { ok: false, error: "forbidden" };
+  }
   const { request, error: loadError } = await loadRequestForInboxAction(
     ctx,
     requestId
