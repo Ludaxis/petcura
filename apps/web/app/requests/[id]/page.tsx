@@ -255,6 +255,7 @@ export default async function RequestDetailPage({
   const paneShell = (
     <RequestPaneShell
       requestId={request.id}
+      clinicId={staffContext.clinic.id}
       rowIds={rowIds}
       hrefForRow={hrefForRow}
       threads={listRows.map((r) => ({

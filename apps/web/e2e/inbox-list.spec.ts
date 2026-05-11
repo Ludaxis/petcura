@@ -266,4 +266,146 @@ test.describe("Inbox list view", () => {
       }
     }
   });
+
+  test("refreshes when a new request arrives via realtime", async ({
+    page,
+    baseURL
+  }) => {
+    test.setTimeout(90_000);
+    test.skip(
+      !supabaseUrl || !publishableKey || !secretKey,
+      "Supabase env required."
+    );
+
+    const admin = adminClient();
+    const unique = Date.now();
+    const staffEmail = `petcura-inbox-live-${unique}@example.test`;
+    const ownerName = `Realtime Inbox Owner ${unique}`;
+    const ownerPhone = `+372${unique}`;
+    const petName = `Realtime Lumi ${unique}`;
+    let clinicId: string | undefined;
+    let staffUserId: string | undefined;
+    let ownerId: string | undefined;
+    let petId: string | undefined;
+
+    try {
+      const { data: clinic } = await admin
+        .from("clinics")
+        .select("id")
+        .eq("slug", defaultClinicSlug)
+        .single();
+      expect(clinic?.id).toBeTruthy();
+      clinicId = clinic!.id;
+
+      const { data: staffUser } = await admin.auth.admin.createUser({
+        email: staffEmail,
+        email_confirm: true
+      });
+      expect(staffUser.user?.id).toBeTruthy();
+      staffUserId = staffUser.user!.id;
+
+      await admin.from("clinic_staff").upsert(
+        {
+          clinic_id: clinicId,
+          user_id: staffUserId,
+          role: "admin",
+          is_active: true
+        },
+        { onConflict: "clinic_id,user_id" }
+      );
+
+      const { data: link } = await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email: staffEmail,
+        options: {
+          redirectTo: `${baseURL}/auth/callback?next=/inbox&lang=en`
+        }
+      });
+      const callbackUrl = new URL("/auth/callback", baseURL);
+      callbackUrl.searchParams.set("next", "/inbox");
+      callbackUrl.searchParams.set("lang", "en");
+      callbackUrl.searchParams.set(
+        "token_hash",
+        link.properties!.hashed_token
+      );
+      callbackUrl.searchParams.set(
+        "type",
+        link.properties!.verification_type ?? "magiclink"
+      );
+      await page.goto(callbackUrl.toString());
+      await expect(
+        page.getByRole("heading", { name: "ClientOps inbox" })
+      ).toBeVisible();
+      await expect(
+        page.locator('[data-realtime-channel^="petcura:inbox:"]')
+      ).toBeAttached();
+
+      const { data: owner } = await admin
+        .from("owners")
+        .insert({
+          clinic_id: clinicId,
+          name: ownerName,
+          phone: ownerPhone,
+          preferred_language: "en"
+        })
+        .select("id")
+        .single();
+      ownerId = owner!.id;
+
+      const { data: pet } = await admin
+        .from("pets")
+        .insert({
+          clinic_id: clinicId,
+          owner_id: ownerId,
+          name: petName,
+          species: "Cat"
+        })
+        .select("id")
+        .single();
+      petId = pet!.id;
+
+      const { data: request, error: requestError } = await admin
+        .from("requests")
+        .insert({
+          clinic_id: clinicId,
+          owner_id: ownerId,
+          pet_id: petId,
+          category: "medical_question",
+          channel: "web",
+          status: "new",
+          urgency: "low",
+          ai_summary: `${petName} realtime intake.`
+        })
+        .select("id")
+        .single();
+      expect(requestError).toBeNull();
+      expect(request?.id).toBeTruthy();
+
+      await expect(
+        page.locator(`[data-row-id="${request!.id}"]`).filter({ hasText: petName })
+      ).toBeVisible({ timeout: 55_000 });
+    } finally {
+      if (clinicId && ownerId) {
+        await admin
+          .from("requests")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .eq("owner_id", ownerId);
+        await admin
+          .from("pets")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .eq("owner_id", ownerId);
+        await admin
+          .from("owners")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .eq("id", ownerId);
+      }
+      if (staffUserId) {
+        await admin.from("clinic_staff").delete().eq("user_id", staffUserId);
+        await admin.auth.admin.deleteUser(staffUserId);
+      }
+    }
+  });
 });

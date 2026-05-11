@@ -581,6 +581,75 @@ test.describe("Request detail tri-pane", () => {
     }
   });
 
+  test("refreshes new messages and delivery events via realtime", async ({
+    page,
+    baseURL
+  }) => {
+    test.setTimeout(90_000);
+    test.skip(
+      !supabaseUrl || !publishableKey || !secretKey,
+      "Supabase env required."
+    );
+    const admin = adminClient();
+    let seed: SeedResult | undefined;
+    try {
+      seed = await seedRequestDetailFixture(admin);
+      await authenticateAs(
+        admin,
+        page,
+        baseURL,
+        seed.staffEmail,
+        `/requests/${seed.primaryRequestId}`
+      );
+      await expect(
+        page.locator('[data-realtime-channel^="petcura:request-detail:"]')
+      ).toBeAttached();
+
+      const unique = Date.now();
+      const realtimeReply = `Realtime staff reply ${unique}`;
+      const externalId = `SM-realtime-${unique}`;
+      const { data: staffMessage, error: messageError } = await admin
+        .from("messages")
+        .insert({
+          clinic_id: seed.clinicId,
+          request_id: seed.primaryRequestId,
+          sender_type: "staff",
+          sender_id: seed.staffUserId,
+          body: realtimeReply,
+          source_locale: "en",
+          external_id: externalId
+        })
+        .select("id")
+        .single();
+      expect(messageError).toBeNull();
+      expect(staffMessage?.id).toBeTruthy();
+
+      const { error: deliveryError } = await admin
+        .from("message_delivery_events")
+        .insert({
+          clinic_id: seed.clinicId,
+          message_id: staffMessage!.id,
+          channel: "whatsapp",
+          status: "read",
+          provider: "twilio",
+          external_event_id: `${externalId}:read`
+        });
+      expect(deliveryError).toBeNull();
+
+      const staffBubble = page.locator(
+        `[data-message-id="${staffMessage!.id}"]`
+      );
+      await expect(staffBubble.getByText(realtimeReply)).toBeVisible({
+        timeout: 45_000
+      });
+      await expect(
+        staffBubble.getByText(/Read|Loetud|Прочитано/)
+      ).toBeVisible({ timeout: 45_000 });
+    } finally {
+      if (seed) await teardownFixture(admin, seed);
+    }
+  });
+
   test("Edit save (saveOnly) keeps card visible and accepted=null", async ({
     page,
     baseURL

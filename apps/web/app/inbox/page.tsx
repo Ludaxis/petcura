@@ -272,6 +272,7 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
       </section>
 
       <InboxClientShell
+        clinicId={staffContext.clinic.id}
         rowIds={rowIds}
         hrefForRow={hrefForRow}
         threads={rows.map((r) => ({
