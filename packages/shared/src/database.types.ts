@@ -628,8 +628,12 @@ export type Database = {
           created_by: string | null
           due_at: string
           id: string
+          last_delivery_message_id: string | null
+          last_send_attempt_at: string | null
+          last_send_error: string | null
           pet_id: string | null
           request_id: string | null
+          send_attempts: number
           sent_at: string | null
           status: string
           title: string
@@ -645,8 +649,12 @@ export type Database = {
           created_by?: string | null
           due_at: string
           id?: string
+          last_delivery_message_id?: string | null
+          last_send_attempt_at?: string | null
+          last_send_error?: string | null
           pet_id?: string | null
           request_id?: string | null
+          send_attempts?: number
           sent_at?: string | null
           status?: string
           title: string
@@ -662,8 +670,12 @@ export type Database = {
           created_by?: string | null
           due_at?: string
           id?: string
+          last_delivery_message_id?: string | null
+          last_send_attempt_at?: string | null
+          last_send_error?: string | null
           pet_id?: string | null
           request_id?: string | null
+          send_attempts?: number
           sent_at?: string | null
           status?: string
           title?: string
@@ -675,6 +687,13 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_last_delivery_message_id_fkey"
+            columns: ["last_delivery_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {

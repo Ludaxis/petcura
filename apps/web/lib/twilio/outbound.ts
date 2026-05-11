@@ -22,6 +22,13 @@ export type WhatsAppSendResult = {
   status: TwilioDeliveryStatus;
 };
 
+export type WhatsAppOwnerMessageInput = {
+  supabase: ServerSupabaseClient;
+  clinicId: string;
+  toPhone: string;
+  body: string;
+};
+
 function getTwilioStatusCallbackUrl() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -69,17 +76,12 @@ export async function resolveClinicWhatsAppSender(
   return channel?.external_id ?? process.env.TWILIO_WHATSAPP_FROM ?? null;
 }
 
-export async function sendWhatsAppStaffMessage({
+export async function sendWhatsAppOwnerMessage({
   supabase,
   clinicId,
   toPhone,
   body
-}: {
-  supabase: ServerSupabaseClient;
-  clinicId: string;
-  toPhone: string;
-  body: string;
-}): Promise<WhatsAppSendResult> {
+}: WhatsAppOwnerMessageInput): Promise<WhatsAppSendResult> {
   const { accountSid, authToken } = requireTwilioCredentials();
   const from = await resolveClinicWhatsAppSender(supabase, clinicId);
 
@@ -102,4 +104,10 @@ export async function sendWhatsAppStaffMessage({
     rawStatus,
     status: mapTwilioDeliveryStatus(rawStatus)
   };
+}
+
+export async function sendWhatsAppStaffMessage(
+  input: WhatsAppOwnerMessageInput
+) {
+  return sendWhatsAppOwnerMessage(input);
 }

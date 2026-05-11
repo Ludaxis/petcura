@@ -239,6 +239,11 @@ export default async function RemindersPage({ searchParams }: Props) {
                           {reminder.body}
                         </p>
                       ) : null}
+                      {reminder.lastSendError ? (
+                        <p className="mt-2 break-words rounded-[var(--radius)] bg-[var(--red-soft)] px-2 py-1 text-[12px] text-[var(--red)]">
+                          {reminder.lastSendError}
+                        </p>
+                      ) : null}
                     </div>
 
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px] text-[var(--ink-2)] sm:grid-cols-4 lg:grid-cols-2">

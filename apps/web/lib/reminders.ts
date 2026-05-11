@@ -43,6 +43,8 @@ type ReminderRow = Pick<
   | "sent_at"
   | "acknowledged_at"
   | "completed_at"
+  | "send_attempts"
+  | "last_send_error"
   | "created_at"
 > & {
   pets: {
@@ -80,6 +82,8 @@ export type ReminderListItem = {
   sentAt: string | null;
   acknowledgedAt: string | null;
   completedAt: string | null;
+  sendAttempts: number;
+  lastSendError: string | null;
   createdAt: string;
   petName: string;
   species: string;
@@ -103,6 +107,8 @@ function toReminderListItem(row: ReminderRow): ReminderListItem {
     sentAt: row.sent_at,
     acknowledgedAt: row.acknowledged_at,
     completedAt: row.completed_at,
+    sendAttempts: row.send_attempts,
+    lastSendError: row.last_send_error,
     createdAt: row.created_at,
     petName: row.pets?.name ?? "Unknown pet",
     species: row.pets?.species ?? "unknown",
@@ -120,7 +126,7 @@ export async function listReminders(
   let query = supabase
     .from("reminders")
     .select(
-      "id, request_id, pet_id, type, title, body, due_at, channel, status, sent_at, acknowledged_at, completed_at, created_at, pets(id, name, species, owners(id, name, phone, preferred_language)), requests(id, owners(id, name, phone, preferred_language))"
+      "id, request_id, pet_id, type, title, body, due_at, channel, status, sent_at, acknowledged_at, completed_at, send_attempts, last_send_error, created_at, pets(id, name, species, owners(id, name, phone, preferred_language)), requests(id, owners(id, name, phone, preferred_language))"
     )
     .eq("clinic_id", clinicId)
     .order("due_at", { ascending: true });
@@ -146,7 +152,7 @@ export async function listRequestReminders(
   const { data, error } = await supabase
     .from("reminders")
     .select(
-      "id, request_id, pet_id, type, title, body, due_at, channel, status, sent_at, acknowledged_at, completed_at, created_at, pets(id, name, species, owners(id, name, phone, preferred_language)), requests(id, owners(id, name, phone, preferred_language))"
+      "id, request_id, pet_id, type, title, body, due_at, channel, status, sent_at, acknowledged_at, completed_at, send_attempts, last_send_error, created_at, pets(id, name, species, owners(id, name, phone, preferred_language)), requests(id, owners(id, name, phone, preferred_language))"
     )
     .eq("clinic_id", clinicId)
     .eq("request_id", requestId)

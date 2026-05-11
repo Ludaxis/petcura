@@ -30,6 +30,7 @@ Configured in Vercel for Production, Preview, and Development:
 - `SUPABASE_SECRET_KEY`
 - `PETCURA_DEFAULT_CLINIC_SLUG`
 - `PETCURA_BOOTSTRAP_STAFF_EMAILS`
+- `CRON_SECRET`
 
 Do not commit Vercel environment values or `.vercel/`. The local project link lives in `.vercel/project.json`, which is intentionally gitignored.
 
@@ -62,3 +63,11 @@ Vercel Git auto-deploy is active for:
 - Vercel team: `Joyixir`
 
 Pushes to `main` should create production deployments. Manual CLI deploy remains available when an explicit deployment is needed.
+
+## Cron Jobs
+
+Production cron jobs are configured from `apps/web/vercel.json`.
+
+- `/api/cron/reminders` runs every five minutes and dispatches due reminders.
+- Vercel invokes cron jobs only on production deployments.
+- The route requires `Authorization: Bearer $CRON_SECRET`; keep `CRON_SECRET` configured in Vercel Production and local `.env.local` for manual testing.

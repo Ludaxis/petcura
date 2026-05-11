@@ -413,6 +413,11 @@ function SideBlocks({
                     {reminder.body}
                   </p>
                 ) : null}
+                {reminder.lastSendError ? (
+                  <p className="mt-2 break-words rounded-[var(--radius)] bg-[var(--red-soft)] px-2 py-1 text-[11.5px] text-[var(--red)]">
+                    {reminder.lastSendError}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ol>
