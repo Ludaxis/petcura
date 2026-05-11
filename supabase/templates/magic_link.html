@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your PetCura sign-in link</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f6f4ef;
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+        sans-serif;
+      letter-spacing: -0.005em;
+      color: #29261b;
+      -webkit-font-smoothing: antialiased;
+    "
+  >
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="background: #f6f4ef; padding: 32px 16px"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            width="560"
+            style="
+              max-width: 560px;
+              background: #f6f4ef;
+              border: 1px solid #e2dccc;
+              border-radius: 12px;
+              padding: 40px 36px;
+            "
+          >
+            <tr>
+              <td
+                style="
+                  font-family: 'JetBrains Mono', SFMono-Regular, Menlo,
+                    monospace;
+                  font-size: 11px;
+                  font-weight: 600;
+                  letter-spacing: 0.08em;
+                  text-transform: uppercase;
+                  color: #4a6b3f;
+                  padding-bottom: 16px;
+                "
+              >
+                PetCura · Staff sign-in
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  font-size: 26px;
+                  font-weight: 600;
+                  letter-spacing: -0.015em;
+                  color: #29261b;
+                  padding-bottom: 16px;
+                  line-height: 1.2;
+                "
+              >
+                One-tap sign-in for the clinic inbox.
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  font-size: 14px;
+                  line-height: 1.55;
+                  color: #4d4738;
+                  padding-bottom: 24px;
+                "
+              >
+                Click the button below to open PetCura. The link is single-use
+                and expires in 1 hour. If you didn't request it, you can safely
+                ignore this email.
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-bottom: 24px">
+                <a
+                  href="{{ .ConfirmationURL }}"
+                  style="
+                    display: inline-block;
+                    background: #4a6b3f;
+                    color: #f6f4ef;
+                    text-decoration: none;
+                    font-weight: 500;
+                    font-size: 14px;
+                    padding: 12px 22px;
+                    border-radius: 8px;
+                    letter-spacing: 0.01em;
+                  "
+                  >Open clinic inbox →</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  font-size: 12px;
+                  color: #847e6b;
+                  padding-bottom: 8px;
+                  line-height: 1.5;
+                "
+              >
+                Or paste this link into your browser:
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  font-family: 'JetBrains Mono', SFMono-Regular, Menlo,
+                    monospace;
+                  font-size: 12px;
+                  color: #4a6b3f;
+                  word-break: break-all;
+                  padding-bottom: 32px;
+                  line-height: 1.5;
+                "
+              >
+                <a
+                  href="{{ .ConfirmationURL }}"
+                  style="color: #4a6b3f; text-decoration: underline"
+                  >{{ .ConfirmationURL }}</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  border-top: 1px solid #e2dccc;
+                  padding-top: 24px;
+                  font-size: 11px;
+                  color: #847e6b;
+                  line-height: 1.55;
+                "
+              >
+                PetCura is the WhatsApp-native ClientOps inbox for veterinary
+                clinics. This message was sent to {{ .Email }}. If you weren't
+                expecting it, please ignore — no further action is needed.
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  padding-top: 16px;
+                  font-family: 'JetBrains Mono', SFMono-Regular, Menlo,
+                    monospace;
+                  font-size: 10.5px;
+                  letter-spacing: 0.06em;
+                  text-transform: uppercase;
+                  color: #a39b86;
+                "
+              >
+                PetCura · v1.0 · May 2026
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

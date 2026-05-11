@@ -227,7 +227,15 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
+# PetCura magic-link sign-in. Branded in Direction B (warm sage on cream),
+# inline CSS so common email clients render correctly. When updating, also
+# update the Supabase Dashboard template (hosted templates take precedence
+# over config.toml). See docs/architecture/auth-email-delivery.md.
+[auth.email.template.magic_link]
+subject = "Your PetCura sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+# Uncomment to customize other email templates
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
@@ -236,7 +244,7 @@ otp_expiry = 3600
 # [auth.email.notification.password_changed]
 # enabled = true
 # subject = "Your password has been changed"
-# content_path = "./templates/password_changed_notification.html"
+# content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
