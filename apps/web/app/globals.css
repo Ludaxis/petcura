@@ -105,7 +105,10 @@
   --line-2: #3a342a;
   --primary: #87a87f;
   --primary-strong: #9bb892;
-  --primary-soft: #1f2a1d;
+  /* --primary-soft was #1f2a1d — only ~1.5:1 against --paper. Bumped so the
+     sidebar active pill, AI suggestion card, and bottom identity-card avatar
+     actually read as a distinct surface in dark mode. */
+  --primary-soft: #283a25;
   --amber: #d4a872;
   --amber-soft: #2a2218;
   --red: #d49080;

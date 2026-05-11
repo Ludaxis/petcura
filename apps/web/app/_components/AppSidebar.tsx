@@ -117,8 +117,10 @@ function useActiveResolver(inboxStream: InboxStream) {
       return pathname.startsWith("/inbox") && item.id === activeChildId;
     }
     if (item.id === "inbox") {
-      // Parent row is highlighted whenever any inbox sub-item is active.
-      return pathname.startsWith("/inbox");
+      // Don't double-highlight: when a sub-stream is active, the child carries
+      // the pill alone. The parent reads as "expanded section header" via the
+      // muted children below it, no fill of its own.
+      return false;
     }
     // Coming-soon stub routes and future top-level pages.
     if (item.href === "/") return pathname === "/";
