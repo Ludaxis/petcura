@@ -1,9 +1,9 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   CalendarClock,
   ChevronDown,
-  Languages
+  Languages,
+  X
 } from "lucide-react";
 import { Badge, Button } from "@petcura/ui";
 import {
@@ -13,7 +13,6 @@ import {
   getRequestStatusLabel,
   getUrgencyLabel,
   requestStatusColumns,
-  withLocale,
   type SupportedLocale
 } from "@petcura/shared";
 import type { RequestDetail as RequestDetailModel } from "@/lib/requests";
@@ -36,6 +35,14 @@ type RequestDetailProps = {
    * card + composer + keyboard model.
    */
   paneShell: React.ReactNode;
+  /**
+   * Localized href used by the small top-right Close affordance ("X") to
+   * walk back to /inbox. The sidebar's Inbox nav is the primary back
+   * affordance — this is the explicit "close this case" cue.
+   */
+  closeHref: string;
+  /** aria-label for the Close button. */
+  closeLabel: string;
 };
 
 const urgencyOptions = ["low", "medium", "high"] as const;
@@ -45,7 +52,9 @@ export function RequestDetail({
   locale,
   formatDateTime,
   currentStaffUserId,
-  paneShell
+  paneShell,
+  closeHref,
+  closeLabel
 }: RequestDetailProps) {
   const t = createTranslator(locale);
   const currentAssignee = request.staffOptions.find(
@@ -63,14 +72,6 @@ export function RequestDetail({
         data-detail-head
         className="flex flex-col gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
       >
-        <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--muted)] lg:hidden">
-          <Button asChild size="sm" variant="ghost">
-            <Link href={withLocale("/inbox", locale)}>
-              <ArrowLeft aria-hidden="true" size={14} />
-              {t("request.detail.openInbox")}
-            </Link>
-          </Button>
-        </div>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-2">
@@ -116,6 +117,21 @@ export function RequestDetail({
             <Badge tone="neutral">
               {getRequestCategoryLabel(request.category, locale)}
             </Badge>
+            {/*
+              Small ghost "X" — explicit "close this case" affordance. The
+              sidebar's Inbox row is the primary back path; this gives a
+              direct exit at the top-right where users expect a close
+              control in dense operational UIs.
+            */}
+            <Link
+              href={closeHref}
+              aria-label={closeLabel}
+              title={closeLabel}
+              data-close-request
+              className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] transition hover:bg-[var(--soft)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+            >
+              <X aria-hidden="true" size={14} />
+            </Link>
           </div>
         </div>
 

@@ -53,6 +53,12 @@ export type AppSidebarProps = {
   initialTheme: ThemePreference;
   counts: NavCounts;
   inboxStream: InboxStream;
+  /**
+   * Whether the current viewer is a configured super-admin. Gates visibility
+   * of items declared with `requires: "super_admin"` in the nav config
+   * (notably the Admin row). When false, those entries are filtered out.
+   */
+  isSuperAdmin?: boolean;
   signOutAction: (formData: FormData) => void | Promise<void>;
   labels: AppSidebarLabels;
 };
@@ -149,6 +155,7 @@ export function AppSidebar({
   initialTheme,
   counts,
   inboxStream,
+  isSuperAdmin = false,
   signOutAction,
   labels
 }: AppSidebarProps) {
@@ -301,7 +308,11 @@ export function AppSidebar({
   return (
     <Sidebar
       variant="sidebar"
-      collapsible="none"
+      // `offcanvas` keeps the 240px persistent rail at `md+` and folds the
+      // same content into shadcn's Sheet drawer below 768px. Mobile open
+      // state, focus trap, and scrim are handled by the primitive — we
+      // expose the toggle via <SidebarTrigger /> in AppShell's mobile header.
+      collapsible="offcanvas"
       className="w-[240px] border-r border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
     >
       <SidebarHeader className="gap-3 px-3 pb-2 pt-4">
@@ -349,7 +360,11 @@ export function AppSidebar({
 
         <SidebarMenu className="px-1">
           {SIDEBAR_NAV.slice(1)
-            .filter((item) => !item.requires || item.requires === "staff")
+            .filter((item) => {
+              if (!item.requires || item.requires === "staff") return true;
+              if (item.requires === "super_admin") return isSuperAdmin;
+              return false;
+            })
             .map(renderTopLevel)}
         </SidebarMenu>
       </SidebarContent>

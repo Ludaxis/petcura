@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   Building2,
   ExternalLink,
   ShieldCheck,
@@ -17,9 +16,7 @@ import { getRequestLocale } from "@/lib/locale";
 import { listAdminClinics } from "@/lib/admin/bootstrap";
 import { requireSuperAdminContext } from "@/lib/auth/super-admin";
 import { requirePublicEnv } from "@/lib/env";
-import { getThemePreference } from "@/lib/theme";
-import { signOutStaff } from "@/app/inbox/actions";
-import { UserMenu } from "@/app/_components/UserMenu";
+import { AppShell } from "@/app/_components/AppShell";
 import {
   addClinicStaff,
   createClinic,
@@ -60,10 +57,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const params = await searchParams;
   const locale = await getRequestLocale(params?.lang);
   const t = createTranslator(locale);
-  const superAdmin = await requireSuperAdminContext(locale);
+  // requireSuperAdminContext runs the auth gate; the AppShell also calls
+  // requireStaffContext (cached), which is fine — super-admins are seeded
+  // as clinic staff too in this build.
+  await requireSuperAdminContext(locale);
   const clinics = await listAdminClinics();
   const env = requirePublicEnv();
-  const themePreference = await getThemePreference();
   const statusKey = getStatusCopy(getSearchParam(params?.admin_status));
   const hasError = Boolean(getSearchParam(params?.admin_error));
   const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -72,33 +71,33 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
-      <header className="flex flex-col gap-4 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Button asChild variant="ghost">
-            <Link href={withLocale("/", locale)}>
-              <ArrowLeft aria-hidden="true" size={16} />
-              {t("nav.back")}
-            </Link>
-          </Button>
-          <div>
-            <p className="text-sm font-semibold text-[var(--primary)]">
-              {t("admin.kicker")}
-            </p>
-            <h1 className="text-2xl font-semibold">{t("admin.title")}</h1>
+    <AppShell
+      locale={locale}
+      currentPath="/admin"
+      pageTitle={t("admin.title")}
+    >
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+        {/*
+          The persistent sidebar carries identity (and a Super-admin entry
+          for users who qualify), so the page header collapses to just the
+          page title with the super-admin badge inline as a "you're in
+          admin mode" cue.
+        */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold text-[var(--ink)]">
+              {t("admin.title")}
+            </h1>
+            <Badge tone="teal">
+              <ShieldCheck aria-hidden="true" size={13} />
+              {t("admin.superAdmin")}
+            </Badge>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="teal">
-            <ShieldCheck aria-hidden="true" size={13} />
-            {t("admin.superAdmin")}
-          </Badge>
-        </div>
-      </header>
 
-      <p className="max-w-3xl text-sm leading-6 text-[var(--muted)]">
-        {t("admin.description")}
-      </p>
+        <p className="max-w-3xl text-sm leading-6 text-[var(--muted)]">
+          {t("admin.description")}
+        </p>
 
       {statusKey ? (
         <div className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]">
@@ -366,26 +365,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </Panel>
           );
         })}
-      </section>
-      <UserMenu
-        email={superAdmin.email}
-        locale={locale}
-        currentPath="/admin"
-        initialTheme={themePreference}
-        labels={{
-          ariaLabel: t("menu.ariaLabel"),
-          signedInAs: t("menu.signedInAs"),
-          theme: t("menu.theme"),
-          themeLight: t("menu.themeLight"),
-          themeDark: t("menu.themeDark"),
-          themeSystem: t("menu.themeSystem"),
-          language: t("menu.language"),
-          help: t("menu.help"),
-          helpHref: "mailto:support@petcura.app",
-          signOut: t("auth.logout")
-        }}
-        signOutAction={signOutStaff}
-      />
-    </main>
+        </section>
+      </div>
+    </AppShell>
   );
 }

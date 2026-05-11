@@ -8,15 +8,12 @@ import { getRequestLocale } from "@/lib/locale";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { getRequestDetail } from "@/lib/requests";
 import { listInboxRequests, type InboxStream } from "@/lib/inbox/queries";
-import { getThemePreference } from "@/lib/theme";
-import { RequestRail } from "./_components/RequestRail";
+import { AppShell } from "@/app/_components/AppShell";
 import { RequestList } from "./_components/RequestList";
 import { RequestDetail } from "./_components/RequestDetail";
 import { RequestPaneShell } from "./_components/RequestPaneShell";
 import type { ThreadMessage } from "./_components/Thread";
 import type { DraftPayload } from "./_components/AiDraftCard";
-import { signOutStaff } from "@/app/inbox/actions";
-import { UserMenu } from "@/app/_components/UserMenu";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -98,15 +95,14 @@ export default async function RequestDetailPage({
     `/requests/${encodeURIComponent(id)}`
   );
 
-  const [request, listRows, themePreference] = await Promise.all([
+  const [request, listRows] = await Promise.all([
     getRequestDetail(staffContext.supabase, staffContext.clinic.id, id),
     listInboxRequests(staffContext.supabase, staffContext.clinic.id, {
       stream: "all",
       view: "list",
       locale,
       staffMembershipId: staffContext.membership.id
-    }),
-    getThemePreference()
+    })
   ]);
 
   if (!request) {
@@ -286,58 +282,47 @@ export default async function RequestDetailPage({
     />
   );
 
+  // Page title for the mobile shell header. Desktop hides it; on mobile
+  // users see e.g. "Lumi — Reza" so they keep their place when the rail
+  // collapses into the Sheet drawer.
+  const pageTitle = `${request.petName}${
+    request.ownerName ? ` — ${request.ownerName}` : ""
+  }`;
+
   return (
-    <main className="flex h-screen w-full overflow-hidden bg-[var(--paper)]">
-      <RequestRail
-        locale={locale}
-        clinicName={staffContext.clinic.name}
-        staffLabel={staffContext.user.email ?? "staff"}
-        labels={{
-          cmdkHint: t("inbox.kbd.command"),
-          backToInbox: t("request.detail.openInbox"),
-          rail: t("inbox.title"),
-          signedIn: t("inbox.rail.signedIn")
-        }}
-      />
+    <AppShell
+      locale={locale}
+      currentPath={`/requests/${id}`}
+      pageTitle={pageTitle}
+    >
+      {/*
+        Two-pane layout below the sidebar: 320px list + flex detail. The
+        list and detail are hidden below `lg` (same as before) — mobile
+        users land on the detail panel and use the sidebar to walk back
+        to /inbox. RequestRail was removed; AppSidebar subsumes its job.
+      */}
+      <div className="flex h-[calc(100svh-3rem)] w-full min-w-0 overflow-hidden md:h-svh">
+        <RequestList
+          rows={listRows}
+          currentRequestId={request.id}
+          locale={locale}
+          hrefForRow={hrefForRow}
+          formatRelative={formatRelative}
+          density="comfortable"
+          emptyLabel={t("inbox.empty")}
+          ariaLabel={t("request.detail.list")}
+        />
 
-      <RequestList
-        rows={listRows}
-        currentRequestId={request.id}
-        locale={locale}
-        hrefForRow={hrefForRow}
-        formatRelative={formatRelative}
-        density="comfortable"
-        emptyLabel={t("inbox.empty")}
-        ariaLabel={t("request.detail.list")}
-      />
-
-      <RequestDetail
-        request={request}
-        locale={locale}
-        formatDateTime={formatDateTime}
-        currentStaffUserId={staffContext.user.id}
-        paneShell={paneShell}
-      />
-      <UserMenu
-        email={staffContext.user.email ?? ""}
-        clinicName={staffContext.clinic.name}
-        locale={locale}
-        currentPath={`/requests/${id}`}
-        initialTheme={themePreference}
-        labels={{
-          ariaLabel: t("menu.ariaLabel"),
-          signedInAs: t("menu.signedInAs"),
-          theme: t("menu.theme"),
-          themeLight: t("menu.themeLight"),
-          themeDark: t("menu.themeDark"),
-          themeSystem: t("menu.themeSystem"),
-          language: t("menu.language"),
-          help: t("menu.help"),
-          helpHref: "mailto:support@petcura.app",
-          signOut: t("auth.logout")
-        }}
-        signOutAction={signOutStaff}
-      />
-    </main>
+        <RequestDetail
+          request={request}
+          locale={locale}
+          formatDateTime={formatDateTime}
+          currentStaffUserId={staffContext.user.id}
+          paneShell={paneShell}
+          closeHref={withLocale("/inbox", locale)}
+          closeLabel={t("request.detail.close")}
+        />
+      </div>
+    </AppShell>
   );
 }

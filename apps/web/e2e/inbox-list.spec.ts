@@ -21,7 +21,11 @@ test.describe("Inbox list view", () => {
   test("renders rows, filters, J/K, ⌘K, theme toggle persists", async ({
     page,
     baseURL
-  }) => {
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name.includes("mobile"),
+      "Desktop keyboard/sidebar interaction is covered by the chromium project."
+    );
     test.skip(
       !supabaseUrl || !publishableKey || !secretKey,
       "Supabase env required for inbox list smoke."
@@ -133,25 +137,17 @@ test.describe("Inbox list view", () => {
       // Stream filter — Urgent. Sidebar replaces the old chip radiogroup;
       // streams are now `<Link>` rows. The link is named after the stream
       // label and writes the `stream` query param via Next router.
-      await page
-        .getByRole("navigation")
-        .getByRole("link", { name: /Urgent/ })
-        .click();
+      const primaryNav = page.getByLabel("Primary navigation");
+      await primaryNav.getByRole("link", { name: /Urgent/ }).click();
       await expect(page).toHaveURL(/[?&]stream=urgent/);
       await expect(seededRow).toBeVisible();
 
       // Resolved should hide the urgent-tier seeded row (it's still open).
-      await page
-        .getByRole("navigation")
-        .getByRole("link", { name: /Resolved/ })
-        .click();
+      await primaryNav.getByRole("link", { name: /Resolved/ }).click();
       await expect(page.locator("[data-row-id]")).toHaveCount(0);
 
       // All — at least one row visible again.
-      await page
-        .getByRole("navigation")
-        .getByRole("link", { name: /^All/ })
-        .click();
+      await primaryNav.getByRole("link", { name: /^All/ }).click();
       await expect(page.locator("[data-row-id]").first()).toBeVisible();
       expect(await page.locator("[data-row-id]").count()).toBeGreaterThanOrEqual(
         1
@@ -178,19 +174,17 @@ test.describe("Inbox list view", () => {
       // Allow the client shell's keydown listener to install before the
       // first keystroke (turbopack hydration race).
       await page.waitForTimeout(400);
-      await expect(async () => {
-        await focusedSeededRow.focus();
-        await page.keyboard.press("e");
-        const count = await focusedSeededRow
-          .locator(
-            '[role="img"][aria-label*="resolved" i], [role="img"][aria-label*="lahendat" i], [role="img"][aria-label*="реше" i]'
-          )
-          .count();
-        expect(count).toBeGreaterThanOrEqual(1);
-      }).toPass({ timeout: 20_000, intervals: [600, 1500, 3000] });
+      await page.keyboard.press("e");
+      await expect(focusedSeededRow).toHaveCount(0, { timeout: 20_000 });
 
       // ⌘K opens the palette; type a partial pet name → ArrowDown + Enter
       // navigates into the request detail.
+      await page.goto(
+        `${baseURL}/inbox?lang=en&stream=resolved&id=${seededRowId}`
+      );
+      await expect(
+        page.locator(`[data-row-id="${seededRowId}"]`)
+      ).toBeVisible();
       const ctrlOrMeta =
         process.platform === "darwin" ? "Meta+k" : "Control+k";
       await page.keyboard.press(ctrlOrMeta);
@@ -352,7 +346,7 @@ test.describe("Inbox list view", () => {
       );
       await page.goto(callbackUrl.toString());
       await expect(
-        page.getByRole("heading", { name: "ClientOps inbox" })
+        page.getByRole("heading", { level: 1, name: /^All/ })
       ).toBeVisible();
       await expect(
         page.locator('[data-realtime-channel^="petcura:inbox:"]')

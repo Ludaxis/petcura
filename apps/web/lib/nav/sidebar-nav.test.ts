@@ -9,16 +9,20 @@ const walk = (items: NavItem[]): NavItem[] =>
   items.flatMap((item) => [item, ...(item.children ? walk(item.children) : [])]);
 
 describe("sidebar-nav", () => {
-  it("expose every top-level surface needed by Slice A", () => {
+  it("exposes every top-level surface needed by the sidebar shell", () => {
     const ids = SIDEBAR_NAV.map((item) => item.id);
-    // The PR contract: search, inbox+children, reminders, reports, settings.
+    // Admin is present in config but gated at render time to super-admins.
     expect(ids).toEqual([
       "search",
       "inbox",
       "reminders",
       "reports",
-      "settings"
+      "settings",
+      "admin"
     ]);
+    expect(SIDEBAR_NAV.find((item) => item.id === "admin")?.requires).toBe(
+      "super_admin"
+    );
   });
 
   it("Inbox children cover every visible stream", () => {

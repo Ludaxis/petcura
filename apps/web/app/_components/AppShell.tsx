@@ -10,9 +10,11 @@ import {
   type InboxStream
 } from "@/lib/inbox/queries";
 import { requireStaffContext } from "@/lib/auth/staff";
+import { isSuperAdminEmail } from "@/lib/auth/super-admin";
 import { getThemePreference } from "@/lib/theme";
 import { signOutStaff } from "@/app/inbox/actions";
 import { AppSidebar } from "./AppSidebar";
+import { MobileShellHeader } from "./MobileShellHeader";
 import type { NavCounts } from "@/lib/nav/sidebar-nav";
 
 /**
@@ -34,6 +36,14 @@ export type AppShellProps = {
   inboxStream?: InboxStream;
   /** Path used by the UserMenu language switcher to preserve location. */
   currentPath: string;
+  /**
+   * The page title shown in the mobile header bar (visible below `md`).
+   * Examples: "All · 35" on /inbox, "Lumi" on /requests/[id], "Admin" on
+   * /admin. The persistent sidebar is hidden on mobile, so this is how
+   * users know where they are. Defaults to the localized inbox label so
+   * callers that don't pass it stay readable.
+   */
+  pageTitle?: string;
 };
 
 function clinicInitialsFrom(name: string) {
@@ -51,11 +61,13 @@ export async function AppShell({
   children,
   locale,
   inboxStream = "all",
-  currentPath
+  currentPath,
+  pageTitle
 }: AppShellProps) {
   const staffContext = await requireStaffContext(locale, currentPath);
   const themePreference = await getThemePreference();
   const t = createTranslator(locale);
+  const isSuperAdmin = isSuperAdminEmail(staffContext.user.email);
 
   const rawCounts = await getInboxStreamCounts(
     staffContext.supabase,
@@ -95,6 +107,7 @@ export async function AppShell({
         initialTheme={themePreference}
         counts={counts}
         inboxStream={inboxStream}
+        isSuperAdmin={isSuperAdmin}
         signOutAction={signOutStaff}
         labels={{
           sectionInbox: t("nav.section.inbox"),
@@ -128,6 +141,15 @@ export async function AppShell({
         >
           {t("nav.skipToContent")}
         </a>
+        {/*
+          Mobile header bar — visible only below `md`. Carries the sidebar
+          trigger (which opens shadcn's Sheet drawer) and the current page
+          title so users know where they are without the rail visible.
+        */}
+        <MobileShellHeader
+          title={pageTitle ?? t("nav.headerTitle.inbox")}
+          openMenuLabel={t("nav.openMenu")}
+        />
         <div id="main-content" className="flex flex-1 flex-col">
           {children}
         </div>

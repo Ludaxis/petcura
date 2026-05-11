@@ -8,6 +8,7 @@ import {
   ListChecks,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
   User,
   Users,
@@ -147,6 +148,16 @@ export const SIDEBAR_NAV: NavItem[] = [
     labelKey: "nav.settings",
     href: "/settings",
     icon: Settings
+  },
+  {
+    // Admin lives at the bottom of the nav and is gated to super-admins.
+    // AppSidebar resolves this `requires` gate at render time via the
+    // `isSuperAdmin` prop threaded down from AppShell.
+    id: "admin",
+    labelKey: "nav.admin",
+    href: "/admin",
+    icon: ShieldCheck,
+    requires: "super_admin"
   }
 ];
 
@@ -184,6 +195,7 @@ export {
   ListChecks,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
   User,
   Users,
