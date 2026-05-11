@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
+import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
 import { CommandPalette, type CommandPaletteRef } from "./CommandPalette";
 import { InboxKeyboard } from "./InboxKeyboard";
 import type { InboxStream } from "@/lib/inbox/queries";
 
 type InboxClientShellProps = {
+  clinicId: string;
   rowIds: string[];
   hrefForRow: Record<string, string>;
   threads: Array<{
@@ -24,6 +27,7 @@ type InboxClientShellProps = {
 };
 
 export function InboxClientShell({
+  clinicId,
   rowIds,
   hrefForRow,
   threads,
@@ -65,6 +69,15 @@ export function InboxClientShell({
 
   return (
     <>
+      <RealtimeRefresh
+        channelName={makeRealtimeChannelName("inbox", clinicId)}
+        targets={[
+          { table: "requests", filter: eqFilter("clinic_id", clinicId) },
+          { table: "messages", filter: eqFilter("clinic_id", clinicId) }
+        ]}
+        pollMs={45_000}
+      />
+
       <InboxKeyboard
         rowIds={rowIds}
         hrefForRow={(id) => hrefForRow[id] ?? `/requests/${id}`}

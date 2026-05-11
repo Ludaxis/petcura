@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CommandPalette, type CommandPaletteRef } from "@/app/inbox/_components/CommandPalette";
+import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
 import type { InboxStream } from "@/lib/inbox/queries";
+import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
 import type { SupportedLocale } from "@petcura/shared";
 import { Thread, type ThreadMessage } from "./Thread";
 import { AiDraftCard, type DraftPayload } from "./AiDraftCard";
@@ -11,6 +13,7 @@ import { RequestKeyboard } from "./RequestKeyboard";
 
 type RequestPaneShellProps = {
   requestId: string;
+  clinicId: string;
   rowIds: string[];
   hrefForRow: Record<string, string>;
   threads: Array<{
@@ -42,6 +45,7 @@ type RequestPaneShellProps = {
  */
 export function RequestPaneShell({
   requestId,
+  clinicId,
   rowIds,
   hrefForRow,
   threads,
@@ -140,6 +144,23 @@ export function RequestPaneShell({
 
   return (
     <>
+      <RealtimeRefresh
+        channelName={makeRealtimeChannelName("request-detail", requestId)}
+        targets={[
+          { table: "requests", filter: eqFilter("id", requestId) },
+          { table: "messages", filter: eqFilter("request_id", requestId) },
+          {
+            table: "request_events",
+            filter: eqFilter("request_id", requestId)
+          },
+          {
+            table: "message_delivery_events",
+            filter: eqFilter("clinic_id", clinicId)
+          }
+        ]}
+        pollMs={30_000}
+      />
+
       <div
         ref={liveRef}
         aria-live="polite"
