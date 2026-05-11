@@ -76,7 +76,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       currentPath="/admin"
       pageTitle={t("admin.title")}
     >
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full min-h-0 max-w-7xl flex-1 flex-col gap-5 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
         {/*
           The persistent sidebar carries identity (and a Super-admin entry
           for users who qualify), so the page header collapses to just the

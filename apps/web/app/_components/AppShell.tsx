@@ -146,7 +146,14 @@ export async function AppShell({
         existing inbox/requests styles continue to read it as the
         document root.
       */}
-      <main className="flex min-h-svh w-full flex-1 flex-col bg-[var(--paper)]">
+      {/*
+        Main is viewport-locked (h-svh + overflow-hidden) so the page itself
+        never scrolls. The inner panes own their own scroll — sidebar fixed,
+        list scrolls in its container, detail scrolls in its container. This
+        matches the Claude/Linear UX and prevents the "dead space below
+        content" bug when the page is scrolled.
+      */}
+      <main className="flex h-svh w-full flex-1 flex-col overflow-hidden bg-[var(--paper)]">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-[var(--paper)] focus:px-3 focus:py-2 focus:text-[var(--ink)] focus:shadow"
@@ -170,7 +177,7 @@ export async function AppShell({
         */}
         <div
           id="main-content"
-          className="flex flex-1 flex-col pb-16 md:pb-0"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden pb-16 md:pb-0"
         >
           {children}
         </div>
