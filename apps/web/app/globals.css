@@ -36,7 +36,10 @@
   --color-border: var(--line);
   --color-input: var(--line);
   --color-ring: var(--primary);
-  --color-sidebar: var(--paper);
+  /* Sidebar uses --soft (one step inset from --paper) so the rail is visually
+     distinct from the main content area. Without this, scrolling the main
+     pane looks like the whole layout moves because both surfaces blend. */
+  --color-sidebar: var(--soft);
   --color-sidebar-foreground: var(--ink);
   --color-sidebar-primary: var(--primary);
   --color-sidebar-primary-foreground: var(--paper);
