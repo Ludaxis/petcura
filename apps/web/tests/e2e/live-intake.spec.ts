@@ -109,7 +109,7 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
 
     await page.goto(callbackUrl.toString());
     await expect(
-      page.getByRole("heading", { name: "ClientOps inbox" })
+      page.getByRole("heading", { level: 1, name: /^All/ })
     ).toBeVisible();
 
     const requestLink = page.getByRole("link", {

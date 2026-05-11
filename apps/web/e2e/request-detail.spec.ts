@@ -236,6 +236,13 @@ async function authenticateAs(
 }
 
 test.describe("Request detail tri-pane", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(
+      testInfo.project.name.includes("mobile"),
+      "Request-detail tri-pane specs are desktop-first; the chromium project includes the 390px mobile layout check."
+    );
+  });
+
   test("renders tri-pane, AI draft accept/reject, translation toggle, ⌘↵, J/K nav", async ({
     page,
     baseURL

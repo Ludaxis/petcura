@@ -165,6 +165,15 @@ export function InboxKeyboard({
     window.setTimeout(() => setToast(null), 1500);
   }, []);
 
+  const refreshWithReloadFallback = useCallback(() => {
+    router.refresh();
+    window.setTimeout(() => {
+      if (document.visibilityState === "visible") {
+        window.location.reload();
+      }
+    }, 1500);
+  }, [router]);
+
   // Open/close the shortcut sheet with focus restoration.
   const openSheet = useCallback(() => {
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
@@ -254,7 +263,7 @@ export function InboxKeyboard({
         e.preventDefault();
         void (async () => {
           const result = await resolveInboxRequest(currentId, locale);
-          if (result.ok) router.refresh();
+          if (result.ok) refreshWithReloadFallback();
           showToast(result.ok ? labels.resolved : labels.errorResolve);
         })();
         return;
@@ -264,7 +273,7 @@ export function InboxKeyboard({
         e.preventDefault();
         void (async () => {
           const result = await assignInboxRequestToMe(currentId, locale);
-          if (result.ok) router.refresh();
+          if (result.ok) refreshWithReloadFallback();
           showToast(result.ok ? labels.assigned : labels.errorAssign);
         })();
         return;
@@ -286,6 +295,7 @@ export function InboxKeyboard({
     onFocusedIndexChange,
     onOpenPalette,
     openSheet,
+    refreshWithReloadFallback,
     router,
     rowIds,
     showSheet,
