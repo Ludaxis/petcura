@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768;
+export const MOBILE_BREAKPOINT = 768;
 
 /**
  * Tracks the viewport's narrow-mode breakpoint. Used by the shadcn Sidebar

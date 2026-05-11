@@ -14,7 +14,11 @@ export default async function RemindersPage({ searchParams }: Props) {
   const locale = await getRequestLocale(langParam);
   const t = createTranslator(locale);
   return (
-    <AppShell locale={locale} currentPath="/reminders">
+    <AppShell
+      locale={locale}
+      currentPath="/reminders"
+      pageTitle={t("nav.reminders")}
+    >
       <ComingSoonCard
         Icon={Bell}
         title={t("nav.reminders")}

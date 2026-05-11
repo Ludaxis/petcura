@@ -14,7 +14,11 @@ export default async function ReportsPage({ searchParams }: Props) {
   const locale = await getRequestLocale(langParam);
   const t = createTranslator(locale);
   return (
-    <AppShell locale={locale} currentPath="/reports">
+    <AppShell
+      locale={locale}
+      currentPath="/reports"
+      pageTitle={t("nav.reports")}
+    >
       <ComingSoonCard
         Icon={FileText}
         title={t("nav.reports")}

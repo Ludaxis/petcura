@@ -14,7 +14,11 @@ export default async function SettingsPage({ searchParams }: Props) {
   const locale = await getRequestLocale(langParam);
   const t = createTranslator(locale);
   return (
-    <AppShell locale={locale} currentPath="/settings">
+    <AppShell
+      locale={locale}
+      currentPath="/settings"
+      pageTitle={t("nav.settings")}
+    >
       <ComingSoonCard
         Icon={Settings}
         title={t("nav.settings")}

@@ -21,8 +21,8 @@ function adminClient() {
  * Slice B mobile shell coverage: the sidebar collapses into shadcn's Sheet
  * drawer below 768px, the header bar surfaces the SidebarTrigger and the
  * current page title, and pressing the trigger opens the drawer over the
- * content. We exercise this on /inbox so the test stays independent of
- * the live request seed flow.
+ * content. We exercise this on /reports so coming-soon shell routes cannot
+ * accidentally render the default "Inbox" mobile title.
  */
 test.describe("Mobile sidebar shell", () => {
   test("trigger reveals sidebar drawer below md", async ({ page, baseURL }) => {
@@ -64,11 +64,11 @@ test.describe("Mobile sidebar shell", () => {
         type: "magiclink",
         email: staffEmail,
         options: {
-          redirectTo: `${baseURL}/auth/callback?next=/inbox&lang=en`
+          redirectTo: `${baseURL}/auth/callback?next=/reports&lang=en`
         }
       });
       const cb = new URL("/auth/callback", baseURL);
-      cb.searchParams.set("next", "/inbox");
+      cb.searchParams.set("next", "/reports");
       cb.searchParams.set("lang", "en");
       cb.searchParams.set("token_hash", link.properties!.hashed_token);
       cb.searchParams.set(
@@ -80,6 +80,9 @@ test.describe("Mobile sidebar shell", () => {
       await page.reload({ waitUntil: "domcontentloaded" });
 
       // Mobile header bar is visible, sidebar is collapsed off-canvas.
+      await expect(
+        page.locator("[data-mobile-shell-header]").getByText("Reports")
+      ).toBeVisible();
       const trigger = page.getByRole("button", { name: /open menu/i });
       await expect(trigger).toBeVisible();
       // Desktop rail (240px) is hidden — sidebar gap collapses to 0.
@@ -87,9 +90,20 @@ test.describe("Mobile sidebar shell", () => {
 
       // Click the trigger — the Sheet drawer opens.
       await trigger.click();
+      const drawer = page.locator('[data-mobile="true"]');
+      await expect(drawer).toBeVisible({ timeout: 5000 });
       await expect(
-        page.locator('[data-mobile="true"]')
-      ).toBeVisible({ timeout: 5000 });
+        drawer.getByRole("link", { name: /^Inbox$/i })
+      ).toBeVisible();
+      await expect(
+        drawer.getByRole("link", { name: /^Reminders$/i })
+      ).toBeVisible();
+      await expect(
+        drawer.getByRole("link", { name: /^Reports$/i })
+      ).toBeVisible();
+      await expect(
+        drawer.getByRole("link", { name: /^Settings$/i })
+      ).toBeVisible();
 
       // Esc on the focused sheet content closes the drawer (shadcn handles
       // both focus trap and Esc binding). Focus must be inside the sheet
@@ -97,11 +111,11 @@ test.describe("Mobile sidebar shell", () => {
       // ensure focus has moved into the trapped region. Then assert via
       // the sheet's data-state attribute, since Radix unmounts after its
       // close animation.
-      await page.locator('[data-mobile="true"]').focus().catch(() => {});
-      await page.locator('[data-mobile="true"]').press("Escape");
-      await expect(page.locator('[data-mobile="true"][data-state="open"]')).toHaveCount(0, {
-        timeout: 5000
-      });
+      await drawer.focus().catch(() => {});
+      await drawer.press("Escape");
+      await expect(
+        page.locator('[data-mobile="true"][data-state="open"]')
+      ).toHaveCount(0, { timeout: 5000 });
     } finally {
       if (staffUserId) {
         await admin.from("clinic_staff").delete().eq("user_id", staffUserId);
