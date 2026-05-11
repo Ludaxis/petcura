@@ -3,16 +3,21 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState
 } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@petcura/ui";
 import {
   resolveInboxRequest,
   assignInboxRequestToMe
 } from "@/app/inbox/_actions";
-import { isEditableTarget, trapTabKey } from "@/app/_components/useFocusTrap";
+import { isEditableTarget } from "@/app/_components/useFocusTrap";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 type Shortcut = {
   keys: string;
@@ -60,58 +65,44 @@ export function RequestKeyboard({
   const router = useRouter();
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 1500);
   }, []);
 
-  const openSheet = useCallback(() => {
-    lastFocusedRef.current =
-      typeof document !== "undefined"
-        ? (document.activeElement as HTMLElement | null)
-        : null;
-    setShowSheet(true);
-  }, []);
-  const closeSheet = useCallback(() => {
-    setShowSheet(false);
-    const target = lastFocusedRef.current;
-    if (target && typeof target.focus === "function") {
-      target.focus();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showSheet) return;
-    const id = window.setTimeout(() => {
-      const close = sheetRef.current?.querySelector<HTMLButtonElement>(
-        "[data-sheet-close]"
-      );
-      close?.focus();
-    }, 0);
-    return () => window.clearTimeout(id);
-  }, [showSheet]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Block global hotkeys when ANOTHER modal dialog is open (e.g. the AI
-      // draft Edit modal). The shortcut sheet itself owns its keys via the
-      // showSheet branches below.
+      // Block global hotkeys when ANOTHER modal owns the foreground. Two
+      // surfaces qualify:
+      //   1. The migrated shortcut sheet (this component's own Dialog) — let
+      //      `?` still toggle it closed below, but ignore everything else so
+      //      Radix owns Tab/Escape/click-outside.
+      //   2. The AI Edit modal in AiDraftCard, which is still a hand-rolled
+      //      `[role="dialog"][aria-modal="true"]` shell that owns its own
+      //      keys (Cmd+Enter save, Escape close, Tab trap). We must not steal
+      //      those keys at the document level.
+      // Both surfaces are detected by checking for an open Radix Dialog
+      // (`data-slot="dialog-content"[data-state="open"]`) or a hand-rolled
+      // modal that is NOT a Radix Dialog
+      // (`[role="dialog"][aria-modal="true"]:not([data-slot="dialog-content"])`).
       if (typeof document !== "undefined") {
-        const openDialog = document.querySelector(
-          '[role="dialog"][aria-modal="true"]'
+        const handRolledModal = document.querySelector(
+          '[role="dialog"][aria-modal="true"]:not([data-slot="dialog-content"])'
         );
-        if (openDialog && openDialog !== sheetRef.current?.parentElement) {
+        if (handRolledModal) return;
+        const openRadixDialog = document.querySelector(
+          '[data-slot="dialog-content"][data-state="open"]'
+        );
+        // If a Radix Dialog is open and it is NOT this component's shortcut
+        // sheet (i.e., it's something like CreateReminderDialog or the future
+        // migrated AI Edit modal), bail. The own-sheet case is allowed to
+        // fall through so `?` can toggle it closed.
+        if (openRadixDialog && !showSheet) {
           return;
         }
       }
 
-      if (showSheet && e.key === "Tab") {
-        trapTabKey(e, sheetRef.current);
-        return;
-      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         onOpenPalette();
@@ -137,15 +128,15 @@ export function RequestKeyboard({
 
       if (e.key === "?") {
         e.preventDefault();
-        if (showSheet) closeSheet();
-        else openSheet();
+        setShowSheet((prev) => !prev);
         return;
       }
-      if (e.key === "Escape") {
-        if (showSheet) {
-          e.preventDefault();
-          closeSheet();
-        }
+      // Escape is handled by Radix Dialog when the sheet is open. When it's
+      // closed, Escape is a no-op at this level (other surfaces may handle).
+      if (showSheet) {
+        // Sheet is open — Radix owns its own keys (Tab trap, Escape close,
+        // click-outside). Don't fire row navigation or row actions while the
+        // shortcut overlay is in front of them.
         return;
       }
       if (e.key === "r" || e.key === "R") {
@@ -202,7 +193,6 @@ export function RequestKeyboard({
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
   }, [
-    closeSheet,
     hrefForRow,
     labels.assigned,
     labels.errorAssign,
@@ -213,7 +203,6 @@ export function RequestKeyboard({
     onOpenPalette,
     onSendComposer,
     onToggleTranslation,
-    openSheet,
     requestId,
     router,
     rowIds,
@@ -231,33 +220,12 @@ export function RequestKeyboard({
           {toast}
         </div>
       ) : null}
-      {showSheet ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={labels.sheetTitle}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
-          onClick={closeSheet}
-        >
-          <div
-            ref={sheetRef}
-            className="w-full max-w-md rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[var(--ink)]">
-                {labels.sheetTitle}
-              </h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={closeSheet}
-                aria-label={labels.close}
-                data-sheet-close
-              >
-                {labels.close}
-              </Button>
-            </div>
+      <Dialog open={showSheet} onOpenChange={setShowSheet}>
+        <DialogContent size="md" closeLabel={labels.close}>
+          <DialogHeader>
+            <DialogTitle>{labels.sheetTitle}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <ul className="flex flex-col gap-1.5">
               {shortcuts.map((s) => (
                 <li
@@ -271,9 +239,9 @@ export function RequestKeyboard({
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-      ) : null}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

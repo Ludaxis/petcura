@@ -997,6 +997,24 @@ test.describe("Request detail tri-pane", () => {
       await expect(back.first()).toBeFocused();
       // Sanity: rail is not visible.
       await expect(rail).toHaveCount(0).catch(() => null);
+
+      // Details sheet escape hatch: the trigger is visible + enabled on
+      // mobile (the inline xl rail is hidden), and clicking it opens a
+      // Radix Sheet that exposes the side panel content under its
+      // accessible name. Closing with Escape restores focus.
+      const detailsTrigger = page.locator("[data-details-sheet]");
+      await expect(detailsTrigger).toBeVisible();
+      await expect(detailsTrigger).toBeEnabled();
+      await detailsTrigger.click();
+      const sheetPanel = page.locator('[data-side-panel="sheet"]');
+      await expect(sheetPanel).toBeVisible();
+      // The same aria-label as the inline rail — confirms parity for SRs.
+      await expect(sheetPanel).toHaveAttribute(
+        "aria-label",
+        /side panel/i
+      );
+      await page.keyboard.press("Escape");
+      await expect(sheetPanel).toHaveCount(0);
     } finally {
       if (seed) await teardownFixture(admin, seed);
     }

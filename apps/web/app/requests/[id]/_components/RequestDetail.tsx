@@ -25,6 +25,7 @@ import {
   updateRequestUrgency
 } from "../actions";
 import { CreateReminderDialog } from "./CreateReminderDialog";
+import { DetailsSheet } from "./DetailsSheet";
 
 type RequestDetailProps = {
   request: RequestDetailModel;
@@ -257,21 +258,27 @@ export function RequestDetail({
                 cancel: t("request.reminder.cancel")
               }}
             />
-            {/* PR C wires the actual sheet. For PR B the trigger is disabled
-                so it's not a misleading enabled no-op for keyboard / SR users.
-                Tablet users still reach the same content via the inline
-                accordion blocks below the thread (md–xl). */}
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled
-              aria-disabled="true"
-              data-details-sheet
-              className="md:hidden"
+            {/*
+              Mobile/tablet/laptop (<xl) escape hatch: the right rail (Pet,
+              Reminders, Events, Notes) lives in `xl:block`, so on narrower
+              viewports it's hidden. Tapping Details slides the same content
+              in from the right as a Sheet so phone/tablet/laptop users keep
+              parity with desktop. Hidden on `xl+` where the inline rail is
+              already visible.
+            */}
+            <DetailsSheet
+              triggerLabel={t("request.detail.detailsSheet")}
+              panelLabel={t("request.detail.sidePanel")}
+              closeLabel={t("inbox.kbdSheet.close")}
             >
-              {t("request.detail.detailsSheetSoon")}
-              <ChevronDown aria-hidden="true" size={12} />
-            </Button>
+              <SideBlocks
+                request={request}
+                locale={locale}
+                formatDateTime={formatDateTime}
+                t={t}
+                idSuffix="sheet"
+              />
+            </DetailsSheet>
           </div>
         </div>
       </header>
