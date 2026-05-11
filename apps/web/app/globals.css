@@ -124,6 +124,44 @@
   box-sizing: border-box;
 }
 
+/* Scrollbar — applied globally so every scrollable surface (page, sidebar,
+ * detail panes, list, modals, prototypes inside iframes if same-origin) reads
+ * the same calm, narrow, token-driven scrollbar. macOS Safari's overlay
+ * scrollbars hide automatically so this only paints on Linux/Windows and
+ * when a user has "Always show scrollbars" enabled.
+ *
+ * Firefox uses scrollbar-width + scrollbar-color (limited styling).
+ * WebKit (Chrome/Safari/Edge) gets richer styling via ::-webkit-scrollbar.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-2) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--line);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 10px;
+  min-height: 36px;
+  min-width: 36px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-2);
+}
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--muted);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 html {
   background: var(--background);
   color: var(--foreground);

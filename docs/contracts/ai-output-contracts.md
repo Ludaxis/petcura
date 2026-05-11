@@ -40,7 +40,7 @@
 ## Summary V1
 
 - Prompt version: `summary.v1.2026-05-11`
-- Default model: `PETCURA_AI_SUMMARY_MODEL` or `anthropic/claude-sonnet-4.6`
+- Default model: `PETCURA_AI_SUMMARY_MODEL` or `anthropic/claude-haiku-4.5`
 - Trigger: new owner message created by web intake or WhatsApp intake
 - Storage:
   - `ai_outputs.kind = summary`
@@ -56,7 +56,7 @@
 ## Translation V1
 
 - Prompt version: `translation.v1.2026-05-11`
-- Default model: `PETCURA_AI_TRANSLATION_MODEL` or `anthropic/claude-sonnet-4.6`
+- Default model: `PETCURA_AI_TRANSLATION_MODEL` or `anthropic/claude-haiku-4.5`
 - Trigger: new owner message created by web intake or WhatsApp intake
 - Targets: all supported UI locales except the source locale (`en`, `et`, `ru`)
 - Storage:
