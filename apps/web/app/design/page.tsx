@@ -6,6 +6,13 @@ import {
   StatusPill,
   UrgencyDot
 } from "@petcura/ui";
+import {
+  ActiveStateMatrix,
+  MobileShellPair,
+  NavConfigSnippet,
+  ShellSkeleton,
+  SidebarStatesRow
+} from "./_components/ShellShowcase";
 
 export const metadata: Metadata = {
   title: "PetCura · Foundation Review",
@@ -270,6 +277,50 @@ export default function DesignCanvasPage() {
         </Section>
 
         <Section
+          id="shell"
+          eyebrow="App shell"
+          title="Shell & navigation"
+          subtitle="Live primitives — the rail, the active states, the mobile sheet. Regressions in any of these light up here first."
+        >
+          <div className="flex flex-col gap-12">
+            <ShowcaseGroup
+              title="A · Sidebar — three states"
+              note="Three captioned tiles using the live shadcn Sidebar primitives. If a future PR breaks the active/hover/super-admin rules, one of these tiles shows the broken state immediately."
+            >
+              <SidebarStatesRow />
+            </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="B · AppShell skeleton"
+              note="Sidebar (left, --soft) + main (right, --paper). The surface tones must differ — that's how the rail reads as anchored when content scrolls."
+            >
+              <ShellSkeleton />
+            </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="C · Mobile shell"
+              note="Below md the rail folds into a Sheet drawer triggered by the MobileShellHeader. The open state here is a visual approximation; the live Sheet renders through a Radix portal."
+            >
+              <MobileShellPair />
+            </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="D · Active-state matrix"
+              note="Static chips rendered with the exact same cn classes SidebarMenuSubButton applies in each state. The contract: this table mirrors the live row — break the classes, break this row."
+            >
+              <ActiveStateMatrix />
+            </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="E · Nav config"
+              note="The sidebar is data-driven. One typed entry per top-level feature, gated to roles when needed."
+            >
+              <NavConfigSnippet />
+            </ShowcaseGroup>
+          </div>
+        </Section>
+
+        <Section
           id="clinic"
           eyebrow="Surface 1"
           title="Clinic inbox"
@@ -322,6 +373,32 @@ export default function DesignCanvasPage() {
         </footer>
       </div>
     </main>
+  );
+}
+
+function ShowcaseGroup({
+  title,
+  note,
+  children
+}: {
+  title: string;
+  note?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
+          {title}
+        </h3>
+        {note ? (
+          <p className="max-w-3xl text-[12.5px] leading-[1.5] text-[var(--ink-2)]">
+            {note}
+          </p>
+        ) : null}
+      </header>
+      {children}
+    </div>
   );
 }
 
