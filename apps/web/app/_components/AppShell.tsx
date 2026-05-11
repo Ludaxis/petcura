@@ -13,6 +13,7 @@ import { requireStaffContext } from "@/lib/auth/staff";
 import { isSuperAdminEmail } from "@/lib/auth/super-admin";
 import { getThemePreference } from "@/lib/theme";
 import { signOutStaff } from "@/app/inbox/actions";
+import { getOpenReminderCount } from "@/lib/reminders";
 import { AppSidebar } from "./AppSidebar";
 import { MobileShellHeader } from "./MobileShellHeader";
 import type { NavCounts } from "@/lib/nav/sidebar-nav";
@@ -69,11 +70,14 @@ export async function AppShell({
   const t = createTranslator(locale);
   const isSuperAdmin = isSuperAdminEmail(staffContext.user.email);
 
-  const rawCounts = await getInboxStreamCounts(
-    staffContext.supabase,
-    staffContext.clinic.id,
-    staffContext.membership.id
-  );
+  const [rawCounts, openReminderCount] = await Promise.all([
+    getInboxStreamCounts(
+      staffContext.supabase,
+      staffContext.clinic.id,
+      staffContext.membership.id
+    ),
+    getOpenReminderCount(staffContext.supabase, staffContext.clinic.id)
+  ]);
 
   // Map server counts onto the NavCountSource keys the sidebar uses. The
   // sidebar only ever reads through these named slots; it stays decoupled
@@ -85,9 +89,7 @@ export async function AppShell({
     urgent: rawCounts.urgent,
     today: rawCounts.today,
     resolved: rawCounts.resolved,
-    // Reminders aren't wired to a real source yet — Slice C delivers them.
-    // The badge slot is reserved so the contract stays stable.
-    remindersTotal: 0
+    remindersTotal: openReminderCount
   };
 
   // staff_role enum values render verbatim in the identity card subtitle.

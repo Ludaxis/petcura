@@ -13,6 +13,7 @@ import {
   normalizeDeliveryStatus,
   type MessageDeliveryStatus
 } from "@/lib/delivery";
+import { listRequestReminders, type ReminderListItem } from "@/lib/reminders";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -97,6 +98,7 @@ export type RequestDetail = InboxRequest & {
     body: string;
     createdAt: string;
   }>;
+  reminders: ReminderListItem[];
   events: Array<{
     id: string;
     eventType: string;
@@ -195,8 +197,14 @@ export async function getRequestDetail(
 
   const request = requestData as unknown as RequestWithRelations;
 
-  const [messagesResult, notesResult, eventsResult, staffResult, draftResult] =
-    await Promise.all([
+  const [
+    messagesResult,
+    notesResult,
+    eventsResult,
+    staffResult,
+    draftResult,
+    reminders
+  ] = await Promise.all([
       supabase
         .from("messages")
         .select(
@@ -234,7 +242,8 @@ export async function getRequestDetail(
         .is("accepted", null)
         .order("created_at", { ascending: false })
         .limit(1)
-        .maybeSingle()
+        .maybeSingle(),
+      listRequestReminders(supabase, clinicId, requestId)
     ]);
 
   if (messagesResult.error) {
@@ -335,6 +344,7 @@ export async function getRequestDetail(
       body: note.body,
       createdAt: note.created_at
     })),
+    reminders,
     events: (eventsResult.data ?? []).map((event) => ({
       id: event.id,
       eventType: event.event_type,

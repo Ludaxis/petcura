@@ -3,8 +3,10 @@ import {
   clinicSlugSchema,
   createClinicSchema,
   createClinicStaffSchema,
+  createReminderSchema,
   intakeRequestSchema,
   internalNoteSchema,
+  reminderStatusActionSchema,
   requestAssignmentSchema,
   requestStatusSchema,
   requestStatusUpdateSchema,
@@ -122,6 +124,48 @@ describe("staff action schemas", () => {
         staffMemberId: "unassigned"
       })
     ).toMatchObject({ staffMemberId: "unassigned" });
+  });
+
+  it("accepts reminder creation and status actions", () => {
+    expect(
+      createReminderSchema.parse({
+        requestId,
+        type: "recheck",
+        title: "Recheck Luna",
+        body: "Please confirm if Luna is eating again.",
+        dueAt: "2026-05-12T09:00:00.000+03:00",
+        channel: "whatsapp"
+      })
+    ).toMatchObject({
+      requestId,
+      type: "recheck",
+      channel: "whatsapp"
+    });
+
+    expect(
+      reminderStatusActionSchema.parse({
+        reminderId: requestId,
+        status: "completed"
+      })
+    ).toMatchObject({ status: "completed" });
+  });
+
+  it("rejects invalid reminder contracts", () => {
+    expect(
+      createReminderSchema.safeParse({
+        requestId,
+        type: "diagnosis",
+        title: "Bad type",
+        dueAt: "2026-05-12T09:00:00.000+03:00",
+        channel: "whatsapp"
+      }).success
+    ).toBe(false);
+    expect(
+      reminderStatusActionSchema.safeParse({
+        reminderId: requestId,
+        status: "sent"
+      }).success
+    ).toBe(false);
   });
 
   it("rejects empty staff action bodies", () => {

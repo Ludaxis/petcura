@@ -11,6 +11,7 @@ import {
   aiDraftDecisionSchema,
   aiDraftEditSchema,
   aiDraftRejectSchema,
+  createReminderSchema,
   internalNoteSchema,
   requestAssignmentSchema,
   requestStatusUpdateSchema,
@@ -61,7 +62,7 @@ function eventTypeForStatusChange(
 
 type RequestForAction = Pick<
   Database["public"]["Tables"]["requests"]["Row"],
-  "id" | "status" | "urgency" | "assigned_staff_id" | "channel"
+  "id" | "pet_id" | "status" | "urgency" | "assigned_staff_id" | "channel"
 > & {
   owners: Pick<Database["public"]["Tables"]["owners"]["Row"], "phone"> | null;
 };
@@ -73,7 +74,7 @@ async function loadRequestForAction(
 ) {
   const { data, error } = await supabase
     .from("requests")
-    .select("id, status, urgency, assigned_staff_id, channel, owners(phone)")
+    .select("id, pet_id, status, urgency, assigned_staff_id, channel, owners(phone)")
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
     .maybeSingle();
@@ -301,6 +302,86 @@ export async function addInternalNote(formData: FormData) {
 
   refreshRequestViews(requestId);
   redirectToRequest(requestId, locale, { action_status: "note_added" });
+}
+
+export async function createReminder(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const requestId = getString(formData, "requestId");
+  const parsed = createReminderSchema.safeParse({
+    requestId,
+    type: getString(formData, "type"),
+    title: getString(formData, "title"),
+    body: getString(formData, "body"),
+    dueAt: getString(formData, "dueAt"),
+    channel: getString(formData, "channel") || "whatsapp"
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(requestId, locale, { action_error: "reminder" });
+  }
+
+  const { type, title, body, dueAt, channel } = parsed.data;
+  const dueDate = new Date(dueAt);
+  if (Number.isNaN(dueDate.getTime())) {
+    redirectToRequest(requestId, locale, { action_error: "reminder" });
+  }
+
+  const staffContext = await requireStaffContext(locale, `/requests/${requestId}`);
+  const request = await loadRequestForAction(
+    staffContext.supabase,
+    staffContext.clinic.id,
+    requestId
+  );
+
+  if (!request) {
+    redirectToRequest(requestId, locale, { action_error: "not_found" });
+  }
+
+  const { data: reminder, error: reminderError } = await staffContext.supabase
+    .from("reminders")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      pet_id: request.pet_id,
+      type,
+      title,
+      body: body?.trim() ? body.trim() : null,
+      due_at: dueDate.toISOString(),
+      channel,
+      status: "scheduled",
+      created_by: staffContext.user.id
+    })
+    .select("id")
+    .single();
+
+  if (reminderError) {
+    throw new Error(`Could not create reminder: ${reminderError.message}`);
+  }
+
+  const { error: eventError } = await staffContext.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: staffContext.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: staffContext.user.id,
+      event_type: "reminder_created",
+      payload_json: {
+        reminder_id: reminder.id,
+        staff_id: staffContext.membership.id,
+        type,
+        due_at: dueDate.toISOString(),
+        channel
+      }
+    });
+
+  if (eventError) {
+    throw new Error(`Could not write reminder event: ${eventError.message}`);
+  }
+
+  refreshRequestViews(requestId);
+  revalidatePath("/reminders");
+  redirectToRequest(requestId, locale, { action_status: "reminder_created" });
 }
 
 export async function updateRequestStatus(formData: FormData) {

@@ -117,6 +117,36 @@ export const requestAssignmentSchema = z.object({
   staffMemberId: z.union([uuidSchema, z.literal("unassigned")])
 });
 
+export const reminderTypeSchema = z.enum([
+  "follow_up",
+  "recheck",
+  "vaccination",
+  "refill"
+]);
+
+export const reminderStatusSchema = z.enum([
+  "scheduled",
+  "sent",
+  "acknowledged",
+  "completed",
+  "missed",
+  "cancelled"
+]);
+
+export const createReminderSchema = z.object({
+  requestId: uuidSchema,
+  type: reminderTypeSchema,
+  title: trimmedString.min(1).max(160),
+  body: trimmedString.max(1000).optional(),
+  dueAt: z.iso.datetime({ offset: true }),
+  channel: z.enum(["whatsapp", "sms"]).default("whatsapp")
+});
+
+export const reminderStatusActionSchema = z.object({
+  reminderId: uuidSchema,
+  status: z.enum(["acknowledged", "completed", "cancelled"])
+});
+
 export const aiDraftDecisionSchema = z.object({
   requestId: uuidSchema,
   aiOutputId: uuidSchema

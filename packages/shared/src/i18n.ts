@@ -126,6 +126,58 @@ export const channelLabels = {
 
 export type RequestChannel = keyof typeof channelLabels.en;
 
+export const reminderTypeLabels = {
+  en: {
+    follow_up: "Follow-up",
+    recheck: "Recheck",
+    vaccination: "Vaccination",
+    refill: "Refill"
+  },
+  et: {
+    follow_up: "Järelkontakt",
+    recheck: "Järelkontroll",
+    vaccination: "Vaktsineerimine",
+    refill: "Ravimi pikendamine"
+  },
+  ru: {
+    follow_up: "Повторный контакт",
+    recheck: "Повторный осмотр",
+    vaccination: "Вакцинация",
+    refill: "Продление препарата"
+  }
+} as const;
+
+export type ReminderType = keyof typeof reminderTypeLabels.en;
+
+export const reminderStatusLabels = {
+  en: {
+    scheduled: "Scheduled",
+    sent: "Sent",
+    acknowledged: "Acknowledged",
+    completed: "Completed",
+    missed: "Missed",
+    cancelled: "Cancelled"
+  },
+  et: {
+    scheduled: "Planeeritud",
+    sent: "Saadetud",
+    acknowledged: "Kinnitatud",
+    completed: "Lõpetatud",
+    missed: "Vastamata",
+    cancelled: "Tühistatud"
+  },
+  ru: {
+    scheduled: "Запланировано",
+    sent: "Отправлено",
+    acknowledged: "Подтверждено",
+    completed: "Завершено",
+    missed: "Пропущено",
+    cancelled: "Отменено"
+  }
+} as const;
+
+export type ReminderStatus = keyof typeof reminderStatusLabels.en;
+
 export const senderLabels = {
   en: {
     owner: "Owner",
@@ -442,6 +494,45 @@ export const uiCopy = {
     "request.detail.close": "Close request",
     "inbox.streams.resolved": "Resolved",
     "inbox.list.heading.resolved": "Resolved threads — {count} results",
+    "request.reminder.create": "Create reminder",
+    "request.reminder.type": "Type",
+    "request.reminder.title": "Title",
+    "request.reminder.titlePlaceholder": "Follow up with owner",
+    "request.reminder.dueAt": "Due date",
+    "request.reminder.body": "Message",
+    "request.reminder.bodyPlaceholder":
+      "Optional owner-facing reminder text.",
+    "request.reminder.channel": "Channel",
+    "request.reminder.cancel": "Cancel",
+    "request.reminder.upcoming": "Upcoming reminders",
+    "request.reminder.empty": "No reminders yet.",
+    "request.toast.reminderCreated": "Reminder created",
+    "request.toast.error.reminder": "Couldn't create reminder",
+    "reminders.title": "Reminders",
+    "reminders.description":
+      "Scheduled follow-ups, rechecks, refills, and vaccination reminders for this clinic.",
+    "reminders.empty": "No reminders in this view.",
+    "reminders.emptyBody":
+      "Create a reminder from a request detail page to close the follow-up loop.",
+    "reminders.tabs.all": "All",
+    "reminders.tabs.scheduled": "Scheduled",
+    "reminders.tabs.sent": "Sent",
+    "reminders.tabs.acknowledged": "Acknowledged",
+    "reminders.tabs.missed": "Missed",
+    "reminders.tabs.completed": "Completed",
+    "reminders.tabs.cancelled": "Cancelled",
+    "reminders.pet": "Pet",
+    "reminders.owner": "Owner",
+    "reminders.due": "Due",
+    "reminders.request": "Request",
+    "reminders.body": "Body",
+    "reminders.actions": "Actions",
+    "reminders.openRequest": "Open request",
+    "reminders.markAcknowledged": "Mark acknowledged",
+    "reminders.markCompleted": "Mark completed",
+    "reminders.cancel": "Cancel reminder",
+    "reminders.statusUpdated": "Reminder updated",
+    "reminders.error": "Could not update reminder",
     "comingSoon.title": "Coming soon",
     "comingSoon.body":
       "This area is part of the PetCura roadmap. The shell is in place so the navigation feels stable; the live workflow lands in a later slice."
@@ -738,6 +829,45 @@ export const uiCopy = {
     "request.detail.close": "Sulge pöördumine",
     "inbox.streams.resolved": "Lahendatud",
     "inbox.list.heading.resolved": "Lahendatud vestlused — {count} tulemust",
+    "request.reminder.create": "Loo meeldetuletus",
+    "request.reminder.type": "Tüüp",
+    "request.reminder.title": "Pealkiri",
+    "request.reminder.titlePlaceholder": "Võta omanikuga ühendust",
+    "request.reminder.dueAt": "Tähtaeg",
+    "request.reminder.body": "Sõnum",
+    "request.reminder.bodyPlaceholder":
+      "Valikuline omanikule saadetav meeldetuletuse tekst.",
+    "request.reminder.channel": "Kanal",
+    "request.reminder.cancel": "Tühista",
+    "request.reminder.upcoming": "Tulevased meeldetuletused",
+    "request.reminder.empty": "Meeldetuletusi veel pole.",
+    "request.toast.reminderCreated": "Meeldetuletus loodud",
+    "request.toast.error.reminder": "Meeldetuletust ei saanud luua",
+    "reminders.title": "Meeldetuletused",
+    "reminders.description":
+      "Kliiniku planeeritud järelkontaktid, kontrollid, ravimipikendused ja vaktsineerimise meeldetuletused.",
+    "reminders.empty": "Selles vaates pole meeldetuletusi.",
+    "reminders.emptyBody":
+      "Loo meeldetuletus pöördumise detailvaatest, et järeltegevus ei jääks lahtiseks.",
+    "reminders.tabs.all": "Kõik",
+    "reminders.tabs.scheduled": "Planeeritud",
+    "reminders.tabs.sent": "Saadetud",
+    "reminders.tabs.acknowledged": "Kinnitatud",
+    "reminders.tabs.missed": "Vastamata",
+    "reminders.tabs.completed": "Lõpetatud",
+    "reminders.tabs.cancelled": "Tühistatud",
+    "reminders.pet": "Lemmik",
+    "reminders.owner": "Omanik",
+    "reminders.due": "Tähtaeg",
+    "reminders.request": "Pöördumine",
+    "reminders.body": "Sisu",
+    "reminders.actions": "Tegevused",
+    "reminders.openRequest": "Ava pöördumine",
+    "reminders.markAcknowledged": "Märgi kinnitatuks",
+    "reminders.markCompleted": "Märgi lõpetatuks",
+    "reminders.cancel": "Tühista meeldetuletus",
+    "reminders.statusUpdated": "Meeldetuletus uuendatud",
+    "reminders.error": "Meeldetuletust ei saanud uuendada",
     "comingSoon.title": "Tuleb varsti",
     "comingSoon.body":
       "See osa on PetCura tegevuskavas. Raamistik on juba paigas, et navigeerimine tunduks stabiilne; tegelik töövoog tuleb hiljem."
@@ -1035,6 +1165,45 @@ export const uiCopy = {
     "request.detail.close": "Закрыть запрос",
     "inbox.streams.resolved": "Решено",
     "inbox.list.heading.resolved": "Решённые запросы — {count} результатов",
+    "request.reminder.create": "Создать напоминание",
+    "request.reminder.type": "Тип",
+    "request.reminder.title": "Заголовок",
+    "request.reminder.titlePlaceholder": "Связаться с владельцем",
+    "request.reminder.dueAt": "Срок",
+    "request.reminder.body": "Сообщение",
+    "request.reminder.bodyPlaceholder":
+      "Необязательный текст напоминания для владельца.",
+    "request.reminder.channel": "Канал",
+    "request.reminder.cancel": "Отмена",
+    "request.reminder.upcoming": "Ближайшие напоминания",
+    "request.reminder.empty": "Напоминаний пока нет.",
+    "request.toast.reminderCreated": "Напоминание создано",
+    "request.toast.error.reminder": "Не удалось создать напоминание",
+    "reminders.title": "Напоминания",
+    "reminders.description":
+      "Запланированные повторные контакты, осмотры, продления препаратов и вакцинации этой клиники.",
+    "reminders.empty": "В этом виде нет напоминаний.",
+    "reminders.emptyBody":
+      "Создайте напоминание на странице запроса, чтобы закрыть цикл follow-up.",
+    "reminders.tabs.all": "Все",
+    "reminders.tabs.scheduled": "Запланировано",
+    "reminders.tabs.sent": "Отправлено",
+    "reminders.tabs.acknowledged": "Подтверждено",
+    "reminders.tabs.missed": "Пропущено",
+    "reminders.tabs.completed": "Завершено",
+    "reminders.tabs.cancelled": "Отменено",
+    "reminders.pet": "Питомец",
+    "reminders.owner": "Владелец",
+    "reminders.due": "Срок",
+    "reminders.request": "Запрос",
+    "reminders.body": "Текст",
+    "reminders.actions": "Действия",
+    "reminders.openRequest": "Открыть запрос",
+    "reminders.markAcknowledged": "Отметить подтверждённым",
+    "reminders.markCompleted": "Отметить завершённым",
+    "reminders.cancel": "Отменить напоминание",
+    "reminders.statusUpdated": "Напоминание обновлено",
+    "reminders.error": "Не удалось обновить напоминание",
     "comingSoon.title": "Скоро",
     "comingSoon.body":
       "Этот раздел в плане PetCura. Каркас уже на месте — навигация стабильна; реальный рабочий процесс появится позже."
@@ -1073,6 +1242,20 @@ export function getChannelLabel(
   locale: SupportedLocale
 ) {
   return channelLabels[locale][channel];
+}
+
+export function getReminderTypeLabel(
+  type: keyof typeof reminderTypeLabels.en,
+  locale: SupportedLocale
+) {
+  return reminderTypeLabels[locale][type];
+}
+
+export function getReminderStatusLabel(
+  status: keyof typeof reminderStatusLabels.en,
+  locale: SupportedLocale
+) {
+  return reminderStatusLabels[locale][status];
 }
 
 export function getSenderLabel(

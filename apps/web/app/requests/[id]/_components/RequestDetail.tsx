@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  CalendarClock,
   ChevronDown,
   Languages,
   X
@@ -11,7 +10,10 @@ import {
   getChannelLabel,
   getRequestCategoryLabel,
   getRequestStatusLabel,
+  getReminderStatusLabel,
+  getReminderTypeLabel,
   getUrgencyLabel,
+  reminderTypes,
   requestStatusColumns,
   type SupportedLocale
 } from "@petcura/shared";
@@ -22,6 +24,7 @@ import {
   updateRequestStatus,
   updateRequestUrgency
 } from "../actions";
+import { CreateReminderDialog } from "./CreateReminderDialog";
 
 type RequestDetailProps = {
   request: RequestDetailModel;
@@ -230,10 +233,30 @@ export function RequestDetail({
           </form>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="secondary">
-              <CalendarClock aria-hidden="true" size={14} />
-              {t("request.reminder")}
-            </Button>
+            <CreateReminderDialog
+              requestId={request.id}
+              locale={locale}
+              options={reminderTypes.map((type) => ({
+                value: type.value,
+                label: getReminderTypeLabel(type.value, locale)
+              }))}
+              channels={[
+                { value: "whatsapp", label: getChannelLabel("whatsapp", locale) }
+              ]}
+              labels={{
+                trigger: t("request.reminder"),
+                title: t("request.reminder.create"),
+                type: t("request.reminder.type"),
+                titleField: t("request.reminder.title"),
+                titlePlaceholder: t("request.reminder.titlePlaceholder"),
+                dueAt: t("request.reminder.dueAt"),
+                body: t("request.reminder.body"),
+                bodyPlaceholder: t("request.reminder.bodyPlaceholder"),
+                channel: t("request.reminder.channel"),
+                submit: t("request.reminder.create"),
+                cancel: t("request.reminder.cancel")
+              }}
+            />
             {/* PR C wires the actual sheet. For PR B the trigger is disabled
                 so it's not a misleading enabled no-op for keyboard / SR users.
                 Tablet users still reach the same content via the inline
@@ -354,6 +377,50 @@ function SideBlocks({
             </p>
           </div>
         </div>
+      </details>
+
+      <details
+        open
+        className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+      >
+        <summary className="flex cursor-pointer items-center justify-between">
+          <h2 className={headingClass}>{t("request.reminder.upcoming")}</h2>
+          <ChevronDown aria-hidden="true" size={12} />
+        </summary>
+        {request.reminders.length > 0 ? (
+          <ol className="mt-2.5 flex flex-col gap-2">
+            {request.reminders.map((reminder) => (
+              <li
+                key={reminder.id}
+                className="rounded-[var(--radius)] border border-[var(--line-2)] bg-[var(--soft)] p-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="break-words text-[12.5px] font-semibold text-[var(--ink)]">
+                      {reminder.title}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                      {getReminderTypeLabel(reminder.type, locale)} ·{" "}
+                      {formatDateTime(reminder.dueAt)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-[var(--paper)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                    {getReminderStatusLabel(reminder.status, locale)}
+                  </span>
+                </div>
+                {reminder.body ? (
+                  <p className="mt-2 break-words text-[12px] leading-5 text-[var(--ink-2)]">
+                    {reminder.body}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-2.5 text-[12px] text-[var(--muted)]">
+            {t("request.reminder.empty")}
+          </p>
+        )}
       </details>
 
       <details

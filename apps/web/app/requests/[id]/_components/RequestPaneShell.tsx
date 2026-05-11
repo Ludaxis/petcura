@@ -154,6 +154,10 @@ export function RequestPaneShell({
             filter: eqFilter("request_id", requestId)
           },
           {
+            table: "reminders",
+            filter: eqFilter("request_id", requestId)
+          },
+          {
             table: "message_delivery_events",
             filter: eqFilter("clinic_id", clinicId)
           }

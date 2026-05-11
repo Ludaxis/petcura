@@ -72,6 +72,7 @@ export default async function RequestDetailPage({
   const toastForStatus: Record<string, string> = {
     reply_sent: t("request.toast.replySent"),
     note_added: t("request.toast.noteAdded"),
+    reminder_created: t("request.toast.reminderCreated"),
     status_updated: t("request.toast.statusUpdated"),
     urgency_updated: t("request.toast.urgencyUpdated"),
     assigned: t("request.toast.assigned")
@@ -79,6 +80,7 @@ export default async function RequestDetailPage({
   const toastForError: Record<string, string> = {
     reply: t("request.toast.error.reply"),
     note: t("request.toast.error.note"),
+    reminder: t("request.toast.error.reminder"),
     status: t("request.toast.error.status"),
     urgency: t("request.toast.error.urgency"),
     assignment: t("request.toast.error.assignment"),

@@ -49,6 +49,22 @@ export const requestCategories = [
   { value: "admin" }
 ] as const;
 
+export const reminderTypes = [
+  { value: "follow_up" },
+  { value: "recheck" },
+  { value: "vaccination" },
+  { value: "refill" }
+] as const;
+
+export const reminderStatuses = [
+  { value: "scheduled" },
+  { value: "sent" },
+  { value: "acknowledged" },
+  { value: "completed" },
+  { value: "missed" },
+  { value: "cancelled" }
+] as const;
+
 export function getLocalizedRequestCategories(locale: SupportedLocale) {
   return requestCategories.map((category) => ({
     value: category.value,
