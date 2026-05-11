@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Suspense } from "react";
 import { Badge, Button } from "@petcura/ui";
 import {
@@ -8,7 +8,6 @@ import {
   type SupportedLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { requireStaffContext } from "@/lib/auth/staff";
 import {
   getInboxStreamCounts,
@@ -26,7 +25,6 @@ import { InboxToolbarControls } from "./_components/InboxToolbarControls";
 import { InboxClientShell } from "./_components/InboxClientShell";
 import { InboxBoard } from "./_components/InboxBoard";
 import { InboxEmptyState, InboxSkeleton } from "./_components/InboxStates";
-import { ThemeToggle } from "@/app/_components/ThemeToggle";
 import { UserMenu } from "@/app/_components/UserMenu";
 
 type InboxPageProps = {
@@ -178,32 +176,8 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ThemeToggle
-            initial={themePreference}
-            labels={{
-              light: t("inbox.theme.light"),
-              dark: t("inbox.theme.dark"),
-              system: t("inbox.theme.system"),
-              label: t("inbox.theme.label"),
-              announceLight: t("inbox.theme.announce.light"),
-              announceDark: t("inbox.theme.announce.dark"),
-              announceSystem: t("inbox.theme.announce.system")
-            }}
-          />
-          <LanguageSwitcher
-            currentPath="/inbox"
-            label={t("language.label")}
-            locale={locale}
-          />
           <Badge tone="teal">{staffContext.clinic.name}</Badge>
           <Badge tone="neutral">{t("inbox.liveBadge")}</Badge>
-          <form action={signOutStaff}>
-            <input name="lang" type="hidden" value={locale} />
-            <Button variant="secondary" type="submit">
-              <LogOut aria-hidden="true" size={16} />
-              {t("auth.logout")}
-            </Button>
-          </form>
         </div>
       </header>
 

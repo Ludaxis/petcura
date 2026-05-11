@@ -16,9 +16,6 @@ import {
   withLocale,
   type SupportedLocale
 } from "@petcura/shared";
-import { LanguageSwitcher } from "@/components/language-switcher";
-import { ThemeToggle } from "@/app/_components/ThemeToggle";
-import type { ThemePreference } from "@/lib/theme";
 import type { RequestDetail as RequestDetailModel } from "@/lib/requests";
 import {
   addInternalNote,
@@ -30,8 +27,6 @@ import {
 type RequestDetailProps = {
   request: RequestDetailModel;
   locale: SupportedLocale;
-  themePreference: ThemePreference;
-  themeLabels: React.ComponentProps<typeof ThemeToggle>["labels"];
   formatDateTime: (iso: string) => string;
   currentStaffUserId: string;
   /**
@@ -48,8 +43,6 @@ const urgencyOptions = ["low", "medium", "high"] as const;
 export function RequestDetail({
   request,
   locale,
-  themePreference,
-  themeLabels,
   formatDateTime,
   currentStaffUserId,
   paneShell
@@ -221,14 +214,6 @@ export function RequestDetail({
           </form>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <LanguageSwitcher
-              currentPath={`/requests/${request.id}`}
-              label={t("language.label")}
-              locale={locale}
-            />
-            <span className="hidden md:inline-flex">
-              <ThemeToggle initial={themePreference} labels={themeLabels} />
-            </span>
             <Button size="sm" variant="secondary">
               <CalendarClock aria-hidden="true" size={14} />
               {t("request.reminder")}

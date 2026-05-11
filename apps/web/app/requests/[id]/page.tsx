@@ -147,16 +147,6 @@ export default async function RequestDetailPage({
       }
     : null;
 
-  const themeLabels = {
-    light: t("inbox.theme.light"),
-    dark: t("inbox.theme.dark"),
-    system: t("inbox.theme.system"),
-    label: t("inbox.theme.label"),
-    announceLight: t("inbox.theme.announce.light"),
-    announceDark: t("inbox.theme.announce.dark"),
-    announceSystem: t("inbox.theme.announce.system")
-  } as const;
-
   const streamLabels: Record<InboxStream, string> = {
     all: t("inbox.streams.all"),
     urgent: t("inbox.streams.urgent"),
@@ -316,8 +306,6 @@ export default async function RequestDetailPage({
       <RequestDetail
         request={request}
         locale={locale}
-        themePreference={themePreference}
-        themeLabels={themeLabels}
         formatDateTime={formatDateTime}
         currentStaffUserId={staffContext.user.id}
         paneShell={paneShell}

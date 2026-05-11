@@ -17,7 +17,6 @@ import { getRequestLocale } from "@/lib/locale";
 import { listAdminClinics } from "@/lib/admin/bootstrap";
 import { requireSuperAdminContext } from "@/lib/auth/super-admin";
 import { requirePublicEnv } from "@/lib/env";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { getThemePreference } from "@/lib/theme";
 import { signOutStaff } from "@/app/inbox/actions";
 import { UserMenu } from "@/app/_components/UserMenu";
@@ -90,16 +89,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <LanguageSwitcher
-            currentPath="/admin"
-            label={t("language.label")}
-            locale={locale}
-          />
           <Badge tone="teal">
             <ShieldCheck aria-hidden="true" size={13} />
             {t("admin.superAdmin")}
           </Badge>
-          <Badge tone="neutral">{superAdmin.email}</Badge>
         </div>
       </header>
 
