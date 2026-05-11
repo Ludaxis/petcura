@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -13,21 +13,42 @@ type RealtimeRefreshProps = {
   targets: RealtimeRefreshTarget[];
   debounceMs?: number;
   pollMs?: number;
+  reloadFallbackMs?: number;
 };
 
 export function RealtimeRefresh({
   channelName,
   targets,
   debounceMs = 600,
-  pollMs
+  pollMs,
+  reloadFallbackMs = 0
 }: RealtimeRefreshProps) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
+  const [refreshCount, setRefreshCount] = useState(0);
   const targetKey = JSON.stringify(targets);
 
   useEffect(() => {
     const supabase = createClient();
+    let reloadFallback: ReturnType<typeof setTimeout> | null = null;
+    const cancelReloadFallback = () => {
+      if (!reloadFallback) return;
+      clearTimeout(reloadFallback);
+      reloadFallback = null;
+    };
     const { cancel, schedule } = createDebouncedRefresh(() => {
-      if (document.visibilityState === "visible") router.refresh();
+      if (document.visibilityState !== "visible") return;
+      setRefreshCount((count) => count + 1);
+      startTransition(() => router.refresh());
+      cancelReloadFallback();
+      if (reloadFallbackMs > 0) {
+        reloadFallback = setTimeout(() => {
+          reloadFallback = null;
+          if (document.visibilityState === "visible") {
+            window.location.reload();
+          }
+        }, reloadFallbackMs);
+      }
     }, debounceMs);
     const parsedTargets = JSON.parse(targetKey) as RealtimeRefreshTarget[];
     const channel = supabase.channel(channelName);
@@ -89,11 +110,26 @@ export function RealtimeRefresh({
 
     return () => {
       cancel();
+      cancelReloadFallback();
       stopPolling();
       document.removeEventListener("visibilitychange", syncPolling);
       void supabase.removeChannel(channel);
     };
-  }, [channelName, debounceMs, pollMs, router, targetKey]);
+  }, [
+    channelName,
+    debounceMs,
+    pollMs,
+    reloadFallbackMs,
+    router,
+    startTransition,
+    targetKey
+  ]);
 
-  return <span data-realtime-channel={channelName} hidden />;
+  return (
+    <span
+      data-realtime-channel={channelName}
+      data-realtime-refresh-count={refreshCount}
+      hidden
+    />
+  );
 }

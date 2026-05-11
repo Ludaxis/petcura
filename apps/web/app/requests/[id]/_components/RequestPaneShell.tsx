@@ -159,6 +159,7 @@ export function RequestPaneShell({
           }
         ]}
         pollMs={30_000}
+        reloadFallbackMs={1_500}
       />
 
       <div

@@ -18,6 +18,9 @@ import type { DraftPayload } from "./_components/AiDraftCard";
 import { signOutStaff } from "@/app/inbox/actions";
 import { UserMenu } from "@/app/_components/UserMenu";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type RequestDetailPageProps = {
   params: Promise<{ id: string }>;
   searchParams?: Promise<{

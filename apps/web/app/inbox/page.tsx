@@ -20,6 +20,9 @@ import { InboxClientShell } from "./_components/InboxClientShell";
 import { InboxBoard } from "./_components/InboxBoard";
 import { InboxEmptyState, InboxSkeleton } from "./_components/InboxStates";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type InboxPageProps = {
   searchParams?: Promise<{
     lang?: string | string[];

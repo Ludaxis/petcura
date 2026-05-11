@@ -40,8 +40,14 @@ Request creation:
 
 - `owners` is upserted by `(clinic_id, phone)`.
 - `owner_channel_identities` is upserted by `(clinic_id, channel, external_id)`.
+- If the owner already has an unresolved WhatsApp request in the clinic, the
+  webhook appends the new owner message to that request instead of creating a
+  new case.
+- When an owner reply arrives while the case is `waiting_owner`, the request is
+  moved back to `waiting_staff` and the request timestamp is refreshed.
 - A placeholder pet `Unknown pet` / `unknown` is used until structured intake
-  collects pet identity.
+  collects pet identity. The placeholder is only created for a new request, not
+  for every later WhatsApp message.
 - A `requests` row is created with:
   - `channel = whatsapp`
   - `category = medical_question`
@@ -58,6 +64,8 @@ Idempotency:
 
 - If a message with the same `external_id` already exists for the clinic, the
   webhook returns success without creating a duplicate request.
+- The database enforces this with a partial unique index on
+  `(clinic_id, external_id)` for non-null external IDs.
 
 Response:
 

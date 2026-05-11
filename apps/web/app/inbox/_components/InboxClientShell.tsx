@@ -90,6 +90,7 @@ export function InboxClientShell({
           { table: "messages", filter: eqFilter("clinic_id", clinicId) }
         ]}
         pollMs={45_000}
+        reloadFallbackMs={1_500}
       />
 
       <InboxKeyboard
