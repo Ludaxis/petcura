@@ -36,6 +36,10 @@
 - Structured outputs must pass schema validation.
 - Failed validation falls back to manual UI and logs the failure.
 - AI output is advisory unless a human review field marks it accepted.
+- Provider credentials:
+  - `AI_GATEWAY_API_KEY` is for Vercel AI Gateway.
+  - `ANTHROPIC_API_KEY` is for a direct Anthropic Console key.
+  - Direct Anthropic calls map `anthropic/claude-haiku-4.5` to Claude API alias `claude-haiku-4-5`.
 
 ## Summary V1
 

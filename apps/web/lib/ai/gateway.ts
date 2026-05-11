@@ -3,6 +3,13 @@ import "server-only";
 import type { z } from "zod";
 
 const gatewayUrl = "https://ai-gateway.vercel.sh/v1/responses";
+const anthropicUrl = "https://api.anthropic.com/v1/messages";
+const anthropicVersion = "2023-06-01";
+const anthropicModelAliases: Record<string, string> = {
+  "anthropic/claude-haiku-4.5": "claude-haiku-4-5",
+  "anthropic/claude-sonnet-4.6": "claude-sonnet-4-6",
+  "anthropic/claude-sonnet-4.5": "claude-sonnet-4-5"
+};
 
 export type GatewayJsonResult<T> =
   | {
@@ -21,23 +28,57 @@ export type GatewayJsonResult<T> =
       latencyMs: number;
     };
 
-function readToken(name: "AI_GATEWAY_API_KEY" | "VERCEL_OIDC_TOKEN") {
+type AiCredentialName =
+  | "AI_GATEWAY_API_KEY"
+  | "ANTHROPIC_API_KEY"
+  | "VERCEL_OIDC_TOKEN";
+
+function readToken(name: AiCredentialName) {
   const token = process.env[name]?.trim();
   return token ? token : null;
 }
 
+function isAnthropicApiKey(token: string) {
+  return token.startsWith("sk-ant-");
+}
+
 export function getAiGatewayToken() {
-  return readToken("AI_GATEWAY_API_KEY") ?? readToken("VERCEL_OIDC_TOKEN");
+  const gatewayToken = readToken("AI_GATEWAY_API_KEY");
+  if (gatewayToken && !isAnthropicApiKey(gatewayToken)) return gatewayToken;
+  return readToken("VERCEL_OIDC_TOKEN");
+}
+
+export function getAnthropicApiKey() {
+  const anthropicToken = readToken("ANTHROPIC_API_KEY");
+  if (anthropicToken) return anthropicToken;
+
+  const misplacedGatewayToken = readToken("AI_GATEWAY_API_KEY");
+  if (misplacedGatewayToken && isAnthropicApiKey(misplacedGatewayToken)) {
+    return misplacedGatewayToken;
+  }
+
+  return null;
 }
 
 export function hasAiGatewayCredentials() {
-  return Boolean(getAiGatewayToken());
+  return Boolean(getAnthropicApiKey() ?? getAiGatewayToken());
 }
 
 function extractResponseText(payload: unknown) {
   if (!payload || typeof payload !== "object") return "";
   const obj = payload as Record<string, unknown>;
   if (typeof obj.output_text === "string") return obj.output_text;
+  const directContent = Array.isArray(obj.content) ? obj.content : [];
+  const directChunks: string[] = [];
+
+  for (const part of directContent) {
+    if (!part || typeof part !== "object") continue;
+    const text = (part as Record<string, unknown>).text;
+    if (typeof text === "string") directChunks.push(text);
+  }
+
+  if (directChunks.length > 0) return directChunks.join("\n").trim();
+
   const output = Array.isArray(obj.output) ? obj.output : [];
   const chunks: string[] = [];
 
@@ -53,6 +94,15 @@ function extractResponseText(payload: unknown) {
   }
 
   return chunks.join("\n").trim();
+}
+
+function toAnthropicModel(model: string) {
+  const mapped = anthropicModelAliases[model];
+  if (mapped) return mapped;
+  if (!model.startsWith("anthropic/")) return model;
+  return model
+    .slice("anthropic/".length)
+    .replace(/(\d)\.(\d)/g, "$1-$2");
 }
 
 function extractUsage(payload: unknown) {
@@ -109,18 +159,79 @@ export async function generateJsonWithGateway<T>({
   maxOutputTokens?: number;
 }): Promise<GatewayJsonResult<T>> {
   const token = getAiGatewayToken();
+  const anthropicApiKey = getAnthropicApiKey();
   const startedAt = Date.now();
 
-  if (!token) {
+  if (!anthropicApiKey && !token) {
     return {
       ok: false,
-      reason: "ai_gateway_not_configured",
+      reason: "ai_provider_not_configured",
       model,
       latencyMs: 0
     };
   }
 
   try {
+    if (anthropicApiKey) {
+      const anthropicModel = toAnthropicModel(model);
+      const response = await fetch(anthropicUrl, {
+        method: "POST",
+        headers: {
+          "anthropic-version": anthropicVersion,
+          "content-type": "application/json",
+          "x-api-key": anthropicApiKey
+        },
+        body: JSON.stringify({
+          model: anthropicModel,
+          system,
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: maxOutputTokens
+        }),
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+      const latencyMs = Date.now() - startedAt;
+
+      if (!response.ok) {
+        return {
+          ok: false,
+          reason: `anthropic_${response.status}`,
+          model: anthropicModel,
+          latencyMs
+        };
+      }
+
+      const payload = await response.json();
+      const rawText = extractResponseText(payload);
+      const parsed = schema.safeParse(parseJsonText(rawText));
+
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "schema_validation_failed",
+          model: anthropicModel,
+          latencyMs
+        };
+      }
+
+      const usage = extractUsage(payload);
+
+      return {
+        ok: true,
+        output: parsed.data,
+        model: anthropicModel,
+        latencyMs,
+        tokensIn: usage.tokensIn,
+        tokensOut: usage.tokensOut,
+        rawText
+      };
+    }
+
     const response = await fetch(gatewayUrl, {
       method: "POST",
       headers: {
