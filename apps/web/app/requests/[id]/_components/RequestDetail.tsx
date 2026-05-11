@@ -4,7 +4,7 @@ import {
   Languages,
   X
 } from "lucide-react";
-import { Badge, Button } from "@petcura/ui";
+import { Badge, Button, Eyebrow } from "@petcura/ui";
 import {
   createTranslator,
   getChannelLabel,
@@ -81,9 +81,7 @@ export function RequestDetail({
               <h1 className="break-words text-[20px] font-semibold leading-tight">
                 {request.petName}
               </h1>
-              <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
-                {request.species}
-              </span>
+              <Eyebrow tone="muted-2">{request.species}</Eyebrow>
             </div>
             <p className="mt-0.5 break-words text-[12.5px] text-[var(--muted)]">
               {request.ownerName} ·{" "}
@@ -350,16 +348,86 @@ function SideBlocks({
   t,
   idSuffix
 }: SideBlocksProps) {
-  const headingClass =
-    "font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]";
+  // Side-block headings: small uppercase mono caption rendered as <h2>
+  // inside <summary> so heading nav (JAWS/NVDA) still works. The shared
+  // Eyebrow primitive owns the typography; the `tracking-[0.12em]` here is
+  // a deliberate extra-loose variant (sidebar context — denser than the
+  // 0.06em used on inline eyebrows elsewhere).
+  const renderHeading = (text: string) => (
+    <Eyebrow as="h2" tone="muted-2" size="sm" className="tracking-[0.12em]">
+      {text}
+    </Eyebrow>
+  );
   return (
     <>
       <details
         open
         className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+        data-ai-summary-panel
       >
         <summary className="flex cursor-pointer items-center justify-between">
-          <h2 className={headingClass}>{t("request.pet")}</h2>
+          {renderHeading(t("request.aiSummary"))}
+          <ChevronDown aria-hidden="true" size={12} />
+        </summary>
+        <div className="mt-2.5 rounded-[var(--radius)] border border-[var(--line-2)] bg-[var(--soft)] p-2.5">
+          <p className="break-words text-[12.5px] leading-5 text-[var(--ink-2)]">
+            {request.aiSummary?.trim()
+              ? request.aiSummary
+              : t("request.noSummary")}
+          </p>
+
+          {request.urgencySuggestion ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
+                {t("request.aiUrgencySuggestion")}
+              </span>
+              <Badge
+                tone={
+                  request.urgencySuggestion === "high"
+                    ? "red"
+                    : request.urgencySuggestion === "medium"
+                      ? "amber"
+                      : "neutral"
+                }
+              >
+                {getUrgencyLabel(request.urgencySuggestion, locale)}
+              </Badge>
+            </div>
+          ) : null}
+
+          {request.riskFlags.length > 0 ? (
+            <div className="mt-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
+                {t("request.aiRiskFlags")}
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {request.riskFlags.map((flag) => (
+                  <Badge key={flag} tone="amber">
+                    {flag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <p className="mt-2 break-words text-[11px] leading-4 text-[var(--muted)]">
+            {request.aiSummaryVersion
+              ? `${t("request.aiVersion").replace(
+                  "{version}",
+                  request.aiSummaryVersion
+                )}. `
+              : ""}
+            {t("request.aiNotice")}
+          </p>
+        </div>
+      </details>
+
+      <details
+        open
+        className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+      >
+        <summary className="flex cursor-pointer items-center justify-between">
+          {renderHeading(t("request.pet"))}
           <ChevronDown aria-hidden="true" size={12} />
         </summary>
         <div className="mt-2.5 flex items-start gap-2.5">
@@ -384,7 +452,7 @@ function SideBlocks({
         className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
       >
         <summary className="flex cursor-pointer items-center justify-between">
-          <h2 className={headingClass}>{t("request.reminder.upcoming")}</h2>
+          {renderHeading(t("request.reminder.upcoming"))}
           <ChevronDown aria-hidden="true" size={12} />
         </summary>
         {request.reminders.length > 0 ? (
@@ -433,7 +501,7 @@ function SideBlocks({
         className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
       >
         <summary className="flex cursor-pointer items-center justify-between">
-          <h2 className={headingClass}>{t("request.events")}</h2>
+          {renderHeading(t("request.events"))}
           <ChevronDown aria-hidden="true" size={12} />
         </summary>
         <ol className="mt-2.5 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
@@ -458,7 +526,7 @@ function SideBlocks({
 
       <details open className="px-4 py-3 [&[open]>summary>svg]:rotate-180">
         <summary className="flex cursor-pointer items-center justify-between">
-          <h2 className={headingClass}>{t("request.internalNotes")}</h2>
+          {renderHeading(t("request.internalNotes"))}
           <ChevronDown aria-hidden="true" size={12} />
         </summary>
 

@@ -3,13 +3,17 @@ import type { CSSProperties, ReactNode } from "react";
 import {
   Badge,
   Button,
+  Eyebrow,
   StatusPill,
   UrgencyDot
 } from "@petcura/ui";
 import {
   ActiveStateMatrix,
+  DialogPrimitiveShowcase,
+  EyebrowShowcase,
   MobileShellPair,
   NavConfigSnippet,
+  SegmentedControlShowcase,
   ShellSkeleton,
   SidebarStatesRow
 } from "./_components/ShellShowcase";
@@ -317,6 +321,27 @@ export default function DesignCanvasPage() {
             >
               <NavConfigSnippet />
             </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="F · Dialog primitive"
+              note="Three sizes (sm / md / lg) cover every overlay shape we ship: small forms (create-reminder), shortcut sheets and edit modals (md), the command palette (lg). Scrim, focus trap, Escape, click-outside, and focus restoration are owned by the primitive — call sites only flip open state."
+            >
+              <DialogPrimitiveShowcase />
+            </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="G · SegmentedControl"
+              note="Radiogroup with roving tabindex + arrow-key navigation. Replaces four hand-rolled toggles (inbox view, density, theme). Two tones: neutral (ink-on-paper, toolbar context) and primary (sage-on-paper, theme picker)."
+            >
+              <SegmentedControlShowcase />
+            </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="H · Eyebrow"
+              note="The small uppercase mono caption used everywhere — section headers, AI draft cards, side-block accordions, shortcut hints. Tones cover muted / muted-2 / primary / amber / red / ink; size sm = 10px tight, md = 10.5px (default)."
+            >
+              <EyebrowShowcase />
+            </ShowcaseGroup>
           </div>
         </Section>
 
@@ -418,9 +443,9 @@ function Section({
   return (
     <section id={id} className="flex scroll-mt-16 flex-col gap-8">
       <header className="flex flex-col gap-2 border-b border-[var(--line)] pb-5">
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
+        <Eyebrow tone="primary" size="sm" bold>
           {eyebrow}
-        </span>
+        </Eyebrow>
         <h2 className="text-3xl font-semibold tracking-[-0.015em] text-[var(--ink)]">
           {title}
         </h2>
@@ -453,9 +478,9 @@ function CoverSection() {
       />
       <div className="relative flex flex-col gap-12">
         <div className="flex flex-col gap-5">
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+          <Eyebrow tone="muted" size="sm" bold>
             PetCura · Foundation review · v1.0 · May 2026
-          </span>
+          </Eyebrow>
           <h1 className="max-w-3xl text-[44px] font-bold leading-[1.04] tracking-[-0.025em] text-[var(--ink)] sm:text-[56px] lg:text-[72px]">
             The WhatsApp-native
             <br />
@@ -492,9 +517,7 @@ function Stat({ n, l }: { n: string; l: string }) {
       <span className="text-[44px] font-semibold leading-none tracking-[-0.02em] text-[var(--ink)]">
         {n}
       </span>
-      <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
-        {l}
-      </span>
+      <Eyebrow tone="muted">{l}</Eyebrow>
     </div>
   );
 }

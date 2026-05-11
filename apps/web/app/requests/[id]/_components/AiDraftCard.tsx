@@ -2,9 +2,16 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Sparkles } from "lucide-react";
-import { Button, cn } from "@petcura/ui";
+import { Button, Eyebrow, cn } from "@petcura/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { acceptAiDraft, editAiDraft, rejectAiDraft } from "../actions";
-import { trapTabKey } from "@/app/_components/useFocusTrap";
 
 export type DraftPayload = {
   id: string;
@@ -64,16 +71,12 @@ export function AiDraftCard({
   const [draftText, setDraftText] = useState(draft.text);
   const [pending, startTransition] = useTransition();
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Focus management for the inline edit dialog.
+  // Dialog primitive owns focus trap, Escape, and focus restoration. We
+  // only need to seed cursor placement inside the textarea once the dialog
+  // mounts (Radix's autoFocus would land on the close button otherwise).
   useEffect(() => {
     if (!editing) return;
-    lastFocusedRef.current =
-      typeof document !== "undefined"
-        ? (document.activeElement as HTMLElement | null)
-        : null;
     const id = window.setTimeout(() => {
       editTextareaRef.current?.focus();
       editTextareaRef.current?.setSelectionRange(
@@ -86,10 +89,6 @@ export function AiDraftCard({
 
   const closeEdit = () => {
     setEditing(false);
-    const target = lastFocusedRef.current;
-    if (target && typeof target.focus === "function") {
-      target.focus();
-    }
   };
 
   if (hidden) return null;
@@ -166,7 +165,7 @@ export function AiDraftCard({
       role="region"
       aria-label={labels.region}
       data-ai-draft-card
-      className="mx-4 mt-3 rounded-[10px] border border-[var(--line)] border-l-2 border-l-[var(--primary)] bg-[var(--paper)] px-3.5 py-3 sm:mx-6"
+      className="mx-4 mt-3 rounded-[var(--radius-md)] border border-[var(--line)] border-l-2 border-l-[var(--primary)] bg-[var(--paper)] px-3.5 py-3 sm:mx-6"
     >
       <header className="flex flex-wrap items-center gap-2">
         <Sparkles
@@ -174,9 +173,9 @@ export function AiDraftCard({
           size={13}
           className="text-[var(--primary)]"
         />
-        <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--ink)]">
+        <Eyebrow tone="ink" size="sm" bold>
           {labels.eyebrow}
-        </span>
+        </Eyebrow>
         <span className="ml-auto flex flex-wrap items-center gap-2 font-mono text-[10.5px] text-[var(--muted-2)]">
           {draft.sourceMessageId ? (
             <span>
@@ -226,23 +225,17 @@ export function AiDraftCard({
         </Button>
       </div>
 
-      {editing ? (
-        <div
-          role="dialog"
-          aria-modal="true"
+      <Dialog
+        open={editing}
+        onOpenChange={(next) => {
+          if (!next) closeEdit();
+        }}
+      >
+        <DialogContent
+          size="md"
           aria-label={labels.editLabel}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center"
-          onClick={closeEdit}
+          closeLabel={labels.cancel}
           onKeyDown={(e) => {
-            if (e.key === "Tab") {
-              trapTabKey(e, dialogRef.current);
-              return;
-            }
-            if (e.key === "Escape") {
-              e.preventDefault();
-              closeEdit();
-              return;
-            }
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
               e.preventDefault();
               // Default to the conservative path: save the edit and keep the
@@ -251,24 +244,10 @@ export function AiDraftCard({
             }
           }}
         >
-          <div
-            ref={dialogRef}
-            className="w-full max-w-lg rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-[var(--ink)]">
-                {labels.editLabel}
-              </h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={closeEdit}
-                aria-label={labels.cancel}
-              >
-                {labels.cancel}
-              </Button>
-            </div>
+          <DialogHeader>
+            <DialogTitle>{labels.editLabel}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <textarea
               ref={editTextareaRef}
               aria-label={labels.editLabel}
@@ -279,36 +258,36 @@ export function AiDraftCard({
                 "focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               )}
             />
-            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={closeEdit}
-                disabled={pending}
-              >
-                {labels.cancel}
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => handleSaveEdit("saveOnly")}
-                disabled={pending || draftText.trim().length === 0}
-                data-ai-draft-action="save"
-              >
-                {labels.save}
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => handleSaveEdit("saveAndAccept")}
-                disabled={pending || draftText.trim().length === 0}
-                data-ai-draft-action="save-accept"
-              >
-                {labels.saveAndAccept}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={closeEdit}
+              disabled={pending}
+            >
+              {labels.cancel}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleSaveEdit("saveOnly")}
+              disabled={pending || draftText.trim().length === 0}
+              data-ai-draft-action="save"
+            >
+              {labels.save}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleSaveEdit("saveAndAccept")}
+              disabled={pending || draftText.trim().length === 0}
+              data-ai-draft-action="save-accept"
+            >
+              {labels.saveAndAccept}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

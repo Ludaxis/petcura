@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useRef } from "react";
 import { ChevronRight } from "lucide-react";
-import { cn } from "@petcura/ui";
+import { cn, Eyebrow } from "@petcura/ui";
 import {
   createTranslator,
   withLocale,
@@ -323,7 +323,7 @@ export function AppSidebar({
         >
           <span
             aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-[var(--primary-soft)] text-[var(--primary-strong)]"
+            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--primary-soft)] text-[var(--primary-strong)]"
           >
             <span className="text-[13px] font-semibold">P</span>
           </span>
@@ -331,12 +331,20 @@ export function AppSidebar({
             <span className="truncate text-[13.5px] font-semibold text-[var(--ink)]">
               PetCura
             </span>
-            <span
-              className="truncate font-mono text-[10.5px] lowercase text-[var(--muted)]"
+            {/*
+              Lowercase mono identity caption — the inverse of an Eyebrow
+              (lowercase, not uppercase) but the same font/size/tone. We
+              borrow Eyebrow and reset the casing with a `normal-case`
+              utility so the typography stays single-sourced.
+            */}
+            <Eyebrow
+              tone="muted"
+              size="md"
+              className="truncate normal-case lowercase tracking-normal"
               title={clinicName}
             >
               {clinicName}
-            </span>
+            </Eyebrow>
           </span>
         </Link>
       </SidebarHeader>
@@ -353,9 +361,9 @@ export function AppSidebar({
         </SidebarMenu>
 
         <div className="px-3 pb-1 pt-3">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-2)]">
+          <Eyebrow as="p" tone="muted-2" size="sm" bold>
             {labels.sectionInbox}
-          </p>
+          </Eyebrow>
         </div>
 
         <SidebarMenu className="px-1">

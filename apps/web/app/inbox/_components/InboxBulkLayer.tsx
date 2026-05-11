@@ -282,7 +282,7 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
           aria-busy={isPending}
           data-inbox-bulk-bar
           className={cn(
-            "fixed inset-x-0 z-40 mx-auto flex w-full max-w-2xl items-center gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--paper)] px-4 py-3 shadow-xl",
+            "fixed inset-x-0 z-40 mx-auto flex w-full max-w-2xl items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] px-4 py-3 shadow-xl",
             "bottom-[calc(env(safe-area-inset-bottom)+4rem+0.5rem)] md:bottom-4 md:max-w-3xl",
             "px-3 sm:px-4",
             !prefersReducedMotion && "animate-in slide-in-from-bottom-4"
@@ -296,7 +296,7 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
               type="button"
               onClick={runAssign}
               disabled={isPending}
-              className="rounded-[8px] border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--ink-2)] transition-colors hover:bg-[var(--soft)] disabled:opacity-60"
+              className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--ink-2)] transition-colors hover:bg-[var(--soft)] disabled:opacity-60"
             >
               {labels.assign}
             </button>
@@ -304,7 +304,7 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
               type="button"
               onClick={runResolve}
               disabled={isPending}
-              className="rounded-[8px] bg-[var(--primary-soft)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--primary-strong)] transition-colors hover:bg-[var(--primary)] hover:text-[var(--paper)] disabled:opacity-60"
+              className="rounded-[var(--radius)] bg-[var(--primary-soft)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--primary-strong)] transition-colors hover:bg-[var(--primary)] hover:text-[var(--paper)] disabled:opacity-60"
             >
               {labels.resolve}
             </button>
@@ -312,7 +312,7 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
               type="button"
               onClick={clear}
               disabled={isPending}
-              className="rounded-[8px] px-2 py-1.5 text-[12.5px] text-[var(--muted)] transition-colors hover:bg-[var(--soft)] hover:text-[var(--ink)] disabled:opacity-60"
+              className="rounded-[var(--radius)] px-2 py-1.5 text-[12.5px] text-[var(--muted)] transition-colors hover:bg-[var(--soft)] hover:text-[var(--ink)] disabled:opacity-60"
             >
               {labels.cancel}
             </button>

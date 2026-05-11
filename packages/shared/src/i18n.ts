@@ -398,6 +398,9 @@ export const uiCopy = {
     "request.draft": "draft",
     "request.aiNotice":
       "AI output is advisory until staff review is stored in `ai_outputs`.",
+    "request.aiRiskFlags": "Risk flags",
+    "request.aiUrgencySuggestion": "Suggested urgency",
+    "request.aiVersion": "Prompt {version}",
     "request.conversation": "Conversation",
     "request.timeline": "Request timeline",
     "request.internalNotes": "Internal notes",
@@ -746,6 +749,9 @@ export const uiCopy = {
     "request.draft": "mustand",
     "request.aiNotice":
       "AI väljund on abistav, kuni töötaja ülevaatus salvestatakse tabelisse `ai_outputs`.",
+    "request.aiRiskFlags": "Riskimärgid",
+    "request.aiUrgencySuggestion": "Soovitatud kiireloomulisus",
+    "request.aiVersion": "Prompt {version}",
     "request.conversation": "Vestlus",
     "request.timeline": "Pöördumise ajajoon",
     "request.internalNotes": "Sisemärkmed",
@@ -1095,6 +1101,9 @@ export const uiCopy = {
     "request.draft": "черновик",
     "request.aiNotice":
       "AI-результат является вспомогательным, пока проверка сотрудника не сохранена в `ai_outputs`.",
+    "request.aiRiskFlags": "Факторы риска",
+    "request.aiUrgencySuggestion": "Предложенная срочность",
+    "request.aiVersion": "Промпт {version}",
     "request.conversation": "Разговор",
     "request.timeline": "Хронология запроса",
     "request.internalNotes": "Внутренние заметки",

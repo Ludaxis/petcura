@@ -142,7 +142,7 @@ export function useInboxRealtime({
     host.dataset.realtimeToast = "true";
     host.setAttribute("role", "status");
     host.className =
-      "fixed bottom-[calc(env(safe-area-inset-bottom)+4rem+0.5rem)] right-4 z-50 max-w-[280px] rounded-[10px] border border-[var(--line)] bg-[var(--primary-soft)] px-3.5 py-2 text-[12px] font-medium text-[var(--primary-strong)] shadow-md md:bottom-4";
+      "fixed bottom-[calc(env(safe-area-inset-bottom)+4rem+0.5rem)] right-4 z-50 max-w-[280px] rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--primary-soft)] px-3.5 py-2 text-[12px] font-medium text-[var(--primary-strong)] shadow-md md:bottom-4";
     const prefersReducedMotion =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;

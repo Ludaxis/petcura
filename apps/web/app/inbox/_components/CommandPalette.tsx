@@ -3,7 +3,6 @@
 import {
   forwardRef,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -12,7 +11,11 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { cn } from "@petcura/ui";
+import { cn, Eyebrow } from "@petcura/ui";
+import {
+  Dialog,
+  DialogContent
+} from "@/components/ui/dialog";
 import {
   resolveInboxRequest,
   assignInboxRequestToMe
@@ -90,13 +93,13 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
     const [query, setQuery] = useState("");
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
-    const dialogRef = useRef<HTMLDivElement>(null);
-    const lastFocusedRef = useRef<HTMLElement | null>(null);
     const liveRef = useRef<HTMLDivElement>(null);
     const [, startTransition] = useTransition();
 
     const openPalette = useCallback(() => {
-      lastFocusedRef.current = document.activeElement as HTMLElement | null;
+      // Radix Dialog handles focus restoration via the trigger / open-change
+      // lifecycle. We just open and seed the input focus after the portal
+      // mounts.
       setOpen(true);
       setQuery("");
       setActive(0);
@@ -104,11 +107,6 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
     }, []);
     const closePalette = useCallback(() => {
       setOpen(false);
-      // Restore focus to whatever opened the palette.
-      const target = lastFocusedRef.current;
-      if (target && typeof target.focus === "function") {
-        target.focus();
-      }
     }, []);
 
     useImperativeHandle(
@@ -260,42 +258,27 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
     // Clamp the active index instead of resetting in an effect.
     const clampedActive = Math.min(active, Math.max(filtered.length - 1, 0));
 
-    if (!open) return null;
-
     return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={labels.dialogLabel}
-        className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-4 pt-[12vh]"
-        onClick={closePalette}
-        onKeyDown={(e) => {
-          if (e.key !== "Tab") return;
-          const container = dialogRef.current;
-          if (!container) return;
-          const focusable = container.querySelectorAll<HTMLElement>(
-            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusable.length === 0) return;
-          const first = focusable.item(0);
-          const last = focusable.item(focusable.length - 1);
-          if (!first || !last) return;
-          const activeEl = document.activeElement as HTMLElement | null;
-          if (e.shiftKey) {
-            if (activeEl === first || !container.contains(activeEl)) {
-              e.preventDefault();
-              last.focus();
-            }
-          } else if (activeEl === last) {
-            e.preventDefault();
-            first.focus();
-          }
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) closePalette();
         }}
       >
-        <div
-          ref={dialogRef}
-          className="w-full max-w-xl overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--paper)] shadow-xl"
-          onClick={(e) => e.stopPropagation()}
+        {/*
+          The shared Dialog primitive handles overlay scrim, click-outside,
+          Escape, focus trap, focus restoration, and the portal. The command
+          palette only owns its own internal listbox keyboard model.
+
+          The palette anchors at ~12vh from the top instead of vertically
+          centered (the canonical cmdk look). DialogContent applies its own
+          translate-y-1/2 centering, so we lift the panel with marginTop.
+        */}
+        <DialogContent
+          size="lg"
+          aria-label={labels.dialogLabel}
+          showCloseButton={false}
+          className="top-[18vh] translate-y-0 overflow-hidden"
         >
           <div
             ref={liveRef}
@@ -384,9 +367,9 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
                   i === clampedActive && "bg-[var(--primary-soft)]"
                 )}
               >
-                <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                <Eyebrow tone="muted-2" size="sm">
                   {cmd.group}
-                </span>
+                </Eyebrow>
                 <span className="flex-1 truncate text-[13px] text-[var(--ink)]">
                   {cmd.label}
                 </span>
@@ -398,8 +381,8 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
               </li>
             ))}
           </ul>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 );

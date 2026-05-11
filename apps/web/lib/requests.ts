@@ -37,6 +37,9 @@ type RequestBaseRow = Pick<
   | "status"
   | "urgency"
   | "ai_summary"
+  | "ai_summary_version"
+  | "urgency_suggestion"
+  | "risk_flags_json"
   | "created_at"
   | "updated_at"
 >;
@@ -80,6 +83,10 @@ export type PendingAiDraft = {
 
 export type RequestDetail = InboxRequest & {
   assignedStaffId: string | null;
+  aiSummary: string | null;
+  aiSummaryVersion: string | null;
+  urgencySuggestion: RequestUrgency | null;
+  riskFlags: string[];
   ownerPhone: string;
   petBreed: string | null;
   createdAt: string;
@@ -130,6 +137,13 @@ function pickJsonString(json: unknown, key: string): string | null {
   return null;
 }
 
+function toStringArray(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is string => typeof item === "string" && item.trim().length > 0
+  );
+}
+
 function fallbackSummary(row: RequestWithRelations) {
   return (
     row.ai_summary ??
@@ -160,7 +174,7 @@ export async function listInboxRequests(
   const { data, error } = await supabase
     .from("requests")
     .select(
-      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
+      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
     )
     .eq("clinic_id", clinicId)
     .order("updated_at", { ascending: false });
@@ -183,7 +197,7 @@ export async function getRequestDetail(
   const { data: requestData, error: requestError } = await supabase
     .from("requests")
     .select(
-      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
+      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
     )
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
@@ -342,6 +356,10 @@ export async function getRequestDetail(
   return {
     ...toInboxRequest(request),
     assignedStaffId: request.assigned_staff_id,
+    aiSummary: request.ai_summary,
+    aiSummaryVersion: request.ai_summary_version,
+    urgencySuggestion: request.urgency_suggestion,
+    riskFlags: toStringArray(request.risk_flags_json),
     ownerPhone: request.owners?.phone ?? "",
     petBreed: request.pets?.breed ?? null,
     createdAt: request.created_at,

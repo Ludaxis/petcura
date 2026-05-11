@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
-import { cn } from "@petcura/ui";
+import { SegmentedControl } from "@petcura/ui";
 
 export type ThemePreference = "light" | "dark" | "system";
 
@@ -63,12 +63,15 @@ export function ThemeToggle({
     () => (typeof document === "undefined" ? initial : readCookie() ?? initial)
   );
   const [, startTransition] = useTransition();
-  const groupRef = useRef<HTMLDivElement>(null);
   const liveRef = useRef<HTMLDivElement>(null);
   const prefRef = useRef(pref);
+  // The ready flag previously gated CSS animation. SegmentedControl now owns
+  // the rendered radiogroup; we wrap it so the ready data attribute still
+  // lives on the same DOM element selectors used by /design's e2e.
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    groupRef.current?.setAttribute("data-theme-toggle-ready", "true");
+    wrapperRef.current?.setAttribute("data-theme-toggle-ready", "true");
   }, []);
 
   useEffect(() => {
@@ -109,59 +112,36 @@ export function ThemeToggle({
     });
   };
 
-  const options: Array<{ value: ThemePreference; icon: typeof Sun; label: string }> = [
-    { value: "light", icon: Sun, label: labels.light },
-    { value: "dark", icon: Moon, label: labels.dark },
-    { value: "system", icon: Monitor, label: labels.system }
-  ];
-
   return (
     <>
       <div ref={liveRef} aria-live="polite" aria-atomic="true" className="sr-only" />
-      <div
-        ref={groupRef}
-        role="radiogroup"
-        aria-label={labels.label}
-        className={cn(
-          "inline-flex items-center gap-0.5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-0.5",
-          variant === "menu" && "w-full"
-        )}
-      >
-        {options.map((option) => {
-          const Icon = option.icon;
-          const active = pref === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-            aria-label={option.label}
-            title={option.label}
-            onPointerDown={() => setTheme(option.value)}
-            onClick={() => setTheme(option.value)}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter" && event.key !== " ") return;
-              event.preventDefault();
-              setTheme(option.value);
-            }}
-            className={cn(
-                "inline-flex h-7 items-center justify-center gap-1.5 rounded-[5px] px-2 text-[11.5px] font-medium transition",
-                active
-                  ? "bg-[var(--primary)] text-[var(--paper)]"
-                  : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]",
-                variant === "menu" && "flex-1"
-              )}
-            >
-              <Icon aria-hidden="true" size={13} />
-              {variant === "menu" ? (
-                <span>{option.label}</span>
-              ) : (
-                <span className="sr-only">{option.label}</span>
-              )}
-            </button>
-          );
-        })}
+      <div ref={wrapperRef} className={variant === "menu" ? "w-full" : "inline-flex"}>
+        <SegmentedControl
+          value={pref}
+          onValueChange={(next: ThemePreference) => setTheme(next)}
+          aria-label={labels.label}
+          tone="primary"
+          fullWidth={variant === "menu"}
+        >
+          <SegmentedControl.Item
+            value="light"
+            label={labels.light}
+            icon={<Sun aria-hidden="true" size={13} />}
+            iconOnly={variant !== "menu"}
+          />
+          <SegmentedControl.Item
+            value="dark"
+            label={labels.dark}
+            icon={<Moon aria-hidden="true" size={13} />}
+            iconOnly={variant !== "menu"}
+          />
+          <SegmentedControl.Item
+            value="system"
+            label={labels.system}
+            icon={<Monitor aria-hidden="true" size={13} />}
+            iconOnly={variant !== "menu"}
+          />
+        </SegmentedControl>
       </div>
     </>
   );

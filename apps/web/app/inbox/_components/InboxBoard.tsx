@@ -47,62 +47,75 @@ export function InboxBoard({ rows, locale, formatDateTime }: InboxBoardProps) {
               </span>
             </div>
 
-            <div className="grid gap-2">
+            {/*
+              Card-in-card removed: the column itself is the Panel surface,
+              so request rows render as borderless list items separated by a
+              hairline divider. Hover lifts the row with a --soft fill and a
+              left-edge sage accent — matches the Design Canvas spec where
+              the column is the card, not the row.
+            */}
+            <ul className="-mx-1 flex flex-col">
               {columnRequests.length === 0 ? (
-                <p className="rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]">
+                <li className="rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]">
                   {t("inbox.empty")}
-                </p>
+                </li>
               ) : null}
-              {columnRequests.map((request) => (
-                <Link
-                  className="group rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-3 transition hover:border-[var(--primary)]"
-                  href={withLocale(`/requests/${request.id}`, locale)}
+              {columnRequests.map((request, i) => (
+                <li
                   key={request.id}
+                  className={
+                    i > 0 ? "border-t border-[var(--line)]" : undefined
+                  }
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{request.petName}</p>
-                      <p className="mt-1 text-xs text-[var(--muted)]">
-                        {request.ownerName}
-                      </p>
+                  <Link
+                    className="group block rounded-[var(--radius-sm)] border-l-2 border-l-transparent px-3 py-2.5 transition hover:bg-[var(--soft)] hover:border-l-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--primary)]"
+                    href={withLocale(`/requests/${request.id}`, locale)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{request.petName}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          {request.ownerName}
+                        </p>
+                      </div>
+                      <ArrowUpRight
+                        aria-hidden="true"
+                        className="text-[var(--muted)] transition group-hover:text-[var(--primary)]"
+                        size={16}
+                      />
                     </div>
-                    <ArrowUpRight
-                      aria-hidden="true"
-                      className="text-[var(--muted)] transition group-hover:text-[var(--primary)]"
-                      size={16}
-                    />
-                  </div>
-                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
-                    {request.preview}
-                  </p>
-                  <p className="mt-2 text-xs text-[var(--muted)]">
-                    {formatDateTime(request.updatedAt)}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge
-                      tone={
-                        request.urgency === "high"
-                          ? "red"
-                          : request.urgency === "medium"
-                            ? "amber"
-                            : "neutral"
-                      }
-                    >
-                      {getUrgencyLabel(request.urgency, locale)}
-                    </Badge>
-                    <Badge tone="neutral">
-                      {getRequestCategoryLabel(request.category, locale)}
-                    </Badge>
-                    {request.ownerLanguage !== locale ? (
-                      <Badge tone="teal">
-                        <Languages aria-hidden="true" size={12} />
-                        {t("inbox.translation")}
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
+                      {request.preview}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {formatDateTime(request.updatedAt)}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <Badge
+                        tone={
+                          request.urgency === "high"
+                            ? "red"
+                            : request.urgency === "medium"
+                              ? "amber"
+                              : "neutral"
+                        }
+                      >
+                        {getUrgencyLabel(request.urgency, locale)}
                       </Badge>
-                    ) : null}
-                  </div>
-                </Link>
+                      <Badge tone="neutral">
+                        {getRequestCategoryLabel(request.category, locale)}
+                      </Badge>
+                      {request.ownerLanguage !== locale ? (
+                        <Badge tone="teal">
+                          <Languages aria-hidden="true" size={12} />
+                          {t("inbox.translation")}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           </Panel>
         );
       })}
