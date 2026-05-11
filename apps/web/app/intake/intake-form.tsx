@@ -86,7 +86,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           {t("intake.ownerName")}
         </label>
         <input
-          className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
+          className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
           id="owner-name"
           name="ownerName"
           placeholder="Marta Tamm"
@@ -98,7 +98,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           {t("intake.phone")}
         </label>
         <input
-          className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
+          className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
           id="phone"
           name="phone"
           placeholder="+372 ..."
@@ -112,7 +112,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
             {t("intake.petName")}
           </label>
           <input
-            className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
+            className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
             id="pet-name"
             name="petName"
             placeholder="Luna"
@@ -123,7 +123,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
             {t("intake.petSpecies")}
           </label>
           <input
-            className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
+            className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
             id="pet-species"
             name="petSpecies"
             placeholder={t("intake.petSpeciesPlaceholder")}
@@ -136,7 +136,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           {t("intake.category")}
         </label>
         <select
-          className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
+          className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
           defaultValue="medical_question"
           id="category"
           name="category"
@@ -154,7 +154,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           {t("intake.message")}
         </label>
         <textarea
-          className="min-h-36 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 py-3"
+          className="min-h-36 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 py-3"
           id="message"
           name="message"
           placeholder={t("intake.messagePlaceholder")}

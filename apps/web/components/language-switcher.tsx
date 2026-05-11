@@ -21,7 +21,7 @@ export function LanguageSwitcher({
   return (
     <nav
       aria-label={label}
-      className="flex items-center gap-1 rounded-[var(--radius)] border border-[var(--line)] bg-white p-1"
+      className="flex items-center gap-1 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-1"
     >
       <span className="flex h-8 w-8 items-center justify-center text-[var(--muted)]">
         <Languages aria-hidden="true" size={15} />

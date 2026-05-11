@@ -94,7 +94,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   className="flex items-start gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3"
                   key={step}
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-[var(--primary)]">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--paper)] text-sm font-semibold text-[var(--primary)]">
                     {index + 1}
                   </span>
                   <p className="text-sm leading-6 text-[var(--foreground)]">
@@ -144,7 +144,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               value={t("home.metric.zeroIncidents")}
             />
           </div>
-          <div className="mt-5 rounded-[var(--radius)] border border-[var(--line)] bg-white p-4">
+          <div className="mt-5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-4">
             <div className="flex gap-3">
               <CheckCircle2
                 aria-hidden="true"

@@ -129,7 +129,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   {t("admin.name")}
                 </label>
                 <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                   id="clinic-name"
                   name="name"
                   placeholder="Alex Veterinary Clinic"
@@ -141,7 +141,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   {t("admin.slug")}
                 </label>
                 <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                   id="clinic-slug"
                   name="slug"
                   placeholder="alex-vet-demo"
@@ -155,7 +155,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   {t("admin.country")}
                 </label>
                 <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                   defaultValue="EE"
                   id="country"
                   maxLength={2}
@@ -168,7 +168,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   {t("admin.timezone")}
                 </label>
                 <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                   defaultValue="Europe/Tallinn"
                   id="timezone"
                   name="timezone"
@@ -180,7 +180,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   {t("admin.locale")}
                 </label>
                 <select
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                   defaultValue="en"
                   id="clinic-locale"
                   name="clinicLocale"
@@ -216,7 +216,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 {t("admin.clinic")}
               </label>
               <select
-                className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                 disabled={clinics.length === 0}
                 id="clinic-id"
                 name="clinicId"
@@ -235,7 +235,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   {t("admin.email")}
                 </label>
                 <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                   id="staff-email"
                   name="email"
                   placeholder="name@clinic.ee"
@@ -248,7 +248,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   {t("admin.role")}
                 </label>
                 <select
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3 text-sm"
+                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
                   defaultValue="reception"
                   id="staff-role"
                   name="role"
@@ -319,7 +319,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <div className="mt-3 grid gap-2">
                     {clinic.staff.map((member) => (
                       <div
-                        className="grid gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+                        className="grid gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
                         key={member.id}
                       >
                         <div className="min-w-0">

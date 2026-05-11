@@ -88,7 +88,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </label>
             <input
               autoComplete="email"
-              className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-white px-3"
+              className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
               id="email"
               name="email"
               placeholder="name@clinic.ee"
