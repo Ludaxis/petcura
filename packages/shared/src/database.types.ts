@@ -399,6 +399,67 @@ export type Database = {
           },
         ]
       }
+      message_translations: {
+        Row: {
+          ai_output_id: string | null
+          clinic_id: string
+          created_at: string
+          id: string
+          message_id: string
+          model: string
+          prompt_version: string
+          source_locale: string
+          target_locale: string
+          translated_body: string
+        }
+        Insert: {
+          ai_output_id?: string | null
+          clinic_id: string
+          created_at?: string
+          id?: string
+          message_id: string
+          model: string
+          prompt_version: string
+          source_locale: string
+          target_locale: string
+          translated_body: string
+        }
+        Update: {
+          ai_output_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          model?: string
+          prompt_version?: string
+          source_locale?: string
+          target_locale?: string
+          translated_body?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_translations_ai_output_id_fkey"
+            columns: ["ai_output_id"]
+            isOneToOne: false
+            referencedRelation: "ai_outputs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_translations_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_translations_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string

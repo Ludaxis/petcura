@@ -1,5 +1,6 @@
 import "server-only";
 
+import { normalizeLocale, type SupportedLocale } from "@petcura/shared";
 import type {
   Database,
   RequestCategory,
@@ -176,7 +177,8 @@ export async function listInboxRequests(
 export async function getRequestDetail(
   supabase: ServerSupabaseClient,
   clinicId: string,
-  requestId: string
+  requestId: string,
+  locale: SupportedLocale
 ): Promise<RequestDetail | null> {
   const { data: requestData, error: requestError } = await supabase
     .from("requests")
@@ -272,25 +274,47 @@ export async function getRequestDetail(
       created_at: string;
     }>
   >();
+  const translationsByMessage = new Map<string, string>();
 
   if (messageIds.length > 0) {
-    const { data: deliveryEvents, error: deliveryError } = await supabase
-      .from("message_delivery_events")
-      .select("id, message_id, status, provider, created_at")
-      .eq("clinic_id", clinicId)
-      .in("message_id", messageIds)
-      .order("created_at", { ascending: true });
+    const [deliveryResult, translationResult] = await Promise.all([
+      supabase
+        .from("message_delivery_events")
+        .select("id, message_id, status, provider, created_at")
+        .eq("clinic_id", clinicId)
+        .in("message_id", messageIds)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("message_translations")
+        .select("message_id, translated_body, target_locale")
+        .eq("clinic_id", clinicId)
+        .eq("target_locale", locale)
+        .in("message_id", messageIds)
+    ]);
 
-    if (deliveryError) {
+    if (deliveryResult.error) {
       throw new Error(
-        `Could not load delivery events: ${deliveryError.message}`
+        `Could not load delivery events: ${deliveryResult.error.message}`
       );
     }
 
-    for (const event of deliveryEvents ?? []) {
+    if (translationResult.error) {
+      throw new Error(
+        `Could not load message translations: ${translationResult.error.message}`
+      );
+    }
+
+    for (const event of deliveryResult.data ?? []) {
       const events = deliveryEventsByMessage.get(event.message_id) ?? [];
       events.push(event);
       deliveryEventsByMessage.set(event.message_id, events);
+    }
+
+    for (const translation of translationResult.data ?? []) {
+      translationsByMessage.set(
+        translation.message_id,
+        translation.translated_body
+      );
     }
   }
 
@@ -326,12 +350,20 @@ export async function getRequestDetail(
         deliveryEventsByMessage.get(message.id) ?? []
       );
       const deliveryStatus = normalizeDeliveryStatus(latestDelivery?.status);
+      const sourceLocale = message.source_locale
+        ? normalizeLocale(message.source_locale)
+        : null;
+      const localizedTranslation =
+        sourceLocale === locale
+          ? null
+          : translationsByMessage.get(message.id) ??
+            (locale === "en" ? message.body_translated : null);
 
       return {
         id: message.id,
         senderType: message.sender_type,
         body: message.body,
-        bodyTranslated: message.body_translated,
+        bodyTranslated: localizedTranslation,
         sourceLocale: message.source_locale,
         createdAt: message.created_at,
         deliveryStatus,

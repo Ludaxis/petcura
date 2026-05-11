@@ -13,6 +13,7 @@ import {
   getClinicBySlug,
   getIntakeClinic
 } from "@/lib/supabase/admin";
+import { processOwnerMessageAi } from "@/lib/ai/owner-message-pipeline";
 
 type IntakeClinic = Awaited<ReturnType<typeof getClinicBySlug>>;
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -185,6 +186,23 @@ async function insertAttachments({
   };
 }
 
+async function runOwnerMessageAi({
+  clinicId,
+  requestId,
+  messageId
+}: {
+  clinicId: string;
+  requestId: string;
+  messageId: string;
+}) {
+  try {
+    await processOwnerMessageAi({ clinicId, requestId, messageId });
+  } catch {
+    // AI output is advisory. Intake and communication must never fail because
+    // summary/translation generation is unavailable.
+  }
+}
+
 async function appendOwnerMessageToRequest({
   admin,
   clinicId,
@@ -325,6 +343,12 @@ async function appendOwnerMessageToRequest({
   if (auditError) {
     return { ok: false, message: auditError.message };
   }
+
+  await runOwnerMessageAi({
+    clinicId,
+    requestId: request.id,
+    messageId: message.id
+  });
 
   return {
     ok: true,
@@ -614,6 +638,12 @@ export async function createOwnerRequest(
   if (auditError) {
     return { ok: false, message: auditError.message };
   }
+
+  await runOwnerMessageAi({
+    clinicId: clinic.id,
+    requestId: request.id,
+    messageId: message.id
+  });
 
   return {
     ok: true,

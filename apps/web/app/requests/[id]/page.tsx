@@ -98,7 +98,7 @@ export default async function RequestDetailPage({
   );
 
   const [request, listRows] = await Promise.all([
-    getRequestDetail(staffContext.supabase, staffContext.clinic.id, id),
+    getRequestDetail(staffContext.supabase, staffContext.clinic.id, id, locale),
     listInboxRequests(staffContext.supabase, staffContext.clinic.id, {
       stream: "all",
       view: "list",

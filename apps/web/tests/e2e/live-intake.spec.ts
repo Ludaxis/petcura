@@ -122,7 +122,9 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     await expect(
       page.locator("[data-detail-head]").getByText(ownerName).first()
     ).toBeVisible();
-    await expect(page.getByText(message).first()).toBeVisible();
+    await expect(
+      page.locator("[data-thread]").getByText(message).first()
+    ).toBeVisible();
 
     // The events / internal-notes side panel is responsive and may be hidden
     // by layout changes at narrower desktop widths. Probe the rendered panel

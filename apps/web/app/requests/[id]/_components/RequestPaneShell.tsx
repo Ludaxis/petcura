@@ -160,6 +160,10 @@ export function RequestPaneShell({
           {
             table: "message_delivery_events",
             filter: eqFilter("clinic_id", clinicId)
+          },
+          {
+            table: "message_translations",
+            filter: eqFilter("clinic_id", clinicId)
           }
         ]}
         pollMs={30_000}
