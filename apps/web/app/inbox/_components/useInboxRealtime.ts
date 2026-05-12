@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+// NOTE: `@/lib/supabase/client` is intentionally NOT imported statically.
+// It transitively pulls in `@supabase/realtime-js` + the Buffer polyfill
+// (~500 KB) into the /inbox first-load JS. Loading it inside the effect
+// below makes Next.js code-split it into a post-hydration chunk so the
+// inbox shell paints without waiting for realtime.
 
 type UseInboxRealtimeArgs = {
   clinicId: string;
@@ -67,69 +71,85 @@ export function useInboxRealtime({
   // Realtime subscription. We use a dedicated channel name so we don't
   // collide with RealtimeRefresh's; that lets each surface manage its
   // own debounce + dedupe.
+  //
+  // The Supabase client is dynamic-imported inside the effect so the
+  // ~500 KB realtime/Buffer chunk lands AFTER hydration instead of in
+  // the inbox first-load bundle. Disposal is wired through a flag the
+  // async block respects.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const supabase = createClient();
-    const channel = supabase.channel(`petcura:inbox-toast:${clinicId}`);
+    let disposed = false;
+    let dispose: (() => void) | null = null;
 
-    const onInsert = (
-      payload: { new: { id?: string; ai_summary?: string | null } }
-    ) => {
-      const newRow = payload.new ?? {};
-      const rowId = newRow.id;
-      if (!rowId || seenRef.current.has(rowId)) return;
-      // Suppress toasts for rows the server already rendered when the
-      // page loaded — those aren't "new" to the user, they're history.
-      if (initialIdsRef.current.has(rowId)) return;
-      seenRef.current.add(rowId);
+    void import("@/lib/supabase/client").then(({ createClient }) => {
+      if (disposed) return;
+      const supabase = createClient();
+      const channel = supabase.channel(`petcura:inbox-toast:${clinicId}`);
 
-      const ownerName =
-        ownerMapRef.current[rowId] ??
-        "" /* fall back to a generic name if we don't know yet */;
-      const message = toastLabelTemplate.replace(
-        "{name}",
-        ownerName || "—"
+      const onInsert = (
+        payload: { new: { id?: string; ai_summary?: string | null } }
+      ) => {
+        const newRow = payload.new ?? {};
+        const rowId = newRow.id;
+        if (!rowId || seenRef.current.has(rowId)) return;
+        // Suppress toasts for rows the server already rendered when the
+        // page loaded — those aren't "new" to the user, they're history.
+        if (initialIdsRef.current.has(rowId)) return;
+        seenRef.current.add(rowId);
+
+        const ownerName =
+          ownerMapRef.current[rowId] ??
+          "" /* fall back to a generic name if we don't know yet */;
+        const message = toastLabelTemplate.replace(
+          "{name}",
+          ownerName || "—"
+        );
+        setToast(message);
+        // Favicon dot if the tab is unfocused — staff notice without
+        // looking at the browser window.
+        if (document.visibilityState !== "visible") {
+          applyDottedFavicon();
+        }
+      };
+
+      const onPostgresChanges = channel.on.bind(channel) as (
+        event: "postgres_changes",
+        filter: {
+          event: "INSERT";
+          schema: "public";
+          table: string;
+          filter?: string;
+        },
+        callback: (payload: { new: Record<string, unknown> }) => void
+      ) => typeof channel;
+
+      onPostgresChanges(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "requests",
+          filter: `clinic_id=eq.${clinicId}`
+        },
+        onInsert as never
       );
-      setToast(message);
-      // Favicon dot if the tab is unfocused — staff notice without
-      // looking at the browser window.
-      if (document.visibilityState !== "visible") {
-        applyDottedFavicon();
-      }
-    };
 
-    const onPostgresChanges = channel.on.bind(channel) as (
-      event: "postgres_changes",
-      filter: {
-        event: "INSERT";
-        schema: "public";
-        table: string;
-        filter?: string;
-      },
-      callback: (payload: { new: Record<string, unknown> }) => void
-    ) => typeof channel;
+      channel.subscribe();
 
-    onPostgresChanges(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "requests",
-        filter: `clinic_id=eq.${clinicId}`
-      },
-      onInsert as never
-    );
+      const onVisible = () => {
+        if (document.visibilityState === "visible") restoreFavicon();
+      };
+      document.addEventListener("visibilitychange", onVisible);
 
-    channel.subscribe();
-
-    const onVisible = () => {
-      if (document.visibilityState === "visible") restoreFavicon();
-    };
-    document.addEventListener("visibilitychange", onVisible);
+      dispose = () => {
+        document.removeEventListener("visibilitychange", onVisible);
+        void supabase.removeChannel(channel);
+      };
+    });
 
     return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      void supabase.removeChannel(channel);
+      disposed = true;
+      dispose?.();
     };
   }, [clinicId, toastLabelTemplate]);
 

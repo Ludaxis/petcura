@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
+import { LazyRealtimeRefresh as RealtimeRefresh } from "@/app/_components/LazyRealtimeRefresh";
 import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
 import { LazyCommandPalette } from "./LazyCommandPalette";
 import type { CommandPalette } from "./CommandPalette";
