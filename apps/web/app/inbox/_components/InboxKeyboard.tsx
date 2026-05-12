@@ -12,13 +12,7 @@ import {
   assignInboxRequestToMe
 } from "../_actions";
 import { isEditableTarget } from "@/app/_components/useFocusTrap";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
+import { LazyInboxShortcutSheet } from "./LazyInboxShortcutSheet";
 
 type Shortcut = {
   keys: string;
@@ -265,35 +259,12 @@ export function InboxKeyboard({
           {toast}
         </div>
       ) : null}
-      <Dialog open={showSheet} onOpenChange={setShowSheet}>
-        <DialogContent
-          size="md"
-          closeLabel={labels.close}
-          // The sheet body is a list of shortcuts; the title is sufficient
-          // labeling. Pass undefined explicitly so Radix doesn't log a
-          // missing-description warning at dev time.
-          aria-describedby={undefined}
-        >
-          <DialogHeader>
-            <DialogTitle>{labels.sheetTitle}</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <ul className="flex flex-col gap-1.5">
-              {shortcuts.map((s) => (
-                <li
-                  key={s.keys + s.description}
-                  className="flex items-center justify-between gap-3 rounded-[6px] px-2 py-1.5 text-[12.5px] text-[var(--ink)] hover:bg-[var(--soft)]"
-                >
-                  <span>{s.description}</span>
-                  <kbd className="rounded border border-[var(--line)] bg-[var(--soft)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--ink-2)]">
-                    {s.keys}
-                  </kbd>
-                </li>
-              ))}
-            </ul>
-          </DialogBody>
-        </DialogContent>
-      </Dialog>
+      <LazyInboxShortcutSheet
+        open={showSheet}
+        onOpenChange={setShowSheet}
+        shortcuts={shortcuts}
+        labels={{ sheetTitle: labels.sheetTitle, close: labels.close }}
+      />
     </>
   );
 }

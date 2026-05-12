@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createTranslator,
   getRequestStatusLabel,
@@ -5,11 +7,22 @@ import {
   type SupportedLocale
 } from "@petcura/shared";
 import type { InboxRowData } from "@/lib/inbox/queries";
-import {
-  BoardDndProvider,
-  type BoardColumnId,
-  type BoardLabels
-} from "./BoardDndProvider";
+import type { BoardColumnId, BoardLabels } from "./BoardDndTypes";
+import { LazyBoardDndProvider } from "./LazyBoardDndProvider";
+
+/**
+ * Client boundary for the board view. Promoted to a client component
+ * specifically so the `LazyBoardDndProvider` import below sits inside an
+ * existing client module — Turbopack only treats deferred `import()`
+ * calls as truly deferred when the call-site is reached via another
+ * client module. (A server component importing a client wrapper still
+ * walks the wrapper's deferred imports as eager top-level client
+ * modules, attributing the dnd-kit bundle to the route's first-load JS.)
+ *
+ * The `createTranslator` call works equally well on the client; the
+ * translation bundle is already shared across all routes in the rootMainFiles
+ * bundle. Doing it on the client keeps this boundary tight.
+ */
 
 type InboxBoardProps = {
   rows: InboxRowData[];
@@ -47,7 +60,7 @@ export function InboxBoard({ rows, locale, formatDateTime }: InboxBoardProps) {
   };
 
   return (
-    <BoardDndProvider
+    <LazyBoardDndProvider
       initialRows={rows}
       locale={locale}
       formatDateTime={formatDateTime}
