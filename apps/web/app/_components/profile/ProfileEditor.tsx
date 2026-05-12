@@ -1,7 +1,15 @@
+"use client";
 /* eslint-disable @next/next/no-img-element -- Profile avatars use short-lived signed Supabase Storage URLs. */
-import type { ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ChangeEvent,
+  type ReactNode
+} from "react";
 import { Camera, Save } from "lucide-react";
-import { Button, cn } from "@petcura/ui";
+import { Button, Spinner, cn } from "@petcura/ui";
 
 export const profileInputClass = cn(
   "h-10 w-full rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm text-[var(--ink)]",
@@ -21,31 +29,64 @@ function initialsFromName(value: string) {
   return initials || "?";
 }
 
-export function ProfileAvatar({
-  name,
-  imageUrl,
-  className
-}: {
+type ProfileAvatarProps = {
   name: string;
   imageUrl?: string | null | undefined;
   className?: string;
-}) {
+  /**
+   * When true, dim the avatar and overlay a small Spinner. Used during a
+   * pending save so staff see the photo "committing" rather than just
+   * staring at a still image.
+   */
+  pending?: boolean;
+  /**
+   * When true, draw a soft sage ring around the avatar — "you picked a new
+   * photo, click Save to commit". Cleared when the form resolves.
+   */
+  unsaved?: boolean;
+};
+
+export function ProfileAvatar({
+  name,
+  imageUrl,
+  className,
+  pending = false,
+  unsaved = false
+}: ProfileAvatarProps) {
   return (
     <span
       className={cn(
-        "relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary-strong)]",
+        "relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary-strong)] transition-shadow",
+        unsaved &&
+          "shadow-[0_0_0_2px_var(--primary-soft),0_0_0_3px_var(--primary)]",
         className
       )}
+      aria-busy={pending || undefined}
     >
       {imageUrl ? (
         <img
           alt=""
-          className="h-full w-full object-cover"
+          className={cn(
+            "h-full w-full object-cover transition-opacity",
+            pending && "opacity-50"
+          )}
           src={imageUrl}
         />
       ) : (
-        <span className="text-[15px] font-semibold">{initialsFromName(name)}</span>
+        <span
+          className={cn(
+            "text-[15px] font-semibold",
+            pending && "opacity-50"
+          )}
+        >
+          {initialsFromName(name)}
+        </span>
       )}
+      {pending ? (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <Spinner size={20} tone="primary" />
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -74,6 +115,20 @@ export function ProfileField({
   );
 }
 
+type ProfileEditorCardProps = {
+  title: string;
+  description?: ReactNode;
+  name: string;
+  imageUrl?: string | null | undefined;
+  action: (formData: FormData) => void | Promise<void>;
+  submitLabel: string;
+  imageLabel: string;
+  hiddenFields?: ReactNode;
+  children: ReactNode;
+  disabled?: boolean;
+  className?: string;
+};
+
 export function ProfileEditorCard({
   title,
   description,
@@ -86,31 +141,72 @@ export function ProfileEditorCard({
   children,
   disabled = false,
   className
-}: {
-  title: string;
-  description?: ReactNode;
-  name: string;
-  imageUrl?: string | null | undefined;
-  action: (formData: FormData) => void | Promise<void>;
-  submitLabel: string;
-  imageLabel: string;
-  hiddenFields?: ReactNode;
-  children: ReactNode;
-  disabled?: boolean;
-  className?: string;
-}) {
+}: ProfileEditorCardProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [pending, startTransition] = useTransition();
+  const [preview, setPreview] = useState<string | null>(null);
+  const [pickedFileName, setPickedFileName] = useState<string | null>(null);
+
+  // Revoke the object URL when it changes or the form unmounts so the
+  // browser can release the blob. Without this, picking three photos in a
+  // row leaks three blobs until tab close.
+  useEffect(() => {
+    if (!preview) return;
+    return () => URL.revokeObjectURL(preview);
+  }, [preview]);
+
+  const onPhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setPreview(null);
+      setPickedFileName(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+    setPickedFileName(file.name);
+  };
+
+  // Wrap the server action so React's useTransition pending fires across
+  // both the upload and the post-redirect re-stream. The form's own
+  // aria-busy + disabled state follows pending so SR users hear the work.
+  const submitAction = (formData: FormData) => {
+    startTransition(async () => {
+      await action(formData);
+      // The action redirects on success; this resolves on the navigation
+      // that follows. On error, the action redirects with ?action_error,
+      // which the parent page maps into an aria-live announcement.
+      setPreview(null);
+      setPickedFileName(null);
+    });
+  };
+
+  const effectiveImageUrl = preview ?? imageUrl ?? null;
+  const isLocked = disabled || pending;
+
   return (
     <form
-      action={action}
+      ref={formRef}
+      action={submitAction}
+      aria-busy={pending || undefined}
       className={cn(
-        "rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-4 shadow-sm",
+        "rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-4 shadow-sm transition-shadow",
+        pending && "shadow-[0_0_0_1px_var(--primary-soft)]",
         className
       )}
     >
       {hiddenFields}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <ProfileAvatar imageUrl={imageUrl} name={name} />
+          <ProfileAvatar
+            imageUrl={effectiveImageUrl}
+            name={name}
+            pending={pending}
+            unsaved={!!preview && !pending}
+          />
           <div className="min-w-0">
             <h2 className="break-words text-[16px] font-semibold text-[var(--ink)]">
               {title}
@@ -120,11 +216,25 @@ export function ProfileEditorCard({
                 {description}
               </div>
             ) : null}
+            {pickedFileName ? (
+              <div
+                className="mt-1.5 inline-flex max-w-full items-center gap-1.5 truncate rounded-full bg-[var(--primary-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--primary-strong)]"
+                title={pickedFileName}
+              >
+                <Camera aria-hidden="true" size={10} />
+                <span className="truncate">{pickedFileName}</span>
+              </div>
+            ) : null}
           </div>
         </div>
 
         {!disabled ? (
-          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-[12.5px] font-medium text-[var(--ink)] transition hover:bg-[var(--soft)]">
+          <label
+            className={cn(
+              "inline-flex h-9 cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-[12.5px] font-medium text-[var(--ink)] transition hover:bg-[var(--soft)]",
+              isLocked && "pointer-events-none opacity-60"
+            )}
+          >
             <Camera aria-hidden="true" size={14} />
             {imageLabel}
             <input
@@ -132,18 +242,58 @@ export function ProfileEditorCard({
               className="sr-only"
               name="photo"
               type="file"
+              disabled={isLocked}
+              onChange={onPhotoChange}
             />
           </label>
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div>
+      <div
+        className={cn(
+          "mt-4 grid gap-3 transition-opacity sm:grid-cols-2",
+          pending && "opacity-70 [&_input]:cursor-wait [&_textarea]:cursor-wait"
+        )}
+        // Inert during pending so users can't keep typing into stale fields
+        // while the save round-trips. The disabled style above carries the
+        // visual signal for browsers that don't honor inert.
+        inert={pending}
+      >
+        {children}
+      </div>
 
       {!disabled ? (
-        <div className="mt-4 flex justify-end">
-          <Button type="submit" variant="secondary">
-            <Save aria-hidden="true" size={15} />
-            {submitLabel}
+        <div className="mt-4 flex items-center justify-end gap-2">
+          {pending ? (
+            <span
+              aria-hidden="true"
+              className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-[var(--muted)]"
+            >
+              {preview ? "Uploading…" : "Saving…"}
+            </span>
+          ) : null}
+          <Button
+            type="submit"
+            variant="secondary"
+            disabled={isLocked}
+            aria-disabled={isLocked}
+            /*
+             * Pending: stays at full opacity with a sage outline pulse so
+             * the user has a strong "in flight" signal independent of the
+             * spinner. Same pattern as the request-detail Composer.
+             */
+            className={cn(
+              "min-w-[120px]",
+              pending &&
+                "!opacity-100 ring-2 ring-offset-1 ring-[var(--primary-soft)] ring-offset-[var(--paper)] animate-pulse"
+            )}
+          >
+            {pending ? (
+              <Spinner size={16} label={submitLabel} />
+            ) : (
+              <Save aria-hidden="true" size={15} />
+            )}
+            <span>{pending ? `${submitLabel}…` : submitLabel}</span>
           </Button>
         </div>
       ) : null}

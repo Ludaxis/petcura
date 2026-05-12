@@ -16,6 +16,7 @@ import {
   useSensor,
   useSensors,
   type Announcements,
+  type DragCancelEvent,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -198,7 +199,7 @@ export function BoardDndProvider({
 
   const announcements = useMemo<Announcements>(
     () => ({
-      onDragStart({ active }) {
+      onDragStart({ active }: DragStartEvent) {
         const row = rows.find((r) => r.id === active.id);
         if (!row) return undefined;
         return fmt(labels.pickedUp, {
@@ -206,13 +207,13 @@ export function BoardDndProvider({
           column: labels.columns[columnForRow(row)]
         });
       },
-      onDragOver({ over }) {
+      onDragOver({ over }: DragOverEvent) {
         if (!over) return undefined;
         const col = (over.id as string) as BoardColumnId;
         if (!labels.columns[col]) return undefined;
         return fmt(labels.over, { column: labels.columns[col] });
       },
-      onDragEnd({ active, over }) {
+      onDragEnd({ active, over }: DragEndEvent) {
         const row = rows.find((r) => r.id === active.id);
         if (!row) return undefined;
         if (!over) {
@@ -227,7 +228,7 @@ export function BoardDndProvider({
           column: labels.columns[col] ?? col
         });
       },
-      onDragCancel({ active }) {
+      onDragCancel({ active }: DragCancelEvent) {
         const row = rows.find((r) => r.id === active.id);
         if (!row) return undefined;
         return fmt(labels.canceled, {

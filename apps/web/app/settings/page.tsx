@@ -11,6 +11,7 @@ import {
 import { Badge, Button, cn } from "@petcura/ui";
 import { createTranslator } from "@petcura/shared";
 import { AppShell } from "@/app/_components/AppShell";
+import { PendingSubmitButton } from "@/app/_components/forms/PendingSubmitButton";
 import {
   ProfileAvatar,
   ProfileField,
@@ -228,10 +229,12 @@ export default async function SettingsPage({ searchParams }: Props) {
                       name="role"
                     />
                   </div>
-                  <Button className="self-end" type="submit">
-                    <UserPlus aria-hidden="true" size={16} />
+                  <PendingSubmitButton
+                    className="self-end"
+                    icon={<UserPlus aria-hidden="true" size={16} />}
+                  >
                     {t("settings.addStaff")}
-                  </Button>
+                  </PendingSubmitButton>
                 </form>
               )}
 
@@ -323,13 +326,12 @@ export default async function SettingsPage({ searchParams }: Props) {
                               labels={roleLabels}
                               name="role"
                             />
-                            <Button
+                            <PendingSubmitButton
                               className="w-full sm:w-auto"
-                              type="submit"
                               variant="secondary"
                             >
                               {t("settings.saveRole")}
-                            </Button>
+                            </PendingSubmitButton>
                           </form>
                           {!member.isCurrentUser ? (
                             <form action={updateClinicTeamMemberStatus}>
@@ -348,15 +350,14 @@ export default async function SettingsPage({ searchParams }: Props) {
                                 type="hidden"
                                 value={member.is_active ? "false" : "true"}
                               />
-                              <Button
+                              <PendingSubmitButton
                                 className="w-full sm:w-auto"
-                                type="submit"
                                 variant="secondary"
                               >
                                 {member.is_active
                                   ? t("settings.deactivate")
                                   : t("settings.activate")}
-                              </Button>
+                              </PendingSubmitButton>
                             </form>
                           ) : (
                             <span
@@ -489,9 +490,9 @@ export default async function SettingsPage({ searchParams }: Props) {
                             />
                           </ProfileField>
                           <div className="flex justify-end sm:col-span-2">
-                            <Button type="submit" variant="secondary">
+                            <PendingSubmitButton variant="secondary">
                               {t("profile.save")}
-                            </Button>
+                            </PendingSubmitButton>
                           </div>
                         </form>
                       </details>
