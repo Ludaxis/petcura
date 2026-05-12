@@ -3,11 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }
