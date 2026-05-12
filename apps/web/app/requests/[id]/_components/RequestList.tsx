@@ -51,7 +51,7 @@ export function RequestList({
               locale={locale}
               selected={row.id === currentRequestId}
               density={density}
-              updatedAtLabel={formatRelative(row.updatedAt)}
+              formatRelative={formatRelative}
               href={hrefForRow[row.id] ?? `/requests/${row.id}`}
             />
           ))
