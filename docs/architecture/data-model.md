@@ -35,6 +35,16 @@
 - `ai_outputs` is the AI accountability source of truth.
 - `message_delivery_events` is the outbound delivery source of truth.
 
+## AI Memory V1
+
+- AI memory uses existing request data and `ai_outputs`; it is derived context, not a medical record or PMS replacement.
+- `ai_memory_items` stores staff-reviewable memory candidates and accepted memory for `request`, `pet`, and `owner` scopes.
+- `ai_memory_sources` links each memory item back to source rows so audit, export, and erasure flows can trace derived data.
+- `ai_outputs.kind = memory_extraction` stores extracted, source-grounded candidate facts.
+- `ai_outputs.kind = context_retrieval` stores the accepted memory selected for a specific AI task.
+- Memory is scoped to one `clinic_id`; retrieval for V1 is limited to the active request plus its linked pet and owner.
+- Cross-clinic retrieval is prohibited.
+
 ## Soft Delete and Erasure
 
 Owner and pet data must support GDPR erasure while retaining non-PII operational/audit structure where legally required.

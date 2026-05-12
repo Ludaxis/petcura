@@ -127,6 +127,38 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
       [open, openPalette, closePalette]
     );
 
+    // Window-event bridge so the lazy wrapper can mount us on first ⌘K /
+    // sidebar Search click, then we open ourselves on subsequent events.
+    // The `petcura:open-cmdk` event already fires from AppSidebar and the
+    // inbox keyboard layer; consuming it here removes the need for a ref.
+    const openRef = useRef(open);
+    openRef.current = open;
+    useEffect(() => {
+      const onOpen = () => {
+        if (openRef.current) {
+          closePalette();
+        } else {
+          openPalette();
+        }
+      };
+      window.addEventListener("petcura:open-cmdk", onOpen as EventListener);
+      // Auto-open on first mount if the wrapper just lazy-loaded us in
+      // response to the initial event (the wrapper sets a flag on window).
+      if (
+        typeof window !== "undefined" &&
+        (window as unknown as { __pcCmdkPending?: boolean }).__pcCmdkPending
+      ) {
+        (window as unknown as { __pcCmdkPending?: boolean }).__pcCmdkPending =
+          false;
+        openPalette();
+      }
+      return () =>
+        window.removeEventListener(
+          "petcura:open-cmdk",
+          onOpen as EventListener
+        );
+    }, [openPalette, closePalette]);
+
     const setStream = useCallback(
       (value: InboxStream) => {
         const sp = new URLSearchParams(window.location.search);

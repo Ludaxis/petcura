@@ -10,6 +10,7 @@ import type {
 } from "@petcura/shared";
 import { readAiSummaryLocalizationMap } from "@/lib/ai/summary-localization";
 import { createClient } from "@/lib/supabase/server";
+import { listAuthUserEmails } from "@/lib/admin/bootstrap";
 import {
   getLatestDeliveryEvent,
   normalizeDeliveryStatus,
@@ -33,6 +34,8 @@ type RequestBaseRow = Pick<
   Database["public"]["Tables"]["requests"]["Row"],
   | "id"
   | "assigned_staff_id"
+  | "owner_id"
+  | "pet_id"
   | "category"
   | "channel"
   | "status"
@@ -69,6 +72,13 @@ export type ClinicStaffOption = {
   id: string;
   userId: string;
   role: Database["public"]["Enums"]["staff_role"];
+  /**
+   * Auth email looked up via the admin API so the Assigned dropdown can
+   * show a recognizable label like "anna@clinic.ee (vet)" instead of
+   * rendering raw role strings × N entries. Null if the user has been
+   * deleted upstream or the admin lookup failed under RLS.
+   */
+  email: string | null;
 };
 
 export type PendingAiDraft = {
@@ -81,6 +91,26 @@ export type PendingAiDraft = {
   model: string;
   promptVersion: string;
   createdAt: string;
+};
+
+export type AiMemoryContextItem = {
+  id: string;
+  scopeType: string;
+  memoryType: string;
+  text: string;
+  confidence: number | null;
+  updatedAt: string | null;
+};
+
+export type AiMemoryCandidateItem = {
+  id: string;
+  scopeType: string;
+  memoryType: string;
+  contentText: string;
+  status: string;
+  confidence: number | null;
+  createdAt: string;
+  sourceCount: number;
 };
 
 export type RequestDetail = InboxRequest & {
@@ -118,6 +148,8 @@ export type RequestDetail = InboxRequest & {
   }>;
   staffOptions: ClinicStaffOption[];
   pendingDraft: PendingAiDraft | null;
+  aiMemoryContext: AiMemoryContextItem[];
+  aiMemoryCandidates: AiMemoryCandidateItem[];
 };
 
 function pickDraftText(output: unknown): string {
@@ -143,6 +175,14 @@ function pickJsonString(json: unknown, key: string): string | null {
 function pickStringArray(json: unknown): string[] {
   if (!Array.isArray(json)) return [];
   return json.filter((value): value is string => typeof value === "string");
+}
+
+function isMissingMemoryTableError(error: { message?: string; code?: string }) {
+  return (
+    error.code === "PGRST205" ||
+    error.message?.includes("Could not find the table 'public.ai_memory_") ||
+    error.message?.includes("relation \"public.ai_memory_")
+  );
 }
 
 function fallbackSummary(row: RequestWithRelations) {
@@ -198,7 +238,7 @@ export async function getRequestDetail(
   const { data: requestData, error: requestError } = await supabase
     .from("requests")
     .select(
-      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, ai_summary_translations_json, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
+      "id, assigned_staff_id, owner_id, pet_id, category, channel, status, urgency, ai_summary, ai_summary_translations_json, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
     )
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
@@ -220,6 +260,7 @@ export async function getRequestDetail(
     eventsResult,
     staffResult,
     draftResult,
+    contextResult,
     reminders
   ] = await Promise.all([
       supabase
@@ -260,6 +301,15 @@ export async function getRequestDetail(
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("ai_outputs")
+        .select("id, output_json, created_at")
+        .eq("clinic_id", clinicId)
+        .eq("request_id", requestId)
+        .eq("kind", "context_retrieval")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
       listRequestReminders(supabase, clinicId, requestId)
     ]);
 
@@ -277,6 +327,12 @@ export async function getRequestDetail(
 
   if (staffResult.error) {
     throw new Error(`Could not load staff: ${staffResult.error.message}`);
+  }
+
+  if (contextResult.error) {
+    throw new Error(
+      `Could not load AI context retrieval: ${contextResult.error.message}`
+    );
   }
 
   const messageIds = (messagesResult.data ?? []).map((message) => message.id);
@@ -364,6 +420,84 @@ export async function getRequestDetail(
       ? localizedSummary.riskFlags
       : null;
 
+  const scopePairs = [
+    { scopeType: "request", scopeId: request.id },
+    request.pet_id ? { scopeType: "pet", scopeId: request.pet_id } : null,
+    { scopeType: "owner", scopeId: request.owner_id }
+  ].filter(
+    (scope): scope is { scopeType: string; scopeId: string } => scope !== null
+  );
+  const candidateRows: Array<{
+    id: string;
+    scope_type: string;
+    scope_id: string;
+    memory_type: string;
+    content_text: string;
+    status: string;
+    confidence: number | null;
+    created_at: string;
+  }> = [];
+
+  if (scopePairs.length > 0) {
+    const { data: memoryRows, error: memoryError } = await supabase
+      .from("ai_memory_items")
+      .select(
+        "id, scope_type, scope_id, memory_type, content_text, status, confidence, created_at"
+      )
+      .eq("clinic_id", clinicId)
+      .eq("status", "candidate")
+      .is("deleted_at", null)
+      .in(
+        "scope_id",
+        scopePairs.map((scope) => scope.scopeId)
+      )
+      .order("created_at", { ascending: false })
+      .limit(8);
+
+    if (memoryError) {
+      if (!isMissingMemoryTableError(memoryError)) {
+        throw new Error(
+          `Could not load AI memory candidates: ${memoryError.message}`
+        );
+      }
+    } else {
+      candidateRows.push(
+        ...((memoryRows ?? []) as typeof candidateRows).filter((row) =>
+          scopePairs.some(
+            (scope) =>
+              scope.scopeType === row.scope_type &&
+              scope.scopeId === row.scope_id
+          )
+        )
+      );
+    }
+  }
+
+  const candidateSourceCounts = new Map<string, number>();
+  if (candidateRows.length > 0) {
+    const { data: sources, error: sourceError } = await supabase
+      .from("ai_memory_sources")
+      .select("memory_item_id")
+      .eq("clinic_id", clinicId)
+      .in(
+        "memory_item_id",
+        candidateRows.map((row) => row.id)
+      );
+
+    if (sourceError) {
+      if (!isMissingMemoryTableError(sourceError)) {
+        throw new Error(`Could not load AI memory sources: ${sourceError.message}`);
+      }
+    }
+
+    for (const source of sources ?? []) {
+      candidateSourceCounts.set(
+        source.memory_item_id,
+        (candidateSourceCounts.get(source.memory_item_id) ?? 0) + 1
+      );
+    }
+  }
+
   return {
     ...toInboxRequest(request),
     assignedStaffId: request.assigned_staff_id,
@@ -413,11 +547,75 @@ export async function getRequestDetail(
       actorType: event.actor_type,
       createdAt: event.created_at
     })),
-    staffOptions: (staffResult.data ?? []).map((staff) => ({
-      id: staff.id,
-      userId: staff.user_id,
-      role: staff.role
-    })),
-    pendingDraft
+    staffOptions: await enrichStaffOptions(staffResult.data ?? []),
+    pendingDraft,
+    aiMemoryContext: pickContextItems(contextResult.data?.output_json),
+    aiMemoryCandidates: candidateRows.map((row) => ({
+      id: row.id,
+      scopeType: row.scope_type,
+      memoryType: row.memory_type,
+      contentText: row.content_text,
+      status: row.status,
+      confidence: row.confidence,
+      createdAt: row.created_at,
+      sourceCount: candidateSourceCounts.get(row.id) ?? 0
+    }))
   };
+}
+
+function pickContextItems(output: unknown): AiMemoryContextItem[] {
+  if (!output || typeof output !== "object") return [];
+  const items = (output as Record<string, unknown>).contextItems;
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const obj = item as Record<string, unknown>;
+      if (
+        typeof obj.id !== "string" ||
+        typeof obj.scopeType !== "string" ||
+        typeof obj.memoryType !== "string" ||
+        typeof obj.text !== "string"
+      ) {
+        return null;
+      }
+      return {
+        id: obj.id,
+        scopeType: obj.scopeType,
+        memoryType: obj.memoryType,
+        text: obj.text,
+        confidence: typeof obj.confidence === "number" ? obj.confidence : null,
+        updatedAt: typeof obj.updatedAt === "string" ? obj.updatedAt : null
+      };
+    })
+    .filter((item): item is AiMemoryContextItem => item !== null);
+}
+
+/**
+ * Joins `clinic_staff` rows to their auth user emails via the admin API.
+ * `clinic_staff` does not store name/email locally — they live in `auth.users`,
+ * which is not RLS-accessible from a user-scoped client. We pay the admin call
+ * once per detail render (same pattern as listClinicTeam in lib/clinic/team.ts).
+ *
+ * If the admin lookup fails (no service key in dev, RLS edge case), we degrade
+ * gracefully by returning `email: null` — the UI then falls back to the role
+ * label only, which is the legacy behavior.
+ */
+async function enrichStaffOptions(
+  rows: Array<{ id: string; user_id: string; role: ClinicStaffOption["role"] }>
+): Promise<ClinicStaffOption[]> {
+  if (rows.length === 0) return [];
+  let emailsByUserId: Map<string, string> | null = null;
+  try {
+    emailsByUserId = await listAuthUserEmails();
+  } catch {
+    emailsByUserId = null;
+  }
+  return rows.map((staff) => ({
+    id: staff.id,
+    userId: staff.user_id,
+    role: staff.role,
+    email: emailsByUserId?.get(staff.user_id) ?? null
+  }));
 }

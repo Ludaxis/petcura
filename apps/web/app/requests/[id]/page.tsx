@@ -14,6 +14,10 @@ import { RequestDetail } from "./_components/RequestDetail";
 import { RequestPaneShell } from "./_components/RequestPaneShell";
 import type { ThreadMessage } from "./_components/Thread";
 import type { DraftPayload } from "./_components/AiDraftCard";
+import {
+  generateAiReplyDraft,
+  reviewAiMemoryCandidate
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -38,6 +42,14 @@ function makeRelativeFormatter(locale: SupportedLocale) {
     const days = Math.round(hours / 24);
     return rtf.format(days, "day");
   };
+}
+
+function formatMemoryKey(
+  t: ReturnType<typeof createTranslator>,
+  prefix: string,
+  value: string
+) {
+  return t(`${prefix}.${value}` as Parameters<typeof t>[0]);
 }
 
 const STREAM_ORDER: InboxStream[] = [
@@ -241,6 +253,97 @@ export default async function RequestDetailPage({
     shortcut: t("request.composer.shortcut")
   };
 
+  const aiMemoryLabels = {
+    region: t("request.aiMemory.region"),
+    title: t("request.aiMemory.title"),
+    draftControls: t("request.aiMemory.draftControls"),
+    generate: t("request.aiMemory.generate"),
+    regenerate: t("request.aiMemory.regenerate"),
+    generating: t("request.aiMemory.generating"),
+    contextHeading: t("request.aiMemory.contextHeading"),
+    contextEmpty: t("request.aiMemory.contextEmpty"),
+    candidatesHeading: t("request.aiMemory.candidatesHeading"),
+    candidatesEmpty: t("request.aiMemory.candidatesEmpty"),
+    candidateReason: t("request.aiMemory.candidateReason"),
+    editCandidate: t("request.aiMemory.editCandidate"),
+    approveCandidate: t("request.aiMemory.approveCandidate"),
+    dismissCandidate: t("request.aiMemory.dismissCandidate"),
+    approveCandidateAria: t("request.aiMemory.approveCandidateAria"),
+    dismissCandidateAria: t("request.aiMemory.dismissCandidateAria"),
+    draftQueued: t("request.aiMemory.draftQueued"),
+    candidateUpdated: t("request.aiMemory.candidateUpdated")
+  };
+
+  const aiMemory = {
+    labels: aiMemoryLabels,
+    contextItems: request.aiMemoryContext.map((item) => ({
+      id: item.id,
+      title: formatMemoryKey(t, "request.aiMemory.type", item.memoryType),
+      body: item.text,
+      pills: [
+        {
+          id: `${item.id}-scope`,
+          label: formatMemoryKey(t, "request.aiMemory.scope", item.scopeType),
+          tone: "teal" as const
+        }
+      ],
+      meta: [
+        item.confidence !== null
+          ? t("request.aiMemory.meta.confidence").replace(
+              "{confidence}",
+              item.confidence.toFixed(2)
+            )
+          : null,
+        item.updatedAt ? formatDateTime(item.updatedAt) : null
+      ].filter((value): value is string => Boolean(value))
+    })),
+    memoryCandidates: request.aiMemoryCandidates.map((candidate) => ({
+      id: candidate.id,
+      title: formatMemoryKey(
+        t,
+        "request.aiMemory.type",
+        candidate.memoryType
+      ),
+      body: candidate.contentText,
+      status: "pending" as const,
+      statusLabel: candidate.status,
+      pills: [
+        {
+          id: `${candidate.id}-scope`,
+          label: formatMemoryKey(
+            t,
+            "request.aiMemory.scope",
+            candidate.scopeType
+          ),
+          tone: "amber" as const
+        }
+      ],
+      meta: [
+        candidate.confidence !== null
+          ? t("request.aiMemory.meta.confidence").replace(
+              "{confidence}",
+              candidate.confidence.toFixed(2)
+            )
+          : null,
+        t("request.aiMemory.meta.sources").replace(
+          "{count}",
+          String(candidate.sourceCount)
+        ),
+        formatDateTime(candidate.createdAt)
+      ].filter((value): value is string => Boolean(value))
+    })),
+    draftControl: {
+      action: generateAiReplyDraft,
+      mode: draft ? ("regenerate" as const) : ("generate" as const),
+      statusLabel: draft
+        ? t("request.aiMemory.status.hasDraft")
+        : t("request.aiMemory.status.ready"),
+      hiddenFields: { lang: locale }
+    },
+    candidateAction: reviewAiMemoryCandidate,
+    candidateActionHiddenFields: { lang: locale }
+  };
+
   const keyboardLabels = {
     sheetTitle: t("inbox.kbdSheet.title"),
     close: t("inbox.kbdSheet.close"),
@@ -278,6 +381,7 @@ export default async function RequestDetailPage({
         hidden: t("request.translate.announce.hidden")
       }}
       draftLabels={draftLabels}
+      aiMemory={aiMemory}
       composerLabels={composerLabels}
       keyboardLabels={keyboardLabels}
       shortcuts={shortcuts}

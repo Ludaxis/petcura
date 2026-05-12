@@ -36,6 +36,18 @@ values
     '{}'::jsonb,
     now(),
     now()
+  ),
+  (
+    '10000000-0000-4000-8000-000000000003',
+    'authenticated',
+    'authenticated',
+    'viewer-a@example.test',
+    '',
+    now(),
+    '{}'::jsonb,
+    '{}'::jsonb,
+    now(),
+    now()
   );
 
 insert into public.clinics (id, name, slug)
@@ -54,6 +66,11 @@ values
     '20000000-0000-4000-8000-000000000002',
     '10000000-0000-4000-8000-000000000002',
     'admin'
+  ),
+  (
+    '20000000-0000-4000-8000-000000000001',
+    '10000000-0000-4000-8000-000000000003',
+    'viewer'
   );
 
 insert into public.owners (id, clinic_id, phone, name)
@@ -69,6 +86,58 @@ values
     '20000000-0000-4000-8000-000000000002',
     '+372000002',
     'Owner B'
+  );
+
+insert into public.ai_memory_items (
+  id,
+  clinic_id,
+  scope_type,
+  scope_id,
+  memory_type,
+  content_text,
+  status,
+  confidence
+)
+values
+  (
+    '40000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000001',
+    'owner',
+    '30000000-0000-4000-8000-000000000001',
+    'communication_preference',
+    'Owner prefers Estonian follow-up messages.',
+    'accepted',
+    0.900
+  ),
+  (
+    '40000000-0000-4000-8000-000000000002',
+    '20000000-0000-4000-8000-000000000002',
+    'owner',
+    '30000000-0000-4000-8000-000000000002',
+    'communication_preference',
+    'Owner prefers Russian follow-up messages.',
+    'accepted',
+    0.900
+  );
+
+insert into public.ai_memory_sources (
+  clinic_id,
+  memory_item_id,
+  source_type,
+  source_id
+)
+values
+  (
+    '20000000-0000-4000-8000-000000000001',
+    '40000000-0000-4000-8000-000000000001',
+    'ai_output',
+    '50000000-0000-4000-8000-000000000001'
+  ),
+  (
+    '20000000-0000-4000-8000-000000000002',
+    '40000000-0000-4000-8000-000000000002',
+    'ai_output',
+    '50000000-0000-4000-8000-000000000002'
   );
 
 set local role authenticated;
@@ -92,6 +161,101 @@ begin
   ) then
     raise exception 'staff A can see clinic B owner';
   end if;
+
+  if (select count(*) from public.ai_memory_items) <> 1 then
+    raise exception 'staff A should see exactly one AI memory item';
+  end if;
+
+  if exists (
+    select 1
+    from public.ai_memory_sources
+    where clinic_id = '20000000-0000-4000-8000-000000000002'
+  ) then
+    raise exception 'staff A can see clinic B AI memory source';
+  end if;
+
+  insert into public.ai_memory_items (
+    clinic_id,
+    scope_type,
+    scope_id,
+    memory_type,
+    content_text,
+    status
+  )
+  values (
+    '20000000-0000-4000-8000-000000000001',
+    'owner',
+    '30000000-0000-4000-8000-000000000001',
+    'owner_preference',
+    'Owner prefers morning callback windows.',
+    'candidate'
+  );
+
+  begin
+    insert into public.ai_memory_items (
+      clinic_id,
+      scope_type,
+      scope_id,
+      memory_type,
+      content_text,
+      status
+    )
+    values (
+      '20000000-0000-4000-8000-000000000002',
+      'owner',
+      '30000000-0000-4000-8000-000000000002',
+      'owner_preference',
+      'Cross-clinic write should be blocked.',
+      'candidate'
+    );
+    raise exception 'staff A inserted clinic B AI memory item';
+  exception
+    when others then
+      if sqlstate not in ('42501', '23514') then
+        raise;
+      end if;
+  end;
+end $$;
+
+reset role;
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  '10000000-0000-4000-8000-000000000003',
+  true
+);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+
+do $$
+begin
+  if (select count(*) from public.ai_memory_items) <> 2 then
+    raise exception 'viewer A should read clinic A AI memory items';
+  end if;
+
+  begin
+    insert into public.ai_memory_items (
+      clinic_id,
+      scope_type,
+      scope_id,
+      memory_type,
+      content_text,
+      status
+    )
+    values (
+      '20000000-0000-4000-8000-000000000001',
+      'owner',
+      '30000000-0000-4000-8000-000000000001',
+      'owner_preference',
+      'Viewer write should be blocked.',
+      'candidate'
+    );
+    raise exception 'viewer inserted AI memory item';
+  exception
+    when others then
+      if sqlstate not in ('42501', '23514') then
+        raise;
+      end if;
+  end;
 end $$;
 
 reset role;
@@ -103,6 +267,10 @@ do $$
 begin
   if (select count(*) from public.owners) <> 0 then
     raise exception 'anonymous user can read owners';
+  end if;
+
+  if (select count(*) from public.ai_memory_items) <> 0 then
+    raise exception 'anonymous user can read AI memory items';
   end if;
 end $$;
 

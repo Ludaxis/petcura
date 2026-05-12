@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_memory_items: {
+        Row: {
+          clinic_id: string
+          confidence: number | null
+          content_json: Json
+          content_text: string
+          created_at: string
+          deleted_at: string | null
+          expires_at: string | null
+          id: string
+          memory_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scope_id: string
+          scope_type: string
+          source_ai_output_id: string | null
+          source_locale: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          confidence?: number | null
+          content_json?: Json
+          content_text: string
+          created_at?: string
+          deleted_at?: string | null
+          expires_at?: string | null
+          id?: string
+          memory_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scope_id: string
+          scope_type: string
+          source_ai_output_id?: string | null
+          source_locale?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          confidence?: number | null
+          content_json?: Json
+          content_text?: string
+          created_at?: string
+          deleted_at?: string | null
+          expires_at?: string | null
+          id?: string
+          memory_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scope_id?: string
+          scope_type?: string
+          source_ai_output_id?: string | null
+          source_locale?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_memory_items_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_memory_items_source_ai_output_id_fkey"
+            columns: ["source_ai_output_id"]
+            isOneToOne: false
+            referencedRelation: "ai_outputs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_memory_sources: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          id: string
+          memory_item_id: string
+          source_id: string
+          source_type: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          id?: string
+          memory_item_id: string
+          source_id: string
+          source_type: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          memory_item_id?: string
+          source_id?: string
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_memory_sources_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_memory_sources_memory_item_id_fkey"
+            columns: ["memory_item_id"]
+            isOneToOne: false
+            referencedRelation: "ai_memory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_outputs: {
         Row: {
           accepted: boolean | null

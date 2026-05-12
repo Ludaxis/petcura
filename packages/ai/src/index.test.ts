@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  contextRetrievalOutputSchema,
   formatSummaryForStaff,
+  memoryExtractionOutputSchema,
+  replyDraftOutputSchema,
   summaryLocalizationOutputSchema,
   summaryOutputSchema,
   translationOutputSchema
@@ -58,5 +61,57 @@ describe("AI output contracts", () => {
       confidence: 0.82,
       riskFlags: ["korduv oksendamine"]
     });
+  });
+
+  it("validates memory extraction candidates with source provenance", () => {
+    const output = memoryExtractionOutputSchema.parse({
+      candidates: [
+        {
+          scopeType: "owner",
+          scopeId: "30000000-0000-4000-8000-000000000001",
+          memoryType: "communication_preference",
+          text: "Owner prefers Estonian follow-up messages.",
+          confidence: "88",
+          sources: [
+            {
+              sourceType: "message",
+              sourceId: "50000000-0000-4000-8000-000000000001"
+            }
+          ]
+        }
+      ],
+      confidence: 0.8
+    });
+
+    expect(output.candidates[0]?.confidence).toBe(0.88);
+    expect(output.candidates[0]?.sources[0]?.sourceType).toBe("message");
+  });
+
+  it("validates context retrieval and reply drafts without final decisions", () => {
+    const context = contextRetrievalOutputSchema.parse({
+      taskKind: "reply_draft",
+      selectedMemoryIds: ["40000000-0000-4000-8000-000000000001"],
+      promptContextHash: "1234567890abcdef",
+      contextItems: [
+        {
+          id: "40000000-0000-4000-8000-000000000001",
+          scopeType: "pet",
+          scopeId: "30000000-0000-4000-8000-000000000001",
+          memoryType: "safety_context",
+          text: "Pet should be handled gently due to prior fear response.",
+          updatedAt: "2026-05-12T08:00:00.000Z"
+        }
+      ]
+    });
+
+    const draft = replyDraftOutputSchema.parse({
+      text: "Thanks for the update. We can help the team review this today.",
+      confidence: 0.73,
+      usedMemoryIds: context.selectedMemoryIds,
+      safetyNotes: ["staff_review_required"]
+    });
+
+    expect(draft.usedMemoryIds).toEqual(context.selectedMemoryIds);
+    expect(draft.safetyNotes).toContain("staff_review_required");
   });
 });

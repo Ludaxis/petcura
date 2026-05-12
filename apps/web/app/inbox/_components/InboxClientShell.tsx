@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
 import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
-import { CommandPalette, type CommandPaletteRef } from "./CommandPalette";
+import { LazyCommandPalette } from "./LazyCommandPalette";
+import type { CommandPalette } from "./CommandPalette";
 import { InboxKeyboard } from "./InboxKeyboard";
 import { InboxBulkProvider } from "./InboxBulkContext";
 import {
@@ -14,7 +15,7 @@ import {
 import { useInboxRealtime } from "./useInboxRealtime";
 import type { InboxStream } from "@/lib/inbox/queries";
 
-type InboxClientShellProps = {
+export type InboxClientShellProps = {
   clinicId: string;
   rowIds: string[];
   hrefForRow: Record<string, string>;
@@ -53,7 +54,6 @@ export function InboxClientShell({
   realtimeToastLabel,
   ownerNameByRowId
 }: InboxClientShellProps) {
-  const paletteRef = useRef<CommandPaletteRef>(null);
   const searchParams = useSearchParams();
   const [focusedIndex, setFocusedIndex] = useState(() => {
     const idParam = searchParams.get("id");
@@ -81,21 +81,17 @@ export function InboxClientShell({
       });
   }, [rowIds, safeFocusedIndex]);
 
-  // Bridge: AppSidebar's "Search" row dispatches a window event so the
-  // sidebar can stay decoupled from the inbox-only CommandPalette. Other
-  // surfaces that don't mount the palette (e.g. /reports) get a noop —
-  // they listen for nothing.
-  useEffect(() => {
-    const onOpen = () => paletteRef.current?.toggle();
-    window.addEventListener("petcura:open-cmdk", onOpen as EventListener);
-    return () =>
-      window.removeEventListener(
-        "petcura:open-cmdk",
-        onOpen as EventListener
-      );
-  }, []);
+  // The CommandPalette listens to `petcura:open-cmdk` directly now (see
+  // CommandPalette.tsx) so any open/close trigger — sidebar Search, ⌘K, the
+  // Playwright test hook below — is just a window dispatch. The bridge
+  // handler that used to call paletteRef.current?.toggle() is gone.
 
   const currentRowId = rowIds[safeFocusedIndex] ?? null;
+
+  const dispatchToggleCmdk = () => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("petcura:open-cmdk"));
+  };
 
   // Realtime toast + favicon dot. Lives next to the RealtimeRefresh which
   // already drives the list re-render; this hook adds the in-app surfaces
@@ -132,14 +128,13 @@ export function InboxClientShell({
         rowIds={rowIds}
         hrefForRow={(id) => hrefForRow[id] ?? `/requests/${id}`}
         locale={locale}
-        onOpenPalette={() => paletteRef.current?.toggle()}
+        onOpenPalette={dispatchToggleCmdk}
         focusedIndex={safeFocusedIndex}
         onFocusedIndexChange={setFocusedIndex}
         shortcuts={shortcuts}
         labels={keyboardLabels}
       />
-      <CommandPalette
-        ref={paletteRef}
+      <LazyCommandPalette
         threads={threads}
         streams={streams}
         currentRowId={currentRowId}
@@ -154,7 +149,7 @@ export function InboxClientShell({
         data-testid="cmdk-trigger"
         aria-hidden="true"
         tabIndex={-1}
-        onClick={() => paletteRef.current?.toggle()}
+        onClick={dispatchToggleCmdk}
         className="sr-only"
       />
     </>

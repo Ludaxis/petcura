@@ -87,6 +87,18 @@ export function InboxRow({
       data-selected={selected ? "true" : undefined}
       data-tier={row.tier}
       tabIndex={selected ? 0 : -1}
+      /*
+       * Shared name for the View Transitions API. The destination route
+       * (request detail header) sets the same `pc-request-{id}` on its
+       * pet identity element. Because the inbox shows many rows but the
+       * detail shows exactly one request, only the matching pair morphs
+       * during the route swap — the rest crossfade with the root group.
+       */
+      style={
+        {
+          viewTransitionName: `pc-request-${row.id}`
+        } as React.CSSProperties
+      }
       className={cn(
         "group relative grid items-center gap-3 border-b border-[var(--line)] px-4 transition-colors",
         "hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)]",

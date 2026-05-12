@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import {
   createTranslator,
-  withLocale,
   type SupportedLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
@@ -9,16 +8,17 @@ import { requireStaffContext } from "@/lib/auth/staff";
 import {
   isInboxStream,
   isInboxView,
-  listInboxRequests,
   type InboxStream,
   type InboxView
 } from "@/lib/inbox/queries";
 import { AppShell } from "@/app/_components/AppShell";
-import { InboxRow } from "./_components/InboxRow";
 import { InboxToolbarControls } from "./_components/InboxToolbarControls";
-import { InboxClientShell } from "./_components/InboxClientShell";
-import { InboxBoard } from "./_components/InboxBoard";
-import { InboxEmptyState, InboxSkeleton } from "./_components/InboxStates";
+import {
+  BoardSkeleton,
+  InboxSkeleton
+} from "./_components/InboxStates";
+import { InboxStreamContent } from "./_components/InboxStreamContent";
+import { InboxClientShellLoader } from "./_components/InboxClientShellLoader";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -86,19 +86,12 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
   const density: "comfortable" | "compact" =
     densityRaw === "compact" ? "compact" : "comfortable";
 
-  // Counts now live in AppShell so the sidebar renders them everywhere; this
-  // page only needs the filtered rows for the current stream.
-  const rows = await listInboxRequests(
-    staffContext.supabase,
-    staffContext.clinic.id,
-    {
-      stream,
-      view,
-      locale,
-      staffMembershipId: staffContext.membership.id
-    }
-  );
-
+  // Counts live in AppShell so the sidebar renders them everywhere. The
+  // page itself doesn't fetch rows synchronously — both the stream content
+  // and the client-shell metadata fetch inside their own Suspense children
+  // (sharing one DB round-trip via React.cache). Removing the top-level
+  // await lets per-stream switches show a skeleton via the keyed Suspense
+  // boundary below instead of blocking the whole page response.
   const formatRelative = makeRelativeFormatter(locale);
   const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
@@ -115,19 +108,6 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
     {} as Record<InboxStream, string>
   );
 
-  const hrefForRow = Object.fromEntries(
-    rows.map((r) => [r.id, withLocale(`/requests/${r.id}`, locale)])
-  ) as Record<string, string>;
-
-  const rowIds = rows.map((r) => r.id);
-
-  // Seed the SSR selection from ?id= so the server-rendered row gets the
-  // roving tabindex aligned with the client shell on first paint.
-  const initialFocusedIndex =
-    idParamRaw && rowIds.indexOf(idParamRaw) >= 0
-      ? rowIds.indexOf(idParamRaw)
-      : 0;
-
   // R/T are advertised in PR B once the composer + per-bubble translation
   // ship (QA #2/#3 — don't promise stubs in the shortcut sheet).
   const shortcuts = [
@@ -138,19 +118,6 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
     { keys: "?", description: t("inbox.kbd.shortcuts") }
   ];
 
-  const listHeadingKey = (
-    {
-      all: "inbox.list.heading.all",
-      urgent: "inbox.list.heading.urgent",
-      today: "inbox.list.heading.today",
-      week: "inbox.list.heading.week",
-      routine: "inbox.list.heading.routine",
-      mine: "inbox.list.heading.mine",
-      unassigned: "inbox.list.heading.unassigned",
-      resolved: "inbox.list.heading.resolved"
-    } as const
-  )[stream];
-  const listHeading = t(listHeadingKey).replace("{count}", String(rows.length));
   // Friendly title for the in-pane heading. "All open · 9" style, mirrors
   // the count badge from the sidebar parent so users get visual continuity.
   const streamTitle = t(STREAM_KEYS[stream]);
@@ -175,12 +142,12 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
             <div className="min-w-0">
               <h1 className="flex items-baseline gap-2 text-[18px] font-semibold text-[var(--ink)]">
                 <span className="truncate">{streamTitle}</span>
-                <span
-                  aria-hidden="true"
-                  className="font-mono text-[11.5px] text-[var(--muted-2)]"
-                >
-                  · {rows.length}
-                </span>
+                {/*
+                  Count chip is rendered by InboxStreamContent (inside the
+                  Suspense boundary) so it stays in sync with the streamed
+                  rows. The h1 itself stays in the static shell for SR
+                  landmarking.
+                */}
               </h1>
             </div>
             <div className="shrink-0">
@@ -199,113 +166,105 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
             </div>
           </div>
 
-          {view === "board" ? (
-            <Suspense
-              fallback={<InboxSkeleton label={t("inbox.loading.label")} />}
-            >
-              <InboxBoard
-                rows={rows}
-                locale={locale}
-                formatDateTime={formatDateTime}
-              />
-            </Suspense>
-          ) : rows.length === 0 ? (
-            <>
-              <h2 className="sr-only">{listHeading}</h2>
-              <InboxEmptyState
-                message={t("inbox.empty")}
-                body={t("inbox.emptyBody")}
-              />
-            </>
-          ) : (
-            <>
-              {/* Heading-level landmark for screen readers navigating by H2. */}
-              <h2 className="sr-only">{listHeading}</h2>
-              <div
-                aria-label={t("inbox.title")}
-                className="overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)]"
-              >
-                {rows.map((row, i) => (
-                  <InboxRow
-                    key={row.id}
-                    row={row}
-                    index={i}
-                    locale={locale}
-                    selected={i === initialFocusedIndex}
-                    density={density}
-                    formatRelative={formatRelative}
-                    href={hrefForRow[row.id] ?? `/requests/${row.id}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          {/*
+            Stream content lives in its own Suspense boundary keyed on the
+            filter combo. When the user clicks "Urgent" or switches view, the
+            URL changes, the key changes, and the skeleton renders while the
+            new fetch streams in — instead of blocking the whole page.
+          */}
+          <Suspense
+            key={`${stream}-${view}-${density}`}
+            fallback={
+              view === "board" ? (
+                <BoardSkeleton label={t("inbox.loading.label")} />
+              ) : (
+                <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)]">
+                  <InboxSkeleton label={t("inbox.loading.label")} />
+                </div>
+              )
+            }
+          >
+            <InboxStreamContent
+              supabase={staffContext.supabase}
+              clinicId={staffContext.clinic.id}
+              staffMembershipId={staffContext.membership.id}
+              stream={stream}
+              view={view}
+              density={density}
+              locale={locale}
+              initialFocusedId={idParamRaw}
+              formatRelative={formatRelative}
+              formatDateTime={formatDateTime}
+            />
+          </Suspense>
         </section>
 
-        <InboxClientShell
-          clinicId={staffContext.clinic.id}
-          rowIds={rowIds}
-          hrefForRow={hrefForRow}
-          threads={rows.map((r) => ({
-            id: r.id,
-            petName: r.petName,
-            ownerName: r.ownerName,
-            preview: r.preview,
-            href: hrefForRow[r.id] ?? `/requests/${r.id}`
-          }))}
-          streams={(Object.keys(STREAM_KEYS) as InboxStream[]).map((value) => ({
-            value,
-            label: streamLabels[value]
-          }))}
-          locale={locale}
-          bulkLabels={{
-            selected: t("inbox.bulk.selected"),
-            resolve: t("inbox.bulk.resolve"),
-            assign: t("inbox.bulk.assign"),
-            cancel: t("inbox.bulk.cancel"),
-            resolveDone: t("inbox.bulk.resolveDone"),
-            assignDone: t("inbox.bulk.assignDone"),
-            error: t("inbox.bulk.error"),
-            rowToggleLabel: t("inbox.bulk.rowToggleLabel")
-          }}
-          realtimeToastLabel={t("inbox.realtime.newRequest")}
-          ownerNameByRowId={Object.fromEntries(
-            rows.map((r) => [r.id, r.ownerName])
-          )}
-          paletteLabels={{
-            dialogLabel: t("inbox.cmdk.dialogLabel"),
-            placeholder: t("inbox.cmdk.placeholder"),
-            empty: t("inbox.cmdk.empty"),
-            threadsHeading: t("inbox.cmdk.threads"),
-            streamsHeading: t("inbox.cmdk.streams"),
-            actionsHeading: t("inbox.cmdk.actions"),
-            appearanceHeading: t("inbox.cmdk.appearance"),
-            openThread: t("inbox.cmdk.openThread"),
-            filterStreamPrefix: t("inbox.cmdk.filterStream").replace(
-              " {stream}",
-              ""
-            ),
-            themeLight: t("inbox.cmdk.themeLight"),
-            themeDark: t("inbox.cmdk.themeDark"),
-            themeSystem: t("inbox.cmdk.themeSystem"),
-            themeAnnounceLight: t("inbox.cmdk.themeAnnounceLight"),
-            themeAnnounceDark: t("inbox.cmdk.themeAnnounceDark"),
-            themeAnnounceSystem: t("inbox.cmdk.themeAnnounceSystem"),
-            resolveCurrent: t("inbox.cmdk.resolveCurrent"),
-            assignCurrent: t("inbox.cmdk.assignCurrent"),
-            resolved: t("inbox.toast.resolved"),
-            assigned: t("inbox.toast.assigned")
-          }}
-          keyboardLabels={{
-            sheetTitle: t("inbox.kbdSheet.title"),
-            close: t("inbox.kbdSheet.close"),
-            resolved: t("inbox.toast.resolved"),
-            assigned: t("inbox.toast.assigned"),
-            errorResolve: t("inbox.toast.resolveError"),
-            errorAssign: t("inbox.toast.assignError")
-          }}
-          shortcuts={shortcuts}
-        />
+        {/*
+          Client shell metadata (rowIds, threads, ownerNameByRowId) streams
+          independently of the stream-content Suspense. fallback={null}
+          keeps it invisible until ready — the user can already see and
+          scroll the inbox list above before keyboard / palette wiring
+          mounts.
+        */}
+        <Suspense fallback={null}>
+          <InboxClientShellLoader
+            supabase={staffContext.supabase}
+            clinicId={staffContext.clinic.id}
+            staffMembershipId={staffContext.membership.id}
+            locale={locale}
+            fetchOptions={{ stream, view, locale }}
+            streams={(Object.keys(STREAM_KEYS) as InboxStream[]).map(
+              (value) => ({
+                value,
+                label: streamLabels[value]
+              })
+            )}
+            bulkLabels={{
+              selected: t("inbox.bulk.selected"),
+              resolve: t("inbox.bulk.resolve"),
+              assign: t("inbox.bulk.assign"),
+              cancel: t("inbox.bulk.cancel"),
+              resolveDone: t("inbox.bulk.resolveDone"),
+              assignDone: t("inbox.bulk.assignDone"),
+              error: t("inbox.bulk.error"),
+              rowToggleLabel: t("inbox.bulk.rowToggleLabel")
+            }}
+            realtimeToastLabel={t("inbox.realtime.newRequest")}
+            paletteLabels={{
+              dialogLabel: t("inbox.cmdk.dialogLabel"),
+              placeholder: t("inbox.cmdk.placeholder"),
+              empty: t("inbox.cmdk.empty"),
+              threadsHeading: t("inbox.cmdk.threads"),
+              streamsHeading: t("inbox.cmdk.streams"),
+              actionsHeading: t("inbox.cmdk.actions"),
+              appearanceHeading: t("inbox.cmdk.appearance"),
+              openThread: t("inbox.cmdk.openThread"),
+              filterStreamPrefix: t("inbox.cmdk.filterStream").replace(
+                " {stream}",
+                ""
+              ),
+              themeLight: t("inbox.cmdk.themeLight"),
+              themeDark: t("inbox.cmdk.themeDark"),
+              themeSystem: t("inbox.cmdk.themeSystem"),
+              themeAnnounceLight: t("inbox.cmdk.themeAnnounceLight"),
+              themeAnnounceDark: t("inbox.cmdk.themeAnnounceDark"),
+              themeAnnounceSystem: t("inbox.cmdk.themeAnnounceSystem"),
+              resolveCurrent: t("inbox.cmdk.resolveCurrent"),
+              assignCurrent: t("inbox.cmdk.assignCurrent"),
+              resolved: t("inbox.toast.resolved"),
+              assigned: t("inbox.toast.assigned")
+            }}
+            keyboardLabels={{
+              sheetTitle: t("inbox.kbdSheet.title"),
+              close: t("inbox.kbdSheet.close"),
+              resolved: t("inbox.toast.resolved"),
+              assigned: t("inbox.toast.assigned"),
+              errorResolve: t("inbox.toast.resolveError"),
+              errorAssign: t("inbox.toast.assignError")
+            }}
+            shortcuts={shortcuts}
+          />
+        </Suspense>
       </div>
     </AppShell>
   );

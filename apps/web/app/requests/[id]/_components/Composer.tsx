@@ -8,7 +8,7 @@ import {
   type FormEvent
 } from "react";
 import { Send } from "lucide-react";
-import { Button, cn } from "@petcura/ui";
+import { Button, Spinner, cn } from "@petcura/ui";
 import type { SupportedLocale } from "@petcura/shared";
 import { sendStaffReply } from "../actions";
 
@@ -147,7 +147,11 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
             aria-disabled={pending}
             data-composer-send
           >
-            <Send aria-hidden="true" size={13} />
+            {pending ? (
+              <Spinner size={14} label={labels.send} />
+            ) : (
+              <Send aria-hidden="true" size={13} />
+            )}
             {labels.send}
           </Button>
         </div>

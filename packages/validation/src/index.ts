@@ -193,3 +193,19 @@ export const translationRevealSchema = z.object({
   messageId: uuidSchema,
   targetLocale: supportedLocaleSchema
 });
+
+export const aiMemoryDecisionSchema = z.object({
+  requestId: uuidSchema,
+  memoryItemId: uuidSchema
+});
+
+export const aiMemoryEditSchema = z.object({
+  requestId: uuidSchema,
+  memoryItemId: uuidSchema,
+  contentText: trimmedString.min(8).max(700)
+});
+
+export const aiReplyDraftGenerationSchema = z.object({
+  requestId: uuidSchema,
+  locale: supportedLocaleSchema.default("en")
+});

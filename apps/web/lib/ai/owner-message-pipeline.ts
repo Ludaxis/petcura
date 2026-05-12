@@ -18,6 +18,12 @@ import {
   summaryTranslationPromptVersion,
   writeAiSummaryLocalization
 } from "./summary-localization";
+import {
+  createMemoryCandidatesFromOwnerMessage,
+  retrieveAcceptedMemoryContext,
+  type MemoryContextItem,
+  type RequestMemoryContext
+} from "./memory";
 
 const supportedLocales = ["en", "et", "ru"] as const satisfies readonly SupportedLocale[];
 const summaryPromptVersion = "summary.v1.2026-05-11";
@@ -33,23 +39,7 @@ type MessageForAi = Pick<
   "id" | "sender_type" | "body" | "source_locale" | "created_at"
 >;
 
-type RequestForAi = Pick<
-  Database["public"]["Tables"]["requests"]["Row"],
-  "id" | "clinic_id" | "category" | "urgency" | "status"
-> & {
-  clinics: Pick<
-    Database["public"]["Tables"]["clinics"]["Row"],
-    "name" | "locale"
-  > | null;
-  owners: Pick<
-    Database["public"]["Tables"]["owners"]["Row"],
-    "id" | "name" | "preferred_language"
-  > | null;
-  pets: Pick<
-    Database["public"]["Tables"]["pets"]["Row"],
-    "id" | "name" | "species" | "breed" | "allergies" | "medical_notes"
-  > | null;
-};
+type RequestForAi = RequestMemoryContext;
 
 export type OwnerMessageAiResult = {
   summary: "generated" | "fallback" | "skipped";
@@ -101,15 +91,24 @@ function buildFallbackSummary({
 
 function buildSummaryPrompt({
   request,
-  messages
+  messages,
+  memoryItems
 }: {
   request: RequestForAi;
   messages: MessageForAi[];
+  memoryItems: MemoryContextItem[];
 }) {
   return JSON.stringify(
     {
       task:
         "Summarize this veterinary owner request for clinic staff. Do not diagnose, prescribe, or decide final urgency. You may suggest risk flags and urgencySuggestion for staff review only. Return only JSON matching the requested shape.",
+      prior_context_not_current_symptoms: memoryItems.map((item) => ({
+        id: item.id,
+        scope_type: item.scopeType,
+        memory_type: item.memoryType,
+        text: item.text,
+        sources: item.sources
+      })),
       clinic: request.clinics?.name,
       owner: {
         name: request.owners?.name,
@@ -183,7 +182,7 @@ async function loadRequestContext(
   const { data, error } = await admin
     .from("requests")
     .select(
-      "id, clinic_id, category, urgency, status, clinics(name, locale), owners(id, name, preferred_language), pets(id, name, species, breed, allergies, medical_notes)"
+      "id, clinic_id, owner_id, pet_id, category, urgency, status, clinics(name, locale), owners(id, name, preferred_language), pets(id, name, species, breed, allergies, medical_notes)"
     )
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
@@ -247,9 +246,16 @@ async function writeSummary({
   sourceMessageId: string;
 }) {
   const model = getSummaryModel();
+  const memoryContext = await retrieveAcceptedMemoryContext({
+    admin,
+    request,
+    taskKind: "summary"
+  });
   const input = {
     source_message_id: sourceMessageId,
     prompt_version: summaryPromptVersion,
+    context_retrieval_ai_output_id: memoryContext.aiOutputId,
+    memory_ids: memoryContext.items.map((item) => item.id),
     messages: messages.map((message) => ({
       id: message.id,
       sender_type: message.sender_type,
@@ -261,7 +267,11 @@ async function writeSummary({
     model,
     system:
       "You are PetCura's veterinary clinic operations assistant. You summarize communication for staff. You never diagnose, prescribe, or replace a veterinarian.",
-    prompt: buildSummaryPrompt({ request, messages }),
+    prompt: buildSummaryPrompt({
+      request,
+      messages,
+      memoryItems: memoryContext.items
+    }),
     schema: summaryOutputSchema,
     timeoutMs: 8_000,
     maxOutputTokens: 700
@@ -538,6 +548,19 @@ export async function processOwnerMessageAi({
     });
   } catch (error) {
     result.errors.push(error instanceof Error ? error.message : "summary_error");
+  }
+
+  try {
+    await createMemoryCandidatesFromOwnerMessage({
+      admin,
+      request,
+      messages,
+      sourceMessageId: messageId
+    });
+  } catch (error) {
+    result.errors.push(
+      error instanceof Error ? error.message : "memory_extraction_error"
+    );
   }
 
   const sourceLocale = normalizeLocale(

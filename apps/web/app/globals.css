@@ -224,3 +224,143 @@ textarea {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Loading shimmer — one shared keyframe so every skeleton, inline placeholder,
+ * and lazy-loaded block reads the same calm sage sweep. Reduced-motion users
+ * see a static --soft block instead. Dark mode picks up the remapped tokens
+ * automatically (no second keyframe needed).
+ */
+@keyframes pc-shimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
+}
+
+.pc-shimmer {
+  background-color: var(--soft);
+  background-image: linear-gradient(
+    90deg,
+    var(--soft) 0%,
+    color-mix(in oklch, var(--primary-soft) 70%, var(--soft)) 50%,
+    var(--soft) 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: pc-shimmer 1.6s ease-in-out infinite;
+}
+
+.pc-shimmer-slow {
+  animation-duration: 2.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-shimmer,
+  .pc-shimmer-slow {
+    animation: none;
+    background-image: none;
+    background-color: var(--soft);
+  }
+}
+
+/*
+ * Top-of-shell progress bar used by the realtime refresh transition and
+ * cross-route navigation. Indeterminate, sage-tinted, 2px tall.
+ */
+@keyframes pc-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.pc-progress {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--soft);
+}
+
+.pc-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--primary) 50%,
+    transparent 100%
+  );
+  animation: pc-progress 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-progress::after {
+    animation: none;
+    background: var(--primary);
+    opacity: 0.5;
+  }
+}
+
+/*
+ * AI streaming caret — sage blinking block used while AI draft tokens arrive.
+ */
+@keyframes pc-caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.pc-caret {
+  display: inline-block;
+  width: 0.42em;
+  height: 1em;
+  vertical-align: -0.12em;
+  margin-inline-start: 1px;
+  background-color: var(--primary);
+  border-radius: 1px;
+  animation: pc-caret 1s steps(2) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-caret {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/*
+ * View Transitions — sage-tinted root crossfade plus shared-element morphing
+ * from inbox row to request detail header. Activated only when the browser
+ * supports the View Transitions API and the user hasn't asked for reduced
+ * motion. Next.js wires document.startViewTransition behind
+ * experimental.viewTransition; this stylesheet is what actually animates.
+ */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+::view-transition-group(pc-request-header) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* The shared name lives on the element via inline style/className —
+   see InboxRow and RequestDetail header. */
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation: none !important;
+  }
+}

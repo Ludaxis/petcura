@@ -7,7 +7,9 @@ export const aiOutputKindSchema = z.enum([
   "reply_draft",
   "translation",
   "category_suggestion",
-  "risk_flags"
+  "risk_flags",
+  "memory_extraction",
+  "context_retrieval"
 ]);
 
 export const aiSafetyRules = [
@@ -81,6 +83,90 @@ export const summaryLocalizationOutputSchema = z.object({
 export type SummaryLocalizationOutput = z.infer<
   typeof summaryLocalizationOutputSchema
 >;
+
+export const aiMemoryScopeSchema = z.enum(["request", "pet", "owner"]);
+
+export const aiMemoryTypeSchema = z.enum([
+  "request_context",
+  "pet_context",
+  "owner_preference",
+  "communication_preference",
+  "follow_up_context",
+  "safety_context",
+  "operational_note"
+]);
+
+export const aiMemoryStatusSchema = z.enum([
+  "candidate",
+  "accepted",
+  "rejected",
+  "expired"
+]);
+
+export const aiMemorySourceSchema = z.object({
+  sourceType: z.enum(["request", "message", "internal_note", "ai_output"]),
+  sourceId: z.uuid()
+});
+
+const optionalIsoDateTime = z.preprocess((value) => {
+  if (value == null || value === "") return undefined;
+  if (typeof value === "string") return value;
+  return undefined;
+}, z.iso.datetime({ offset: true }).optional());
+
+export const aiMemoryCandidateSchema = z.object({
+  scopeType: aiMemoryScopeSchema,
+  scopeId: z.uuid(),
+  memoryType: aiMemoryTypeSchema,
+  text: z.string().trim().min(8).max(700),
+  content: z.record(z.string(), z.unknown()).default({}),
+  sourceLocale: optionalText(20),
+  confidence: confidenceScore,
+  expiresAt: optionalIsoDateTime,
+  sources: z.array(aiMemorySourceSchema).min(1).max(6)
+});
+
+export const memoryExtractionOutputSchema = z.object({
+  candidates: z.array(aiMemoryCandidateSchema).max(6).default([]),
+  confidence: confidenceScore
+});
+
+export type AiMemoryCandidate = z.infer<typeof aiMemoryCandidateSchema>;
+export type MemoryExtractionOutput = z.infer<
+  typeof memoryExtractionOutputSchema
+>;
+
+export const contextRetrievalItemSchema = z.object({
+  id: z.uuid(),
+  scopeType: aiMemoryScopeSchema,
+  scopeId: z.uuid(),
+  memoryType: aiMemoryTypeSchema,
+  text: z.string().trim().min(1).max(700),
+  confidence: z.number().min(0).max(1).nullable().optional(),
+  updatedAt: z.string(),
+  sources: z.array(aiMemorySourceSchema).default([])
+});
+
+export const contextRetrievalOutputSchema = z.object({
+  taskKind: z.enum(["summary", "reply_draft", "memory_extraction"]),
+  selectedMemoryIds: z.array(z.uuid()).default([]),
+  contextItems: z.array(contextRetrievalItemSchema).default([]),
+  promptContextHash: z.string().min(8),
+  rationale: z.string().max(500).optional()
+});
+
+export type ContextRetrievalOutput = z.infer<
+  typeof contextRetrievalOutputSchema
+>;
+
+export const replyDraftOutputSchema = z.object({
+  text: z.string().trim().min(1).max(4000),
+  confidence: confidenceScore,
+  usedMemoryIds: z.array(z.uuid()).default([]),
+  safetyNotes: stringArray
+});
+
+export type ReplyDraftOutput = z.infer<typeof replyDraftOutputSchema>;
 
 export function formatSummaryForStaff(summary: SummaryOutput) {
   if (summary.summaryText?.trim()) {

@@ -14,6 +14,14 @@ import {
   getIntakeClinic
 } from "@/lib/supabase/admin";
 import { processOwnerMessageAi } from "@/lib/ai/owner-message-pipeline";
+import {
+  OWNER_MESSAGE_CREATED_EVENT,
+  type OwnerMessageCreatedEventData
+} from "../../../../jobs/inngest/events";
+import {
+  sendPetCuraInngestEvent,
+  shouldUseInngestAiJobs
+} from "@/lib/inngest/client";
 
 type IntakeClinic = Awaited<ReturnType<typeof getClinicBySlug>>;
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -22,6 +30,7 @@ type RequestEventInsert =
 
 type AppendableRequest = {
   id: string;
+  pet_id: string | null;
   status: RequestStatus;
 };
 
@@ -123,7 +132,7 @@ async function findAppendableOwnerRequest({
 
   const { data, error } = await admin
     .from("requests")
-    .select("id, status")
+    .select("id, pet_id, status")
     .eq("clinic_id", clinicId)
     .eq("owner_id", ownerId)
     .eq("channel", channel)
@@ -189,17 +198,53 @@ async function insertAttachments({
 async function runOwnerMessageAi({
   clinicId,
   requestId,
-  messageId
+  messageId,
+  ownerId,
+  petId,
+  channel,
+  sourceLocale,
+  hasAttachments
 }: {
   clinicId: string;
   requestId: string;
   messageId: string;
+  ownerId: string;
+  petId?: string | undefined;
+  channel: RequestChannel;
+  sourceLocale: SupportedLocale;
+  hasAttachments: boolean;
 }) {
   try {
+    if (shouldUseInngestAiJobs()) {
+      const data: OwnerMessageCreatedEventData = {
+        clinicId,
+        requestId,
+        messageId,
+        ownerId,
+        channel,
+        sourceLocale,
+        hasAttachments,
+        createdAt: new Date().toISOString()
+      };
+      if (petId) {
+        data.petId = petId;
+      }
+      await sendPetCuraInngestEvent({
+        name: OWNER_MESSAGE_CREATED_EVENT,
+        data,
+        id: `${clinicId}:${requestId}:${messageId}:owner-message-ai`
+      });
+      return;
+    }
+
     await processOwnerMessageAi({ clinicId, requestId, messageId });
   } catch {
-    // AI output is advisory. Intake and communication must never fail because
-    // summary/translation generation is unavailable.
+    try {
+      await processOwnerMessageAi({ clinicId, requestId, messageId });
+    } catch {
+      // AI output is advisory. Intake and communication must never fail because
+      // summary/translation generation is unavailable.
+    }
   }
 }
 
@@ -347,7 +392,12 @@ async function appendOwnerMessageToRequest({
   await runOwnerMessageAi({
     clinicId,
     requestId: request.id,
-    messageId: message.id
+    messageId: message.id,
+    ownerId,
+    petId: request.pet_id ?? undefined,
+    channel: input.channel,
+    sourceLocale,
+    hasAttachments: attachments.length > 0
   });
 
   return {
@@ -642,7 +692,12 @@ export async function createOwnerRequest(
   await runOwnerMessageAi({
     clinicId: clinic.id,
     requestId: request.id,
-    messageId: message.id
+    messageId: message.id,
+    ownerId: owner.id,
+    petId,
+    channel: input.channel,
+    sourceLocale,
+    hasAttachments: attachments.length > 0
   });
 
   return {

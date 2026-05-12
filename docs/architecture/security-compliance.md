@@ -18,6 +18,15 @@ Primary application data is hosted in EU regions. Subprocessors, transfer mechan
 - Secrets are stored only in platform secret stores.
 - Audit staff/system actions in `audit_logs`.
 
+## AI Memory V1
+
+- Memory prompts use the minimum necessary source excerpts for the active request.
+- Memory outputs are processor-held derived data and remain subject to clinic-controlled export, retention, and erasure.
+- `memory_extraction`, `context_retrieval`, and `ai_memory_sources` records must preserve source references for auditability.
+- Staff must accept, edit, reject, or expire memory before it becomes retrievable context.
+- No cross-clinic memory retrieval, provider-side training, unreviewed owner personalization, or clinic-wide profiling is allowed in V1.
+- AI inference settings and subprocessors must explicitly cover memory prompts before pilot use.
+
 ## GDPR Requirements
 
 - DPA signed before pilot.
