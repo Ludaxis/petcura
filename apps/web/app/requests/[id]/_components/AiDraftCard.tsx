@@ -10,6 +10,7 @@ import {
   cn
 } from "@petcura/ui";
 import { acceptAiDraft, editAiDraft, rejectAiDraft } from "../actions";
+import { useAiDraftStream } from "./useAiDraftStream";
 import {
   Dialog,
   DialogBody,
@@ -101,12 +102,12 @@ export function AiDraftCard({
   >(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // "Fresh draft" = arrived within the last 30s. We use this to drive the
-  // typewriter reveal so realtime drafts feel like the AI is typing, while
-  // returning to a thread with an existing draft renders the text instantly.
-  // The real SSE token stream lives behind a Codex-owned contract; until
-  // that endpoint exists this client-side reveal gives the right *feel*
-  // without coupling to backend timing.
+  // "Fresh draft" = arrived within the last 30s. Fresh drafts attempt the
+  // real SSE token stream (see /docs/contracts/ai-draft-stream.md). On any
+  // stream failure (404, 401, network drop, premature close) the card
+  // falls back to the static timer-based reveal so the perceived "AI is
+  // typing" feel is preserved even when the backend is unreachable. Older
+  // drafts skip the stream entirely and render instantly.
   //
   // useState lazy init captures `Date.now()` once on mount so the value is
   // pure across re-renders (React's purity rules disallow Date.now() in
@@ -116,8 +117,22 @@ export function AiDraftCard({
     return ageMs >= 0 && ageMs < 30_000;
   });
 
+  // Live SSE stream. Inert when the draft is not fresh.
+  const stream = useAiDraftStream(requestId, locale, { enabled: isFresh });
+  // Once the stream has produced characters we trust its content. The
+  // `draftText` mirror is still the canonical value used for edit, accept,
+  // and final render — we sync stream text into it on completion or on
+  // fallback we keep the prop-derived value.
+  const streamActive =
+    isFresh && (stream.isStreaming || stream.isComplete) && stream.error === null;
+  const streamHasText = stream.text.length > 0;
+  // Fall back to the timer reveal when the stream is enabled but produced
+  // an error before any text arrived, OR when the draft is fresh but the
+  // hook is disabled / never started.
+  const useTimerFallback = isFresh && !streamActive;
+
   const [revealedChars, setRevealedChars] = useState(
-    isFresh ? 0 : draftText.length
+    useTimerFallback ? 0 : draftText.length
   );
 
   // Reset mirror + reveal when a different draft arrives (different id).
@@ -131,10 +146,19 @@ export function AiDraftCard({
     setRevealedChars(draft.text.length);
   }
 
-  const isStreaming = revealedChars < draftText.length;
+  // What the card actually shows:
+  //   - while the SSE stream is in flight or complete: render stream.text
+  //     incrementally with the caret.
+  //   - otherwise: fall back to draftText, either revealed instantly (old
+  //     draft) or via the timer-based typewriter (fresh draft but stream
+  //     unavailable).
+  const displayText = streamActive && streamHasText ? stream.text : draftText;
+  const isStreaming = streamActive
+    ? stream.isStreaming
+    : revealedChars < draftText.length;
 
   useEffect(() => {
-    if (!isFresh) return;
+    if (!useTimerFallback) return;
     if (revealedChars >= draftText.length) return;
     if (typeof window === "undefined") return;
     // Reveal ~8 chars per tick so a 280-character draft completes in
@@ -144,7 +168,7 @@ export function AiDraftCard({
       setRevealedChars((n) => Math.min(draftText.length, n + 8));
     }, 24);
     return () => window.clearTimeout(id);
-  }, [isFresh, revealedChars, draftText]);
+  }, [useTimerFallback, revealedChars, draftText]);
 
   // Focus the textarea (and place caret at end) once Radix has mounted the
   // Dialog content. Radix already handles focus restoration to the trigger
@@ -339,12 +363,16 @@ export function AiDraftCard({
           of each character.
         */}
         <span aria-hidden={isStreaming ? "true" : undefined}>
-          {isStreaming ? draftText.slice(0, revealedChars) : draftText}
+          {streamActive && streamHasText
+            ? stream.text
+            : isStreaming
+              ? draftText.slice(0, revealedChars)
+              : draftText}
         </span>
         {isStreaming ? <AiTypingCaret className="ml-px" /> : null}
         {isStreaming ? (
           <span className="sr-only" role="status">
-            {draftText}
+            {displayText.length > 0 ? displayText : draftText}
           </span>
         ) : null}
       </p>
