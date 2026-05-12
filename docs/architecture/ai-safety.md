@@ -1,5 +1,7 @@
 # AI Safety
 
+Last updated: 2026-05-12.
+
 ## Allowed V1 AI Functions
 
 - intake question generation
@@ -25,6 +27,8 @@
 
 Staff approval is required for all owner-facing medical content. Intake clarification questions, cached translations, and staff-facing memory context may be generated without approval when they avoid advice, diagnosis, and prescription.
 
+AI memory is a reviewed staff aid. The model creates candidates, but accepted memory only enters future context after staff accept or edit-and-accept it. On-demand reply drafts can use accepted memory, but they only prefill the composer and are never sent automatically.
+
 ## Logging
 
 Every AI output must write:
@@ -42,6 +46,10 @@ Every AI output must write:
 - edited output when changed
 - source references for memory extraction and context retrieval
 
+For reply drafts, `ai_outputs.input_json` also records `source_locale`, `target_locale`, `context_retrieval_ai_output_id`, and retrieved `memory_ids` so staff-visible draft metadata and audits stay aligned.
+
 ## Evals
 
 AI changes require eval updates against anonymized clinic messages. Eval sets must cover English, Estonian, Russian, summaries, translations, category suggestions, risk flags, reply drafts, memory extraction, and context retrieval.
+
+AI Memory V1 eval coverage includes safe extraction, source-grounded context retrieval, safe summary and draft behavior, stale or contradictory memory, translation preservation, and cross-tenant leak sentinels.

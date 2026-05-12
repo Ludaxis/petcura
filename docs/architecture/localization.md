@@ -1,5 +1,7 @@
 # Localization
 
+Last updated: 2026-05-12.
+
 PetCura supports English, Estonian, and Russian from the foundation stage.
 
 ## Supported Locales
@@ -56,6 +58,8 @@ Use `withLocale()` for internal links so the selected language follows the user 
 ## AI Translation Rule
 
 AI translation is a product feature, not a replacement for localized UI. Interface copy must come from the localization dictionary. Owner messages, staff replies, summaries, and drafts may be translated through the AI layer and cached per message.
+
+AI memory does not alter translation prompts. Memory-assisted reply drafts store both `source_locale` and `target_locale` in `ai_outputs.input_json` so the request detail card can display stable draft language metadata even after regeneration or page reload.
 
 ## Next Upgrade
 

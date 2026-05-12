@@ -1,5 +1,7 @@
 # Security and Compliance
 
+Last updated: 2026-05-12.
+
 ## Posture
 
 PetCura is the data processor. The clinic is the data controller.
@@ -26,6 +28,8 @@ Primary application data is hosted in EU regions. Subprocessors, transfer mechan
 - Staff must accept, edit, reject, or expire memory before it becomes retrievable context.
 - No cross-clinic memory retrieval, provider-side training, unreviewed owner personalization, or clinic-wide profiling is allowed in V1.
 - AI inference settings and subprocessors must explicitly cover memory prompts before pilot use.
+- Manual QA on 2026-05-12 verified anonymous denial, viewer read-only behavior, viewer write denial, inactive staff denial, and cross-clinic denial for AI memory rows.
+- On-demand AI drafts now record both source and target locale metadata so staff-facing draft audit labels do not rely on inference from UI state.
 
 ## GDPR Requirements
 

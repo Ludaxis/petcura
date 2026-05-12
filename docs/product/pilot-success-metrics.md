@@ -18,6 +18,8 @@ Measure during week 0 before go-live:
 - median first response time at or below 4 business hours
 - AI summary accept rate at or above 70 percent
 - AI reply drafts require only minor edits in at least 50 percent of cases
+- accepted AI memory is cited in at least 30 percent of repeat-owner/pet requests after enough history exists
+- staff reject or expire unsafe, stale, or non-useful memory without workflow interruption
 - reminder delivery success at or above 95 percent
 - explicit reminder acknowledgement at or above 50 percent
 - zero medical safety incidents
@@ -31,3 +33,10 @@ Measure during week 0 before go-live:
 - Codex can integrate Claude UI work without rewriting the design.
 - QA can run a repeatable checklist and produce actionable failures.
 - No file contains conflicting agent instructions.
+
+## AI Memory V1 Pilot Watchpoints
+
+- Track candidate accept/edit/reject rates by clinic and memory type.
+- Track draft generation latency and whether generated drafts include visible source and target locale metadata.
+- Track zero cross-clinic memory retrieval incidents.
+- Track zero cases where AI memory changes final urgency, diagnosis, prescription, or autonomous owner-facing advice.

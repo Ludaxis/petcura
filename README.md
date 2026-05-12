@@ -2,7 +2,7 @@
 
 PetCura is the WhatsApp-native ClientOps inbox for veterinary clinics. It captures owner requests, structures intake, supports staff-approved AI assistance, manages reminders, and exports clean case records into the clinic's existing PMS.
 
-This repository contains the PetCura monorepo foundation: a Next.js web app scaffold, shared packages, hosted Supabase schema migration, CI, operating manuals, role boundaries, workflow playbooks, and contracts for Codex and Claude collaboration.
+This repository contains the PetCura monorepo foundation: a Next.js web app, shared packages, hosted Supabase schema migrations, Inngest AI jobs, operating manuals, role boundaries, workflow playbooks, and contracts for Codex and Claude collaboration.
 
 Production is deployed at `https://app.petcura.app`.
 
@@ -49,6 +49,7 @@ PetCura v1 is limited to:
 - clinic inbox and request detail
 - staff-approved replies
 - AI summaries, translations, category suggestions, risk flags, and reply drafts
+- reviewed AI memory for request, pet, and owner context
 - staff-confirmed urgency
 - reminders
 - PDF/CSV exports

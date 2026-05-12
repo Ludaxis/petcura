@@ -1,5 +1,7 @@
 # Data Model
 
+Last updated: 2026-05-12.
+
 ## Core Tables
 
 - `clinics`
@@ -42,9 +44,13 @@
 - `ai_memory_sources` links each memory item back to source rows so audit, export, and erasure flows can trace derived data.
 - `ai_outputs.kind = memory_extraction` stores extracted, source-grounded candidate facts.
 - `ai_outputs.kind = context_retrieval` stores the accepted memory selected for a specific AI task.
+- `ai_outputs.kind = reply_draft` stores on-demand drafts and records `source_locale`, `target_locale`, context retrieval output ID, and memory IDs in `input_json`.
 - Memory is scoped to one `clinic_id`; retrieval for V1 is limited to the active request plus its linked pet and owner.
 - Cross-clinic retrieval is prohibited.
+- Status values are `candidate`, `accepted`, `rejected`, and `expired`.
+- Accepted retrieval excludes expired and soft-deleted memory.
+- RLS allows active clinic members to read; candidate review/update is limited to roles with request-management write rights.
 
 ## Soft Delete and Erasure
 
-Owner and pet data must support GDPR erasure while retaining non-PII operational/audit structure where legally required.
+Owner and pet data must support GDPR erasure while retaining non-PII operational/audit structure where legally required. AI memory is derived data and must be exported, redacted, expired, or deleted consistently with its source records before pilot go-live.
