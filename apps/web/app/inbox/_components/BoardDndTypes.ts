@@ -33,6 +33,5 @@ export type BoardLabels = {
 export type BoardDndProviderProps = {
   initialRows: InboxRowData[];
   locale: SupportedLocale;
-  formatDateTime: (iso: string) => string;
   labels: BoardLabels;
 };

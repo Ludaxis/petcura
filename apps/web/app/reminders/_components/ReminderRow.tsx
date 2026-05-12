@@ -31,7 +31,7 @@ type Props = {
   reminder: ReminderListItem;
   locale: SupportedLocale;
   filter: ReminderFilter;
-  formatDateTime: (iso: string) => string;
+  dueAtLabel: string;
   actionable: boolean;
   labels: Labels;
 };
@@ -81,7 +81,7 @@ export function ReminderRow({
   reminder,
   locale,
   filter,
-  formatDateTime,
+  dueAtLabel,
   actionable,
   labels
 }: Props) {
@@ -145,7 +145,7 @@ export function ReminderRow({
             <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
               {labels.due}
             </dt>
-            <dd className="mt-0.5">{formatDateTime(reminder.dueAt)}</dd>
+            <dd className="mt-0.5">{dueAtLabel}</dd>
           </div>
           <div>
             <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">

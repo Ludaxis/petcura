@@ -93,12 +93,6 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
   // await lets per-stream switches show a skeleton via the keyed Suspense
   // boundary below instead of blocking the whole page response.
   const formatRelative = makeRelativeFormatter(locale);
-  const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
-  const formatDateTime = (iso: string) =>
-    dateTimeFormatter.format(new Date(iso));
 
   const streamLabels = (Object.keys(STREAM_KEYS) as InboxStream[]).reduce(
     (acc, key) => {
@@ -194,7 +188,6 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
               locale={locale}
               initialFocusedId={idParamRaw}
               formatRelative={formatRelative}
-              formatDateTime={formatDateTime}
             />
           </Suspense>
         </section>

@@ -181,7 +181,7 @@ export default async function RemindersPage({ searchParams }: Props) {
                   reminder={reminder}
                   locale={locale}
                   filter={filter}
-                  formatDateTime={formatDateTime}
+                  dueAtLabel={formatDateTime(reminder.dueAt)}
                   actionable={actionableStatuses.has(reminder.status)}
                   labels={{
                     pet: t("reminders.pet"),
