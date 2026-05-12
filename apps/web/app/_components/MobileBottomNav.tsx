@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
-import { Inbox as InboxIcon, Search } from "lucide-react";
-import { useSidebar } from "@/components/ui/sidebar";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Bell, Inbox as InboxIcon, Search } from "lucide-react";
 import {
   createTranslator,
   withLocale,
@@ -21,6 +20,10 @@ type MobileBottomNavProps = {
    *  Reuses the existing menu.ariaLabel so the AT story matches the
    *  sidebar identity card popover. */
   meAriaLabel: string;
+  /** Count of open reminders; when > 0, a sage-soft dot renders at the
+   *  top-right of the Reminders bell so the user notices pending work
+   *  without crowding the nav with a numeric badge. */
+  reminderCount: number;
 };
 
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
@@ -42,62 +45,68 @@ function getReducedMotionServerSnapshot() {
 }
 
 /**
- * Persistent mobile bottom navigation — three tabs only.
+ * Persistent mobile bottom navigation — four tabs.
  *
- *   Inbox  · routes to /inbox
- *   Search · dispatches the petcura:open-cmdk window event used by the
- *            sidebar Search row and ⌘K on desktop; the CommandPalette
- *            mounts on /inbox so this is the primary mobile entry point
- *   Me     · dispatches petcura:open-user-menu so the sidebar identity
- *            card popover opens (the UserMenu is single-instance and
- *            already handles its own focus trap / Esc close)
+ *   Inbox     · routes to /inbox
+ *   Search    · dispatches petcura:open-cmdk to surface the command palette
+ *   Reminders · routes to /reminders; sage-soft dot when openReminderCount > 0
+ *   Me        · dispatches petcura:open-me-sheet to surface MobileMeSheet
  *
  * Visible only below `md` (≥768px the persistent sidebar handles all of
  * this). Inset is paired with `pb-16` on the main content surface so rows
  * are never covered by the nav bar.
  *
- * Decision: we KEEP the SidebarTrigger in the mobile header. The bottom
- * nav covers the three highest-traffic destinations (Inbox/Search/Me) but
- * the sidebar drawer still owns Reminders / Reports / Settings / Admin.
- * Removing the trigger would orphan those routes on mobile and break the
- * existing sidebar-mobile spec (which depends on the trigger being present
- * on /reports, where the bottom nav isn't enough on its own).
+ * The MobileMeSheet broadcasts `petcura:me-sheet-state` so this nav can
+ * mirror the sheet's open state into the Me tab's `aria-expanded` even
+ * when the sheet is dismissed via Esc or outside-click.
  */
 export function MobileBottomNav({
   locale,
   meInitials,
-  meAriaLabel
+  meAriaLabel,
+  reminderCount
 }: MobileBottomNavProps) {
   const pathname = usePathname() ?? "/";
   const t = createTranslator(locale);
-  const { setOpenMobile } = useSidebar();
   const prefersReducedMotion = useSyncExternalStore(
     subscribeReducedMotion,
     getReducedMotionSnapshot,
     getReducedMotionServerSnapshot
   );
+  const [meSheetOpen, setMeSheetOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onState = (event: Event) => {
+      const detail = (event as CustomEvent<{ open: boolean }>).detail;
+      if (typeof detail?.open === "boolean") {
+        setMeSheetOpen(detail.open);
+      }
+    };
+    window.addEventListener(
+      "petcura:me-sheet-state",
+      onState as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "petcura:me-sheet-state",
+        onState as EventListener
+      );
+  }, []);
 
   const inboxHref = withLocale("/inbox", locale);
   const inboxActive = pathname.startsWith("/inbox");
+  const remindersHref = withLocale("/reminders", locale);
+  const remindersActive = pathname.startsWith("/reminders");
 
   const openCommandPalette = () => {
     if (typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent("petcura:open-cmdk"));
   };
 
-  const openUserMenu = () => {
+  const openMeSheet = () => {
     if (typeof window === "undefined") return;
-    // The UserMenu lives inside the sidebar identity card. On mobile the
-    // sidebar itself is collapsed into shadcn's Sheet drawer, so we
-    // surface the drawer first and only then fire the open-user-menu
-    // event — the popover anchors to the identity card and the user can
-    // dismiss the Sheet to close everything at once.
-    setOpenMobile(true);
-    // Defer to the next frame so the SheetContent has mounted and the
-    // UserMenu's listener is attached before we dispatch.
-    requestAnimationFrame(() => {
-      window.dispatchEvent(new CustomEvent("petcura:open-user-menu"));
-    });
+    window.dispatchEvent(new CustomEvent("petcura:open-me-sheet"));
   };
 
   // Shared tab classes. Pill background renders only on active so taps
@@ -105,7 +114,7 @@ export function MobileBottomNav({
   // the colour fade entirely.
   const tabClass = (active: boolean) =>
     cn(
-      "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-2 text-[10.5px] font-medium",
+      "relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 text-[10.5px] font-medium",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]",
       !prefersReducedMotion && "transition-colors",
       active
@@ -146,11 +155,42 @@ export function MobileBottomNav({
         <span>{t("nav.bottom.search")}</span>
       </button>
 
+      <Link
+        href={remindersHref}
+        aria-current={remindersActive ? "page" : undefined}
+        aria-label={
+          reminderCount > 0
+            ? `${t("nav.bottom.reminders")} (${reminderCount})`
+            : t("nav.bottom.reminders")
+        }
+        data-bottom-nav-reminders
+        className={tabClass(remindersActive)}
+      >
+        <span className="relative inline-flex h-[18px] w-[18px] items-center justify-center">
+          <Bell
+            aria-hidden="true"
+            size={18}
+            strokeWidth={remindersActive ? 2.25 : 1.75}
+          />
+          {reminderCount > 0 ? (
+            <span
+              aria-hidden="true"
+              data-bottom-nav-reminders-dot
+              className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--primary)] ring-2 ring-[var(--paper)]"
+            />
+          ) : null}
+        </span>
+        <span>{t("nav.bottom.reminders")}</span>
+      </Link>
+
       <button
         type="button"
-        onClick={openUserMenu}
+        onClick={openMeSheet}
         aria-label={meAriaLabel}
-        className={tabClass(false)}
+        aria-haspopup="dialog"
+        aria-expanded={meSheetOpen}
+        data-bottom-nav-me
+        className={tabClass(meSheetOpen)}
       >
         <span
           aria-hidden="true"

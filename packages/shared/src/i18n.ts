@@ -211,12 +211,15 @@ export const uiCopy = {
     "auth.logout": "Sign out",
     "auth.email": "Work email",
     "menu.ariaLabel": "Account menu",
+    "menu.sheetTitle": "Account",
     "menu.signedInAs": "Signed in",
     "menu.theme": "Theme",
     "menu.themeLight": "Light",
     "menu.themeDark": "Dark",
     "menu.themeSystem": "System",
     "menu.language": "Language",
+    "menu.settings": "Settings",
+    "menu.admin": "Admin",
     "menu.help": "Get help",
     "auth.sendLink": "Send magic link",
     "auth.checkEmail": "Check your email for the secure login link.",
@@ -646,7 +649,10 @@ export const uiCopy = {
     "nav.bottom.label": "Primary mobile navigation",
     "nav.bottom.inbox": "Inbox",
     "nav.bottom.search": "Search",
-    "nav.bottom.me": "Me"
+    "nav.bottom.reminders": "Reminders",
+    "nav.bottom.me": "Me",
+    "request.detail.editActions": "Edit",
+    "request.detail.editSheet.title": "Update request"
   },
   et: {
     "nav.back": "Tagasi",
@@ -657,12 +663,15 @@ export const uiCopy = {
     "auth.logout": "Logi välja",
     "auth.email": "Töö e-post",
     "menu.ariaLabel": "Konto menüü",
+    "menu.sheetTitle": "Konto",
     "menu.signedInAs": "Sisse logitud",
     "menu.theme": "Teema",
     "menu.themeLight": "Hele",
     "menu.themeDark": "Tume",
     "menu.themeSystem": "Süsteem",
     "menu.language": "Keel",
+    "menu.settings": "Seaded",
+    "menu.admin": "Admin",
     "menu.help": "Abi",
     "auth.sendLink": "Saada sisselogimislink",
     "auth.checkEmail": "Kontrolli e-posti turvalise sisselogimislingi jaoks.",
@@ -1093,7 +1102,10 @@ export const uiCopy = {
     "nav.bottom.label": "Põhinavigatsioon mobiilis",
     "nav.bottom.inbox": "Postkast",
     "nav.bottom.search": "Otsi",
-    "nav.bottom.me": "Mina"
+    "nav.bottom.reminders": "Meeldetuletused",
+    "nav.bottom.me": "Mina",
+    "request.detail.editActions": "Muuda",
+    "request.detail.editSheet.title": "Uuenda pöördumist"
   },
   ru: {
     "nav.back": "Назад",
@@ -1104,12 +1116,15 @@ export const uiCopy = {
     "auth.logout": "Выйти",
     "auth.email": "Рабочая почта",
     "menu.ariaLabel": "Меню аккаунта",
+    "menu.sheetTitle": "Аккаунт",
     "menu.signedInAs": "Вход выполнен",
     "menu.theme": "Тема",
     "menu.themeLight": "Светлая",
     "menu.themeDark": "Тёмная",
     "menu.themeSystem": "Системная",
     "menu.language": "Язык",
+    "menu.settings": "Настройки",
+    "menu.admin": "Админ",
     "menu.help": "Помощь",
     "auth.sendLink": "Отправить magic link",
     "auth.checkEmail": "Проверьте почту для безопасной ссылки входа.",
@@ -1541,7 +1556,10 @@ export const uiCopy = {
     "nav.bottom.label": "Основная мобильная навигация",
     "nav.bottom.inbox": "Входящие",
     "nav.bottom.search": "Поиск",
-    "nav.bottom.me": "Я"
+    "nav.bottom.reminders": "Напоминания",
+    "nav.bottom.me": "Я",
+    "request.detail.editActions": "Изменить",
+    "request.detail.editSheet.title": "Обновить запрос"
   }
 } satisfies Record<SupportedLocale, Record<string, string>>;
 

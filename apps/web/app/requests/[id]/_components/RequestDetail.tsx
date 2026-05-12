@@ -17,6 +17,7 @@ import {
   requestStatusColumns,
   type SupportedLocale
 } from "@petcura/shared";
+import { cn } from "@petcura/ui";
 import type { RequestDetail as RequestDetailModel } from "@/lib/requests";
 import {
   addInternalNote,
@@ -29,6 +30,7 @@ import {
 import type { AiMemoryPanelProps } from "./AiMemoryPanel";
 import { CreateReminderDialog } from "./CreateReminderDialog";
 import { DetailsSheet } from "./DetailsSheet";
+import { RequestEditSheet } from "./RequestEditSheet";
 import { SideAiMemory } from "./SideAiMemory";
 
 /**
@@ -119,7 +121,7 @@ export function RequestDetail({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-2">
-              <h1 className="break-words text-[20px] font-semibold leading-tight">
+              <h1 className="break-words text-[18px] font-semibold leading-tight lg:text-[20px]">
                 {request.petName}
               </h1>
               <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
@@ -179,101 +181,40 @@ export function RequestDetail({
           </div>
         </div>
 
-        {/* Sticky action row: status / urgency / assign — keep the existing
-            forms, just lay them out as a tighter inline grid. */}
+        {/* Sticky action row: status / urgency / assign — inline forms on
+            `lg+`, hidden on smaller viewports where the Edit sheet handles
+            the same three forms with proper 44pt touch targets. */}
         <div className="flex flex-wrap items-end gap-3">
-          <form
-            action={updateRequestStatus}
-            className="flex items-end gap-2"
-            data-action="status"
-          >
-            <input name="lang" type="hidden" value={locale} />
-            <input name="requestId" type="hidden" value={request.id} />
-            <label
-              className="flex flex-col gap-1 text-[10.5px] font-mono uppercase tracking-[0.06em] text-[var(--muted-2)]"
-              htmlFor="status"
-            >
-              {t("request.status")}
-              <select
-                id="status"
-                name="status"
-                defaultValue={request.status}
-                className="h-8 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-2 text-[12.5px] text-[var(--ink)]"
-              >
-                {requestStatusColumns.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {getRequestStatusLabel(status.value, locale)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button size="sm" variant="secondary" type="submit">
-              {t("request.save")}
-            </Button>
-          </form>
-
-          <form
-            action={updateRequestUrgency}
-            className="flex items-end gap-2"
-            data-action="urgency"
-          >
-            <input name="lang" type="hidden" value={locale} />
-            <input name="requestId" type="hidden" value={request.id} />
-            <label
-              className="flex flex-col gap-1 text-[10.5px] font-mono uppercase tracking-[0.06em] text-[var(--muted-2)]"
-              htmlFor="urgency"
-            >
-              {t("request.urgency")}
-              <select
-                id="urgency"
-                name="urgency"
-                defaultValue={request.urgency}
-                className="h-8 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-2 text-[12.5px] text-[var(--ink)]"
-              >
-                {urgencyOptions.map((urgency) => (
-                  <option key={urgency} value={urgency}>
-                    {getUrgencyLabel(urgency, locale)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button size="sm" variant="secondary" type="submit">
-              {t("request.save")}
-            </Button>
-          </form>
-
-          <form
-            action={assignRequest}
-            className="flex items-end gap-2"
-            data-action="assign"
-          >
-            <input name="lang" type="hidden" value={locale} />
-            <input name="requestId" type="hidden" value={request.id} />
-            <label
-              className="flex flex-col gap-1 text-[10.5px] font-mono uppercase tracking-[0.06em] text-[var(--muted-2)]"
-              htmlFor="staffMemberId"
-            >
-              {t("request.assigned")}
-              <select
-                id="staffMemberId"
-                name="staffMemberId"
-                defaultValue={request.assignedStaffId ?? "unassigned"}
-                className="h-8 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-2 text-[12.5px] text-[var(--ink)]"
-              >
-                <option value="unassigned">{t("request.unassigned")}</option>
-                {request.staffOptions.map((staff) => (
-                  <option key={staff.id} value={staff.id}>
-                    {getStaffLabel(staff)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button size="sm" variant="secondary" type="submit">
-              {t("request.assign")}
-            </Button>
-          </form>
+          <div className="hidden flex-wrap items-end gap-3 lg:flex">
+            <StaffActionForms
+              request={request}
+              locale={locale}
+              t={t}
+              idSuffix="inline"
+              getStaffLabel={getStaffLabel}
+            />
+          </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
+            {/* Mobile/tablet Edit trigger — opens a right-side Sheet that
+                re-renders the same three forms with a stacked layout and
+                taller selects so touch targets clear 44pt. Hidden on
+                `lg+` where the inline forms are already visible. */}
+            <RequestEditSheet
+              triggerLabel={t("request.detail.editActions")}
+              sheetTitle={t("request.detail.editSheet.title")}
+              closeLabel={t("inbox.kbdSheet.close")}
+              className="lg:hidden"
+            >
+              <StaffActionForms
+                request={request}
+                locale={locale}
+                t={t}
+                idSuffix="sheet"
+                getStaffLabel={getStaffLabel}
+                stack
+              />
+            </RequestEditSheet>
             <CreateReminderDialog
               requestId={request.id}
               locale={locale}
@@ -702,6 +643,153 @@ function SideBlocks({
           </ul>
         ) : null}
       </details>
+    </>
+  );
+}
+
+type StaffActionFormsProps = {
+  request: RequestDetailModel;
+  locale: SupportedLocale;
+  t: ReturnType<typeof createTranslator>;
+  /** Disambiguates `<label htmlFor>` + `<select id>` because the same
+   *  three forms render twice in the SSR DOM (inline on `lg+` and inside
+   *  RequestEditSheet on smaller viewports). Without this we'd ship
+   *  duplicate HTML ids and break label/select association for assistive
+   *  tech. */
+  idSuffix: string;
+  getStaffLabel: (staff: RequestDetailModel["staffOptions"][number]) => string;
+  /** When true, lays the three forms out vertically (column flex) and
+   *  bumps select height to `h-9` so touch targets clear 44pt inside the
+   *  edit sheet. */
+  stack?: boolean;
+};
+
+/**
+ * The three operational forms — status, urgency, assignee — extracted so
+ * the same JSX renders inline (sticky action row on `lg+`) and inside the
+ * mobile/tablet RequestEditSheet. Both instances share the same server
+ * actions; the only differences are layout (`stack`) and the `idSuffix`
+ * the parent supplies to keep DOM ids unique across both mounts.
+ */
+function StaffActionForms({
+  request,
+  locale,
+  t,
+  idSuffix,
+  getStaffLabel,
+  stack = false
+}: StaffActionFormsProps) {
+  const selectClass = cn(
+    "rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-2 text-[12.5px] text-[var(--ink)]",
+    stack ? "h-9 w-full" : "h-8"
+  );
+  const formClass = cn(
+    "items-end gap-2",
+    stack ? "flex flex-col items-stretch" : "flex"
+  );
+  const labelClass = cn(
+    "flex flex-col gap-1 text-[10.5px] font-mono uppercase tracking-[0.06em] text-[var(--muted-2)]",
+    stack && "w-full"
+  );
+
+  return (
+    <>
+      <form
+        action={updateRequestStatus}
+        className={formClass}
+        data-action="status"
+      >
+        <input name="lang" type="hidden" value={locale} />
+        <input name="requestId" type="hidden" value={request.id} />
+        <label className={labelClass} htmlFor={`status-${idSuffix}`}>
+          {t("request.status")}
+          <select
+            id={`status-${idSuffix}`}
+            name="status"
+            defaultValue={request.status}
+            className={selectClass}
+          >
+            {requestStatusColumns.map((status) => (
+              <option key={status.value} value={status.value}>
+                {getRequestStatusLabel(status.value, locale)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          size={stack ? "md" : "sm"}
+          variant="secondary"
+          type="submit"
+          className={stack ? "w-full" : undefined}
+        >
+          {t("request.save")}
+        </Button>
+      </form>
+
+      <form
+        action={updateRequestUrgency}
+        className={formClass}
+        data-action="urgency"
+      >
+        <input name="lang" type="hidden" value={locale} />
+        <input name="requestId" type="hidden" value={request.id} />
+        <label className={labelClass} htmlFor={`urgency-${idSuffix}`}>
+          {t("request.urgency")}
+          <select
+            id={`urgency-${idSuffix}`}
+            name="urgency"
+            defaultValue={request.urgency}
+            className={selectClass}
+          >
+            {urgencyOptions.map((urgency) => (
+              <option key={urgency} value={urgency}>
+                {getUrgencyLabel(urgency, locale)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          size={stack ? "md" : "sm"}
+          variant="secondary"
+          type="submit"
+          className={stack ? "w-full" : undefined}
+        >
+          {t("request.save")}
+        </Button>
+      </form>
+
+      <form
+        action={assignRequest}
+        className={formClass}
+        data-action="assign"
+      >
+        <input name="lang" type="hidden" value={locale} />
+        <input name="requestId" type="hidden" value={request.id} />
+        <label className={labelClass} htmlFor={`staffMemberId-${idSuffix}`}>
+          {t("request.assigned")}
+          <select
+            id={`staffMemberId-${idSuffix}`}
+            name="staffMemberId"
+            defaultValue={request.assignedStaffId ?? "unassigned"}
+            className={selectClass}
+          >
+            <option value="unassigned">{t("request.unassigned")}</option>
+            {request.staffOptions.map((staff) => (
+              <option key={staff.id} value={staff.id}>
+                {getStaffLabel(staff)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          size={stack ? "md" : "sm"}
+          variant="secondary"
+          type="submit"
+          className={stack ? "w-full" : undefined}
+        >
+          {t("request.assign")}
+        </Button>
+      </form>
     </>
   );
 }

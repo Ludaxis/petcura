@@ -19,6 +19,7 @@ import { getOpenReminderCount } from "@/lib/reminders";
 import { AppSidebar } from "./AppSidebar";
 import { MobileShellHeader } from "./MobileShellHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileMeSheet } from "./MobileMeSheet";
 import type { NavCounts } from "@/lib/nav/sidebar-nav";
 
 /**
@@ -197,6 +198,33 @@ export async function AppShell({
           locale={locale}
           meInitials={userInitialsFrom(staffContext.user.email ?? "")}
           meAriaLabel={t("menu.ariaLabel")}
+          reminderCount={openReminderCount}
+        />
+        <MobileMeSheet
+          email={staffContext.user.email ?? ""}
+          clinicName={staffContext.clinic.name}
+          roleLabel={roleLabel}
+          initials={userInitialsFrom(staffContext.user.email ?? "")}
+          locale={locale}
+          currentPath={currentPath}
+          initialTheme={themePreference}
+          isSuperAdmin={isSuperAdmin}
+          signOutAction={signOutStaff}
+          labels={{
+            sheetTitle: t("menu.sheetTitle"),
+            signedInAs: t("menu.signedInAs"),
+            theme: t("menu.theme"),
+            themeLight: t("menu.themeLight"),
+            themeDark: t("menu.themeDark"),
+            themeSystem: t("menu.themeSystem"),
+            language: t("menu.language"),
+            settings: t("menu.settings"),
+            admin: t("menu.admin"),
+            help: t("menu.help"),
+            helpHref: "mailto:support@petcura.app",
+            signOut: t("auth.logout"),
+            close: t("inbox.kbdSheet.close")
+          }}
         />
       </main>
     </SidebarProvider>
