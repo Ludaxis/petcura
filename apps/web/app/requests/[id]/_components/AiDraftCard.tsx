@@ -145,8 +145,16 @@ export function AiDraftCard({
 
   if (hidden) return null;
 
-  const sourceLocale = (draft.sourceLocale ?? "??").toUpperCase();
-  const targetLocale = (draft.targetLocale ?? draft.sourceLocale ?? "??").toUpperCase();
+  const sourceLocale = (
+    draft.sourceLocale ??
+    draft.targetLocale ??
+    locale
+  ).toUpperCase();
+  const targetLocale = (
+    draft.targetLocale ??
+    draft.sourceLocale ??
+    locale
+  ).toUpperCase();
   const confidenceLabel =
     typeof draft.confidence === "number"
       ? labels.confidence.replace("{confidence}", draft.confidence.toFixed(2))

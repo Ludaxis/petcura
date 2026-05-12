@@ -15,6 +15,7 @@ import {
   type SupportedLocale
 } from "@petcura/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveReplyDraftSourceLocale } from "./draft-locale";
 import { generateJsonWithGateway } from "./gateway";
 
 const defaultAnthropicHaikuModel = "anthropic/claude-haiku-4.5";
@@ -542,6 +543,7 @@ export async function generateReplyDraftForRequest({
     taskKind: "reply_draft"
   });
   const model = getReplyDraftModel();
+  const sourceLocale = resolveReplyDraftSourceLocale({ request, messages });
   const targetLocale = normalizeLocale(
     locale ?? request.owners?.preferred_language ?? request.clinics?.locale
   );
@@ -595,6 +597,7 @@ export async function generateReplyDraftForRequest({
       prompt_version: replyDraftPromptVersion,
       input_json: toJson({
         prompt_version: replyDraftPromptVersion,
+        source_locale: sourceLocale,
         target_locale: targetLocale,
         context_retrieval_ai_output_id: context.aiOutputId,
         memory_ids: context.items.map((item) => item.id)
@@ -622,6 +625,8 @@ export async function generateReplyDraftForRequest({
     payload_json: {
       ai_output_id: aiOutput.id,
       prompt_version: replyDraftPromptVersion,
+      source_locale: sourceLocale,
+      target_locale: targetLocale,
       context_retrieval_ai_output_id: context.aiOutputId,
       memory_ids: output.usedMemoryIds
     }
