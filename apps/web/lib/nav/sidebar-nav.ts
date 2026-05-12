@@ -131,18 +131,29 @@ export const SIDEBAR_NAV: NavItem[] = [
     countSource: "inboxTotal",
     children: INBOX_CHILDREN
   },
+  // Customers + Pets are clinic-mental-model entry points to the unified
+  // /directory view. Each href points to the friendly /customers or /pets
+  // route which redirects to /directory with the appropriate tab preset.
+  // Active-state matching in AppSidebar's useActiveResolver special-cases
+  // these so the right row stays lit after the redirect lands on /directory.
+  {
+    id: "customers",
+    labelKey: "nav.customers",
+    href: "/customers",
+    icon: Users
+  },
+  {
+    id: "pets",
+    labelKey: "nav.pets",
+    href: "/pets",
+    icon: PawPrint
+  },
   {
     id: "reminders",
     labelKey: "nav.reminders",
     href: "/reminders",
     icon: Bell,
     countSource: "remindersTotal"
-  },
-  {
-    id: "directory",
-    labelKey: "nav.directory",
-    href: "/directory",
-    icon: Users
   },
   {
     id: "reports",
@@ -156,12 +167,10 @@ export const SIDEBAR_NAV: NavItem[] = [
     href: "/settings",
     icon: Settings
   },
-  {
-    id: "profile",
-    labelKey: "nav.profile",
-    href: "/profile",
-    icon: User
-  },
+  // /profile is intentionally NOT a top-level nav row. Staff reach it through
+  // the identity card (UserMenu in the rail, MobileMeSheet on mobile) — that
+  // surface already shows "Profile" alongside theme/language/sign-out, so a
+  // duplicate sidebar row added noise without surfacing the user's identity.
   {
     // Admin lives at the bottom of the nav and is gated to super-admins.
     // AppSidebar resolves this `requires` gate at render time via the

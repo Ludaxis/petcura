@@ -12,14 +12,20 @@ describe("sidebar-nav", () => {
   it("exposes every top-level surface needed by the sidebar shell", () => {
     const ids = SIDEBAR_NAV.map((item) => item.id);
     // Admin is present in config but gated at render time to super-admins.
+    // Profile is intentionally absent from the main nav — it lives on the
+    // identity card (UserMenu + MobileMeSheet) to avoid duplicating an
+    // entry the user is already standing on at the bottom of the rail.
+    // Directory was replaced by separate Customers + Pets entries — they
+    // both deep-link into the same /directory page via a tab preset, but
+    // the clinic mental model is "customers" or "pets", not "directory".
     expect(ids).toEqual([
       "search",
       "inbox",
+      "customers",
+      "pets",
       "reminders",
-      "directory",
       "reports",
       "settings",
-      "profile",
       "admin"
     ]);
     expect(SIDEBAR_NAV.find((item) => item.id === "admin")?.requires).toBe(

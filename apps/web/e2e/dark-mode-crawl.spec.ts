@@ -56,6 +56,12 @@ const ALLOWED_WHITE_TEXT_BGS = new Set([
 
 // Routes we crawl. We skip `/health` (JSON), `/api/*` (route handlers), and
 // `/auth/callback` (302 redirect) — none of which render UI.
+//
+// `/customers` and `/pets` are server-side redirects to `/directory` with a
+// `?tab=` preset. We list them anyway because the crawler follows the
+// redirect transparently and the resulting `/directory` surface is where the
+// dark-mode tokens actually paint. A future migration to a non-redirect
+// implementation would still be exercised by the same entries.
 const STATIC_ROUTES = [
   "/",
   "/login",
@@ -65,6 +71,10 @@ const STATIC_ROUTES = [
   "/reminders",
   "/reports",
   "/settings",
+  "/profile",
+  "/customers",
+  "/pets",
+  "/directory",
   "/design"
 ] as const;
 
