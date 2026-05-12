@@ -32,6 +32,12 @@ import {
 } from "@petcura/shared";
 import type { InboxRowData } from "@/lib/inbox/queries";
 import { moveRequestToColumn } from "../_actions";
+import type {
+  BoardColumnId,
+  BoardDndProviderProps,
+  BoardLabels
+} from "./BoardDndTypes";
+export type { BoardColumnId, BoardLabels } from "./BoardDndTypes";
 
 /**
  * Board kanban with drag-and-drop.
@@ -63,13 +69,6 @@ import { moveRequestToColumn } from "../_actions";
  *    scroll the page.
  */
 
-export type BoardColumnId =
-  | "new"
-  | "urgent"
-  | "waiting_staff"
-  | "waiting_owner"
-  | "resolved";
-
 const COLUMNS: ReadonlyArray<{ id: BoardColumnId }> = [
   { id: "new" },
   { id: "urgent" },
@@ -77,28 +76,6 @@ const COLUMNS: ReadonlyArray<{ id: BoardColumnId }> = [
   { id: "waiting_owner" },
   { id: "resolved" }
 ];
-
-export type BoardLabels = {
-  columns: Record<BoardColumnId, string>;
-  empty: string;
-  translation: string;
-  instructions: string;
-  pickedUp: string;
-  over: string;
-  dropped: string;
-  canceled: string;
-  error: string;
-  dropHint: string;
-  cardDragLabel: string;
-  title: string;
-};
-
-type BoardDndProviderProps = {
-  initialRows: InboxRowData[];
-  locale: SupportedLocale;
-  formatDateTime: (iso: string) => string;
-  labels: BoardLabels;
-};
 
 function fmt(template: string, vars: Record<string, string>) {
   let out = template;

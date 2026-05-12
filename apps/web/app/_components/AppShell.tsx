@@ -21,7 +21,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AppSidebar } from "./AppSidebar";
 import { MobileShellHeader } from "./MobileShellHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
-import { MobileMeSheet } from "./MobileMeSheet";
+import { LazyMobileMeSheet } from "./LazyMobileMeSheet";
 import type { NavCounts } from "@/lib/nav/sidebar-nav";
 
 /**
@@ -222,7 +222,7 @@ export async function AppShell({
           meAriaLabel={t("menu.ariaLabel")}
           reminderCount={openReminderCount}
         />
-        <MobileMeSheet
+        <LazyMobileMeSheet
           email={staffContext.user.email ?? ""}
           displayName={userDisplayName}
           avatarUrl={avatarUrl}

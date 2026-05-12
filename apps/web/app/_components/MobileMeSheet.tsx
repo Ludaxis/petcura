@@ -13,11 +13,7 @@ import {
   Sun,
   UserRound
 } from "lucide-react";
-import {
-  localeOptions,
-  type SupportedLocale,
-  withLocale
-} from "@petcura/shared";
+import { localeOptions, withLocale } from "@petcura/shared";
 import { cn } from "@petcura/ui";
 import {
   Sheet,
@@ -33,37 +29,9 @@ import {
   type ThemePreference
 } from "./ThemeToggle";
 
-export type MobileMeSheetLabels = {
-  sheetTitle: string;
-  signedInAs: string;
-  theme: string;
-  themeLight: string;
-  themeDark: string;
-  themeSystem: string;
-  language: string;
-  profile: string;
-  settings: string;
-  admin: string;
-  help: string;
-  helpHref: string;
-  signOut: string;
-  close: string;
-};
+import type { MobileMeSheetProps } from "./MobileMeSheetTypes";
 
-type MobileMeSheetProps = {
-  email: string;
-  displayName?: string | undefined;
-  avatarUrl?: string | null | undefined;
-  clinicName?: string | undefined;
-  roleLabel: string;
-  initials: string;
-  locale: SupportedLocale;
-  currentPath: string;
-  initialTheme: ThemePreference;
-  isSuperAdmin: boolean;
-  labels: MobileMeSheetLabels;
-  signOutAction: (formData: FormData) => void | Promise<void>;
-};
+export type { MobileMeSheetLabels, MobileMeSheetProps } from "./MobileMeSheetTypes";
 
 const THEME_OPTIONS: Array<{
   value: ThemePreference;
@@ -107,6 +75,18 @@ export function MobileMeSheet({
       handleOpenChange(!open);
     };
     window.addEventListener("petcura:open-me-sheet", onOpen as EventListener);
+    // LazyMobileMeSheet consumes the very first `petcura:open-me-sheet`
+    // event itself (it has to, in order to know to fetch this chunk).
+    // The wrapper stashes a flag and re-dispatches once we've mounted our
+    // listener — using a queued microtask so the listener above is attached
+    // before the event fires.
+    const flag = window as unknown as { __pcMeSheetPending?: boolean };
+    if (flag.__pcMeSheetPending) {
+      flag.__pcMeSheetPending = false;
+      queueMicrotask(() => {
+        window.dispatchEvent(new CustomEvent("petcura:open-me-sheet"));
+      });
+    }
     return () =>
       window.removeEventListener(
         "petcura:open-me-sheet",
