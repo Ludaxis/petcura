@@ -8,8 +8,14 @@ import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
 import type { SupportedLocale } from "@petcura/shared";
 import { Thread, type ThreadMessage } from "./Thread";
 import { AiDraftCard, type DraftPayload } from "./AiDraftCard";
+import { AiMemoryPanel, type AiMemoryPanelProps } from "./AiMemoryPanel";
 import { Composer, type ComposerRef } from "./Composer";
 import { RequestKeyboard } from "./RequestKeyboard";
+
+export type RequestPaneAiMemoryProps = Omit<
+  AiMemoryPanelProps,
+  "requestId" | "locale" | "hasDraft" | "onAnnounce"
+>;
 
 type RequestPaneShellProps = {
   requestId: string;
@@ -33,6 +39,7 @@ type RequestPaneShellProps = {
   threadLabels: React.ComponentProps<typeof Thread>["labels"];
   translateAnnounce: { shown: string; hidden: string };
   draftLabels: React.ComponentProps<typeof AiDraftCard>["labels"];
+  aiMemory?: RequestPaneAiMemoryProps | null;
   composerLabels: React.ComponentProps<typeof Composer>["labels"];
   keyboardLabels: React.ComponentProps<typeof RequestKeyboard>["labels"];
   shortcuts: React.ComponentProps<typeof RequestKeyboard>["shortcuts"];
@@ -58,6 +65,7 @@ export function RequestPaneShell({
   threadLabels,
   translateAnnounce,
   draftLabels,
+  aiMemory,
   composerLabels,
   keyboardLabels,
   shortcuts
@@ -164,6 +172,10 @@ export function RequestPaneShell({
           {
             table: "message_translations",
             filter: eqFilter("clinic_id", clinicId)
+          },
+          {
+            table: "ai_outputs",
+            filter: eqFilter("request_id", requestId)
           }
         ]}
         pollMs={5_000}
@@ -187,6 +199,16 @@ export function RequestPaneShell({
           onBubbleFocus={handleBubbleFocus}
           labels={threadLabels}
         />
+
+        {aiMemory ? (
+          <AiMemoryPanel
+            requestId={requestId}
+            locale={locale}
+            hasDraft={Boolean(draft)}
+            onAnnounce={announceMessage}
+            {...aiMemory}
+          />
+        ) : null}
 
         {draft ? (
           <AiDraftCard

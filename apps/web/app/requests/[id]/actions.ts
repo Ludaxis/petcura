@@ -11,6 +11,9 @@ import {
   aiDraftDecisionSchema,
   aiDraftEditSchema,
   aiDraftRejectSchema,
+  aiMemoryDecisionSchema,
+  aiMemoryEditSchema,
+  aiReplyDraftGenerationSchema,
   createReminderSchema,
   internalNoteSchema,
   requestAssignmentSchema,
@@ -26,6 +29,12 @@ import {
 } from "@/lib/auth/permissions";
 import { sendWhatsAppStaffMessage } from "@/lib/twilio/outbound";
 import { getTwilioDeliveryEventId } from "@/lib/twilio/whatsapp";
+import { generateReplyDraftForRequest } from "@/lib/ai/memory";
+import {
+  sendPetCuraInngestEvent,
+  shouldUseInngestAiJobs
+} from "@/lib/inngest/client";
+import { AI_REPLY_DRAFT_REQUESTED_EVENT } from "../../../../../jobs/inngest/events";
 
 function requestPath(
   requestId: string,
@@ -66,7 +75,13 @@ function eventTypeForStatusChange(
 
 type RequestForAction = Pick<
   Database["public"]["Tables"]["requests"]["Row"],
-  "id" | "pet_id" | "status" | "urgency" | "assigned_staff_id" | "channel"
+  | "id"
+  | "owner_id"
+  | "pet_id"
+  | "status"
+  | "urgency"
+  | "assigned_staff_id"
+  | "channel"
 > & {
   owners: Pick<Database["public"]["Tables"]["owners"]["Row"], "phone"> | null;
 };
@@ -78,7 +93,7 @@ async function loadRequestForAction(
 ) {
   const { data, error } = await supabase
     .from("requests")
-    .select("id, pet_id, status, urgency, assigned_staff_id, channel, owners(phone)")
+    .select("id, owner_id, pet_id, status, urgency, assigned_staff_id, channel, owners(phone)")
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
     .maybeSingle();
@@ -824,6 +839,162 @@ export async function rejectAiDraft(input: {
         ai_output_id: aiOutputId,
         staff_id: ctx.membership.id,
         reason: reason ?? null
+      }
+    });
+
+  if (eventError) return { ok: false, error: eventError.message };
+
+  refreshRequestViews(requestId);
+  return { ok: true };
+}
+
+export async function generateAiReplyDraft(
+  formData: FormData
+): Promise<AiDraftActionResult> {
+  const parsed = aiReplyDraftGenerationSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    locale: normalizeLocale(formData.get("lang"))
+  });
+
+  if (!parsed.success) {
+    return { ok: false, error: "invalid_input" };
+  }
+
+  const { requestId, locale } = parsed.data;
+  const ctx = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(ctx, "requests:reply")) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  if (shouldUseInngestAiJobs()) {
+    await sendPetCuraInngestEvent({
+      name: AI_REPLY_DRAFT_REQUESTED_EVENT,
+      id: `${ctx.clinic.id}:${requestId}:reply-draft:${Date.now()}`,
+      data: {
+        clinicId: ctx.clinic.id,
+        requestId,
+        requestedAt: new Date().toISOString(),
+        requestedBy: {
+          type: "staff",
+          id: ctx.user.id
+        },
+        targetLocale: locale
+      }
+    });
+    refreshRequestViews(requestId);
+    return { ok: true };
+  }
+
+  const result = await generateReplyDraftForRequest({
+    clinicId: ctx.clinic.id,
+    requestId,
+    locale
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  refreshRequestViews(requestId);
+  return { ok: true };
+}
+
+function memoryBelongsToRequest(
+  request: Pick<RequestForAction, "id" | "owner_id" | "pet_id">,
+  memory: Pick<
+    Database["public"]["Tables"]["ai_memory_items"]["Row"],
+    "scope_type" | "scope_id"
+  >
+) {
+  if (memory.scope_type === "request") return memory.scope_id === request.id;
+  if (memory.scope_type === "owner") return memory.scope_id === request.owner_id;
+  if (memory.scope_type === "pet") return memory.scope_id === request.pet_id;
+  return false;
+}
+
+export async function reviewAiMemoryCandidate(
+  formData: FormData
+): Promise<AiDraftActionResult> {
+  const requestId = getString(formData, "requestId");
+  const memoryItemId = getString(formData, "candidateId");
+  const intent = getString(formData, "intent");
+  const locale = normalizeLocale(formData.get("lang"));
+  const contentText = getString(formData, "contentText");
+  const parsed =
+    intent === "approve"
+      ? aiMemoryEditSchema.safeParse({ requestId, memoryItemId, contentText })
+      : aiMemoryDecisionSchema.safeParse({ requestId, memoryItemId });
+
+  if (!parsed.success || (intent !== "approve" && intent !== "dismiss")) {
+    return { ok: false, error: "invalid_input" };
+  }
+
+  const ctx = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const request = await loadRequestForAction(
+    ctx.supabase,
+    ctx.clinic.id,
+    requestId
+  );
+
+  if (!request) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { data: memory, error: memoryError } = await ctx.supabase
+    .from("ai_memory_items")
+    .select("id, scope_type, scope_id, status")
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", memoryItemId)
+    .maybeSingle();
+
+  if (memoryError) return { ok: false, error: memoryError.message };
+  if (!memory || !memoryBelongsToRequest(request, memory)) {
+    return { ok: false, error: "not_found" };
+  }
+  if (memory.status !== "candidate") {
+    refreshRequestViews(requestId);
+    return { ok: true };
+  }
+
+  const accepted = intent === "approve";
+  const updatePayload: Database["public"]["Tables"]["ai_memory_items"]["Update"] =
+    accepted
+      ? {
+          status: "accepted",
+          content_text: contentText,
+          reviewed_by: ctx.user.id,
+          reviewed_at: new Date().toISOString()
+        }
+      : {
+          status: "rejected",
+          reviewed_by: ctx.user.id,
+          reviewed_at: new Date().toISOString()
+        };
+
+  const { error: updateError } = await ctx.supabase
+    .from("ai_memory_items")
+    .update(updatePayload)
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", memoryItemId);
+
+  if (updateError) return { ok: false, error: updateError.message };
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      event_type: accepted ? "ai_memory_accepted" : "ai_memory_rejected",
+      payload_json: {
+        memory_item_id: memoryItemId,
+        staff_id: ctx.membership.id,
+        edited_length: accepted ? contentText.length : null
       }
     });
 
