@@ -190,7 +190,10 @@ export function RequestPaneShell({
         {announce}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* gap-3 spaces the stacked panes — Thread / AiMemoryPanel / AiDraftCard
+          / Composer — so the composer doesn't sit flush against the draft
+          card. UX feedback: the seam reads as cramped without breathing room. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
         <Thread
           key={requestId}
           requestId={requestId}
