@@ -68,13 +68,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
 
         {sent ? (
-          <div className="mb-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]">
+          <div
+            role="status"
+            className="mb-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]"
+          >
             {t("auth.checkEmail")}
           </div>
         ) : null}
 
         {errorCopy ? (
-          <div className="mb-4 rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm leading-6 text-[var(--red)]">
+          <div
+            role="alert"
+            className="mb-4 rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm leading-6 text-[var(--red)]"
+          >
             {errorCopy}
           </div>
         ) : null}

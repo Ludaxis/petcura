@@ -163,6 +163,12 @@ export const SIDEBAR_NAV: NavItem[] = [
     icon: Settings
   },
   {
+    id: "profile",
+    labelKey: "nav.profile",
+    href: "/profile",
+    icon: User
+  },
+  {
     // Admin lives at the bottom of the nav and is gated to super-admins.
     // AppSidebar resolves this `requires` gate at render time via the
     // `isSuperAdmin` prop threaded down from AppShell.

@@ -17,7 +17,6 @@ as $$
       and clinic_staff.is_active = true
   )
 $$;
-
 create or replace function public.current_clinic_id()
 returns uuid
 language sql
@@ -37,12 +36,10 @@ as $$
     )
   )
 $$;
-
 revoke all on function public.is_active_clinic_member(uuid) from public;
 revoke all on function public.current_clinic_id() from public;
 grant execute on function public.is_active_clinic_member(uuid) to anon, authenticated, service_role;
 grant execute on function public.current_clinic_id() to anon, authenticated, service_role;
-
 insert into public.clinics (id, name, slug, country, timezone, locale)
 values (
   '00000000-0000-4000-8000-000000000001',
@@ -58,7 +55,6 @@ set
   country = excluded.country,
   timezone = excluded.timezone,
   locale = excluded.locale;
-
 drop policy if exists clinics_isolation on public.clinics;
 drop policy if exists clinic_staff_isolation on public.clinic_staff;
 drop policy if exists owners_isolation on public.owners;
@@ -74,63 +70,48 @@ drop policy if exists ai_outputs_isolation on public.ai_outputs;
 drop policy if exists reminders_isolation on public.reminders;
 drop policy if exists clinic_channels_isolation on public.clinic_channels;
 drop policy if exists audit_logs_isolation on public.audit_logs;
-
 create policy clinics_isolation on public.clinics
   for select
   using (public.is_active_clinic_member(id));
-
 create policy clinic_staff_select_isolation on public.clinic_staff
   for select
   using (public.is_active_clinic_member(clinic_id));
-
 create policy owners_isolation on public.owners
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy owner_channel_identities_isolation on public.owner_channel_identities
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy pets_isolation on public.pets
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy requests_isolation on public.requests
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy messages_isolation on public.messages
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy attachments_isolation on public.attachments
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy message_delivery_events_isolation on public.message_delivery_events
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy internal_notes_isolation on public.internal_notes
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy request_events_isolation on public.request_events
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy ai_outputs_isolation on public.ai_outputs
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy reminders_isolation on public.reminders
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy clinic_channels_isolation on public.clinic_channels
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));
-
 create policy audit_logs_isolation on public.audit_logs
   using (public.is_active_clinic_member(clinic_id))
   with check (public.is_active_clinic_member(clinic_id));

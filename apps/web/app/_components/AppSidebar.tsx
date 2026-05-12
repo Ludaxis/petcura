@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Profile avatars use short-lived signed Supabase Storage URLs. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useRef } from "react";
@@ -45,7 +46,8 @@ export type AppSidebarLabels = {
 export type AppSidebarProps = {
   locale: SupportedLocale;
   email: string;
-  displayName?: string;
+  displayName?: string | undefined;
+  avatarUrl?: string | null | undefined;
   roleLabel?: string;
   clinicName: string;
   clinicInitials: string;
@@ -148,6 +150,7 @@ export function AppSidebar({
   locale,
   email,
   displayName,
+  avatarUrl,
   roleLabel,
   clinicName,
   clinicInitials,
@@ -166,7 +169,9 @@ export function AppSidebar({
   const initials = useMemo(() => {
     const source = (displayName || email).trim();
     const parts = source.split(/[\s.@_-]+/).filter(Boolean).slice(0, 2);
-    const joined = parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+    const joined = parts
+      .map((part) => Array.from(part)[0]?.toLocaleUpperCase("en-US") ?? "")
+      .join("");
     return joined || "?";
   }, [displayName, email]);
 
@@ -393,9 +398,17 @@ export function AppSidebar({
               <div className="flex w-full items-center gap-2.5 px-3 py-3 text-left">
                 <span
                   aria-hidden="true"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[var(--primary-strong)]"
+                  className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--primary-soft)] text-[var(--primary-strong)]"
                 >
-                  <span className="text-[12px] font-semibold">{initials}</span>
+                  {avatarUrl ? (
+                    <img
+                      alt=""
+                      className="h-full w-full object-cover"
+                      src={avatarUrl}
+                    />
+                  ) : (
+                    <span className="text-[12px] font-semibold">{initials}</span>
+                  )}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[12.5px] font-semibold text-[var(--ink)]">

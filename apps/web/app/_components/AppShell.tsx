@@ -16,6 +16,8 @@ import { isSuperAdminEmail } from "@/lib/auth/super-admin";
 import { getThemePreference } from "@/lib/theme";
 import { signOutStaff } from "@/app/inbox/actions";
 import { getOpenReminderCount } from "@/lib/reminders";
+import { getSignedProfileImageUrl } from "@/lib/profile-media";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { AppSidebar } from "./AppSidebar";
 import { MobileShellHeader } from "./MobileShellHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -66,9 +68,12 @@ function clinicInitialsFrom(name: string) {
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
+    .map((part) => Array.from(part)[0]?.toLocaleUpperCase("en-US") ?? "")
     .join("");
-  return initials || name.slice(0, 2).toUpperCase();
+  return (
+    initials ||
+    Array.from(name.trim()).slice(0, 2).join("").toLocaleUpperCase("en-US")
+  );
 }
 
 function userInitialsFrom(email: string) {
@@ -76,7 +81,9 @@ function userInitialsFrom(email: string) {
   // avatar matches what the user already sees in the rail.
   const source = email.trim();
   const parts = source.split(/[\s.@_-]+/).filter(Boolean).slice(0, 2);
-  const joined = parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+  const joined = parts
+    .map((part) => Array.from(part)[0]?.toLocaleUpperCase("en-US") ?? "")
+    .join("");
   return joined || "?";
 }
 
@@ -91,15 +98,24 @@ export async function AppShell({
   const themePreference = await getThemePreference();
   const t = createTranslator(locale);
   const isSuperAdmin = isSuperAdminEmail(staffContext.user.email);
+  const admin = createAdminClient();
 
-  const [rawCounts, openReminderCount] = await Promise.all([
+  const [rawCounts, openReminderCount, profileResult] = await Promise.all([
     getInboxStreamCounts(
       staffContext.supabase,
       staffContext.clinic.id,
       staffContext.membership.id
     ),
-    getOpenReminderCount(staffContext.supabase, staffContext.clinic.id)
+    getOpenReminderCount(staffContext.supabase, staffContext.clinic.id),
+    admin
+      .from("user_profiles")
+      .select("full_name, display_name, avatar_url")
+      .eq("user_id", staffContext.user.id)
+      .maybeSingle()
   ]);
+  const profile = profileResult.data;
+  const avatarUrl = await getSignedProfileImageUrl(profile?.avatar_url);
+  const userDisplayName = profile?.display_name ?? profile?.full_name ?? undefined;
 
   // Map server counts onto the NavCountSource keys the sidebar uses. The
   // sidebar only ever reads through these named slots; it stays decoupled
@@ -122,6 +138,8 @@ export async function AppShell({
       <AppSidebar
         locale={locale}
         email={staffContext.user.email ?? ""}
+        displayName={userDisplayName}
+        avatarUrl={avatarUrl}
         clinicName={staffContext.clinic.name}
         clinicInitials={clinicInitialsFrom(staffContext.clinic.name)}
         roleLabel={roleLabel}
@@ -144,6 +162,7 @@ export async function AppShell({
             themeDark: t("menu.themeDark"),
             themeSystem: t("menu.themeSystem"),
             language: t("menu.language"),
+            profile: t("menu.profile"),
             help: t("menu.help"),
             helpHref: "mailto:support@petcura.app",
             signOut: t("auth.logout")
@@ -196,15 +215,22 @@ export async function AppShell({
         </div>
         <MobileBottomNav
           locale={locale}
-          meInitials={userInitialsFrom(staffContext.user.email ?? "")}
+          meInitials={userInitialsFrom(
+            userDisplayName ?? staffContext.user.email ?? ""
+          )}
+          avatarUrl={avatarUrl}
           meAriaLabel={t("menu.ariaLabel")}
           reminderCount={openReminderCount}
         />
         <MobileMeSheet
           email={staffContext.user.email ?? ""}
+          displayName={userDisplayName}
+          avatarUrl={avatarUrl}
           clinicName={staffContext.clinic.name}
           roleLabel={roleLabel}
-          initials={userInitialsFrom(staffContext.user.email ?? "")}
+          initials={userInitialsFrom(
+            userDisplayName ?? staffContext.user.email ?? ""
+          )}
           locale={locale}
           currentPath={currentPath}
           initialTheme={themePreference}
@@ -218,6 +244,7 @@ export async function AppShell({
             themeDark: t("menu.themeDark"),
             themeSystem: t("menu.themeSystem"),
             language: t("menu.language"),
+            profile: t("menu.profile"),
             settings: t("menu.settings"),
             admin: t("menu.admin"),
             help: t("menu.help"),

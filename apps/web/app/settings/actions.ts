@@ -12,12 +12,17 @@ import {
 } from "@petcura/shared";
 import {
   createClinicStaffSchema,
+  updateTeamMemberProfileSchema,
   updateClinicStaffRoleSchema,
   updateClinicStaffStatusSchema
 } from "@petcura/validation";
 import { ensureAuthUser } from "@/lib/admin/bootstrap";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { countActiveOwners } from "@/lib/clinic/team";
+import {
+  hasUsableProfileImage,
+  uploadProfileImage
+} from "@/lib/profile-media";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function settingsRedirect(
@@ -35,6 +40,16 @@ function settingsRedirect(
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
+}
+
+function getPhoto(formData: FormData) {
+  const value = formData.get("photo");
+  return value instanceof File && hasUsableProfileImage(value) ? value : null;
+}
+
+function nullable(value: string | undefined) {
+  const next = value?.trim();
+  return next ? next : null;
 }
 
 async function getTeamActionContext(locale: SupportedLocale) {
@@ -243,4 +258,88 @@ export async function updateClinicTeamMemberStatus(formData: FormData) {
 
   revalidatePath("/settings");
   settingsRedirect(locale, { settings_status: "staff_updated" });
+}
+
+export async function updateClinicTeamMemberProfile(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const { staffContext, actorRole } = await getTeamActionContext(locale);
+  const parsed = updateTeamMemberProfileSchema.safeParse({
+    membershipId: getString(formData, "membershipId"),
+    fullName: getString(formData, "fullName"),
+    displayName: getString(formData, "displayName"),
+    phone: getString(formData, "phone"),
+    jobTitle: getString(formData, "jobTitle"),
+    locale: getString(formData, "profileLocale") || locale
+  });
+
+  if (!parsed.success) {
+    settingsRedirect(locale, { settings_error: "invalid_profile" });
+  }
+
+  const admin = createAdminClient();
+  const { data: target, error: targetError } = await admin
+    .from("clinic_staff")
+    .select("id, clinic_id, user_id, role, is_active")
+    .eq("clinic_id", staffContext.clinic.id)
+    .eq("id", parsed.data.membershipId)
+    .maybeSingle();
+
+  if (targetError || !target) {
+    settingsRedirect(locale, { settings_error: "staff_not_found" });
+  }
+
+  const targetRole = target.role as StaffRole;
+  if (!canManageStaffMember(actorRole, targetRole)) {
+    settingsRedirect(locale, { settings_error: "forbidden" });
+  }
+
+  const photo = getPhoto(formData);
+  let avatarUrl: string | undefined;
+
+  if (photo) {
+    try {
+      avatarUrl = await uploadProfileImage({
+        clinicId: staffContext.clinic.id,
+        entity: "staff",
+        entityId: target.user_id,
+        file: photo
+      });
+    } catch {
+      settingsRedirect(locale, { settings_error: "photo_upload_failed" });
+    }
+  }
+
+  const { error } = await admin.from("user_profiles").upsert(
+    {
+      user_id: target.user_id,
+      full_name: parsed.data.fullName,
+      display_name: nullable(parsed.data.displayName),
+      phone: nullable(parsed.data.phone),
+      job_title: nullable(parsed.data.jobTitle),
+      locale: parsed.data.locale,
+      ...(avatarUrl ? { avatar_url: avatarUrl } : {})
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) {
+    settingsRedirect(locale, { settings_error: "profile_update_failed" });
+  }
+
+  await admin.from("audit_logs").insert({
+    clinic_id: staffContext.clinic.id,
+    actor_id: staffContext.user.id,
+    action: "clinic_staff_profile_updated",
+    entity_type: "clinic_staff",
+    entity_id: target.id,
+    payload_json: {
+      user_id: target.user_id,
+      source: "clinic_settings",
+      avatar_url: Boolean(avatarUrl)
+    }
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+  settingsRedirect(locale, { settings_status: "profile_saved" });
 }

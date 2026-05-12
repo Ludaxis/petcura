@@ -1,8 +1,6 @@
 create schema if not exists private;
-
 revoke all on schema private from public;
 grant usage on schema private to authenticated, service_role;
-
 create or replace function private.active_staff_role(target_clinic_id uuid)
 returns public.staff_role
 language sql
@@ -18,7 +16,6 @@ as $$
   order by clinic_staff.created_at asc
   limit 1
 $$;
-
 create or replace function private.can_write_clinic_data(target_clinic_id uuid)
 returns boolean
 language sql
@@ -37,12 +34,10 @@ as $$
     false
   )
 $$;
-
 revoke all on function private.active_staff_role(uuid) from public;
 revoke all on function private.can_write_clinic_data(uuid) from public;
 grant execute on function private.active_staff_role(uuid) to authenticated, service_role;
 grant execute on function private.can_write_clinic_data(uuid) to authenticated, service_role;
-
 drop policy if exists owners_isolation on public.owners;
 drop policy if exists owner_channel_identities_isolation on public.owner_channel_identities;
 drop policy if exists pets_isolation on public.pets;
@@ -56,7 +51,6 @@ drop policy if exists ai_outputs_isolation on public.ai_outputs;
 drop policy if exists reminders_isolation on public.reminders;
 drop policy if exists clinic_channels_isolation on public.clinic_channels;
 drop policy if exists audit_logs_isolation on public.audit_logs;
-
 drop policy if exists owners_select_isolation on public.owners;
 drop policy if exists owner_channel_identities_select_isolation on public.owner_channel_identities;
 drop policy if exists pets_select_isolation on public.pets;
@@ -70,7 +64,6 @@ drop policy if exists ai_outputs_select_isolation on public.ai_outputs;
 drop policy if exists reminders_select_isolation on public.reminders;
 drop policy if exists clinic_channels_select_isolation on public.clinic_channels;
 drop policy if exists audit_logs_select_isolation on public.audit_logs;
-
 drop policy if exists owners_insert_write on public.owners;
 drop policy if exists owner_channel_identities_insert_write on public.owner_channel_identities;
 drop policy if exists pets_insert_write on public.pets;
@@ -84,7 +77,6 @@ drop policy if exists ai_outputs_insert_write on public.ai_outputs;
 drop policy if exists reminders_insert_write on public.reminders;
 drop policy if exists clinic_channels_insert_write on public.clinic_channels;
 drop policy if exists audit_logs_insert_write on public.audit_logs;
-
 drop policy if exists owners_update_write on public.owners;
 drop policy if exists owner_channel_identities_update_write on public.owner_channel_identities;
 drop policy if exists pets_update_write on public.pets;
@@ -98,7 +90,6 @@ drop policy if exists ai_outputs_update_write on public.ai_outputs;
 drop policy if exists reminders_update_write on public.reminders;
 drop policy if exists clinic_channels_update_write on public.clinic_channels;
 drop policy if exists audit_logs_update_write on public.audit_logs;
-
 drop policy if exists owners_delete_write on public.owners;
 drop policy if exists owner_channel_identities_delete_write on public.owner_channel_identities;
 drop policy if exists pets_delete_write on public.pets;
@@ -112,7 +103,6 @@ drop policy if exists ai_outputs_delete_write on public.ai_outputs;
 drop policy if exists reminders_delete_write on public.reminders;
 drop policy if exists clinic_channels_delete_write on public.clinic_channels;
 drop policy if exists audit_logs_delete_write on public.audit_logs;
-
 create policy owners_select_isolation on public.owners
   for select using (public.is_active_clinic_member(clinic_id));
 create policy owner_channel_identities_select_isolation on public.owner_channel_identities
@@ -139,7 +129,6 @@ create policy clinic_channels_select_isolation on public.clinic_channels
   for select using (public.is_active_clinic_member(clinic_id));
 create policy audit_logs_select_isolation on public.audit_logs
   for select using (public.is_active_clinic_member(clinic_id));
-
 create policy owners_insert_write on public.owners
   for insert with check (private.can_write_clinic_data(clinic_id));
 create policy owner_channel_identities_insert_write on public.owner_channel_identities
@@ -166,7 +155,6 @@ create policy clinic_channels_insert_write on public.clinic_channels
   for insert with check (private.can_write_clinic_data(clinic_id));
 create policy audit_logs_insert_write on public.audit_logs
   for insert with check (private.can_write_clinic_data(clinic_id));
-
 create policy owners_update_write on public.owners
   for update using (private.can_write_clinic_data(clinic_id))
   with check (private.can_write_clinic_data(clinic_id));

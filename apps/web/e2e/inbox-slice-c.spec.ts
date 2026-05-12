@@ -143,6 +143,9 @@ test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
       await expect(
         meSheet.getByRole("radiogroup").first()
       ).toBeVisible();
+      await expect(
+        meSheet.getByRole("link", { name: /^Profile$/i })
+      ).toBeVisible({ timeout: 3_000 });
       // Esc closes and aria-expanded flips back to false.
       await meSheet.press("Escape");
       await expect(page.locator("[data-me-sheet]")).toHaveCount(0, {

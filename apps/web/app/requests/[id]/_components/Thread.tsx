@@ -188,7 +188,15 @@ export function Thread({
                   onBubbleFocus?.(msg.id);
                 }}
                 aria-label={`${senderLabel} · ${formatTime(msg.createdAt)}${
-                  msg.sourceLocale ? ` · ${msg.sourceLocale.toUpperCase()}` : ""
+                  // Source-language tag is only meaningful on inbound (owner)
+                  // bubbles — it tells staff what language the owner wrote
+                  // in. On outbound (staff) bubbles the tag would reflect
+                  // session locale rather than message content, which lies
+                  // when staff type a reply in a different language than
+                  // their UI is set to.
+                  !isStaff && msg.sourceLocale
+                    ? ` · ${msg.sourceLocale.toUpperCase()}`
+                    : ""
                 }`}
                 className={cn(
                   "max-w-[480px] rounded-[10px] border px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
@@ -209,7 +217,12 @@ export function Thread({
                   )}
                 >
                   <span>{formatTime(msg.createdAt)}</span>
-                  {msg.sourceLocale ? (
+                  {/*
+                   * Source-language pill — owner-side only. See the
+                   * aria-label rationale above: showing it on staff bubbles
+                   * misrepresents content language as session locale.
+                   */}
+                  {!isStaff && msg.sourceLocale ? (
                     <span aria-hidden="true">{msg.sourceLocale.toUpperCase()}</span>
                   ) : null}
                   {isStaff && msg.deliveryStatus ? (

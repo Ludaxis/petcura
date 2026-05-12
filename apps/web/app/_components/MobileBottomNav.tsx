@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Profile avatars use short-lived signed Supabase Storage URLs. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -13,16 +14,9 @@ import { cn } from "@petcura/ui";
 
 type MobileBottomNavProps = {
   locale: SupportedLocale;
-  /** Initials shown inside the "Me" avatar circle. Server-derived so the
-   *  first paint is identical to the sidebar identity card. */
   meInitials: string;
-  /** aria-label for the Me tab — falls back to a generic account label.
-   *  Reuses the existing menu.ariaLabel so the AT story matches the
-   *  sidebar identity card popover. */
+  avatarUrl?: string | null | undefined;
   meAriaLabel: string;
-  /** Count of open reminders; when > 0, a sage-soft dot renders at the
-   *  top-right of the Reminders bell so the user notices pending work
-   *  without crowding the nav with a numeric badge. */
   reminderCount: number;
 };
 
@@ -44,25 +38,10 @@ function getReducedMotionServerSnapshot() {
   return false;
 }
 
-/**
- * Persistent mobile bottom navigation — four tabs.
- *
- *   Inbox     · routes to /inbox
- *   Search    · dispatches petcura:open-cmdk to surface the command palette
- *   Reminders · routes to /reminders; sage-soft dot when openReminderCount > 0
- *   Me        · dispatches petcura:open-me-sheet to surface MobileMeSheet
- *
- * Visible only below `md` (≥768px the persistent sidebar handles all of
- * this). Inset is paired with `pb-16` on the main content surface so rows
- * are never covered by the nav bar.
- *
- * The MobileMeSheet broadcasts `petcura:me-sheet-state` so this nav can
- * mirror the sheet's open state into the Me tab's `aria-expanded` even
- * when the sheet is dismissed via Esc or outside-click.
- */
 export function MobileBottomNav({
   locale,
   meInitials,
+  avatarUrl,
   meAriaLabel,
   reminderCount
 }: MobileBottomNavProps) {
@@ -109,9 +88,6 @@ export function MobileBottomNav({
     window.dispatchEvent(new CustomEvent("petcura:open-me-sheet"));
   };
 
-  // Shared tab classes. Pill background renders only on active so taps
-  // feel discrete; transition is suppressed under reduced-motion to avoid
-  // the colour fade entirely.
   const tabClass = (active: boolean) =>
     cn(
       "relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 text-[10.5px] font-medium",
@@ -194,9 +170,13 @@ export function MobileBottomNav({
       >
         <span
           aria-hidden="true"
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[10px] font-semibold text-[var(--primary-strong)]"
+          className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-[var(--primary-soft)] text-[10px] font-semibold text-[var(--primary-strong)]"
         >
-          {meInitials || "?"}
+          {avatarUrl ? (
+            <img alt="" className="h-full w-full object-cover" src={avatarUrl} />
+          ) : (
+            meInitials || "?"
+          )}
         </span>
         <span>{t("nav.bottom.me")}</span>
       </button>

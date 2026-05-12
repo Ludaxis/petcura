@@ -24,5 +24,15 @@ describe("clinic role permissions", () => {
     expect(hasClinicPermission("viewer", "requests:view")).toBe(true);
     expect(hasClinicPermission("viewer", "requests:reply")).toBe(false);
     expect(hasClinicPermission("viewer", "reminders:manage")).toBe(false);
+    expect(hasClinicPermission("viewer", "customers:manage")).toBe(false);
+    expect(hasClinicPermission("viewer", "pets:manage")).toBe(false);
+  });
+
+  it("allows operational roles to maintain customer and pet profiles", () => {
+    expect(hasClinicPermission("owner", "customers:manage")).toBe(true);
+    expect(hasClinicPermission("admin", "pets:manage")).toBe(true);
+    expect(hasClinicPermission("vet", "pets:manage")).toBe(true);
+    expect(hasClinicPermission("tech", "customers:manage")).toBe(true);
+    expect(hasClinicPermission("reception", "customers:manage")).toBe(true);
   });
 });

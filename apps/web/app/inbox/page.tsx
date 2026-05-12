@@ -227,7 +227,8 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
               resolveDone: t("inbox.bulk.resolveDone"),
               assignDone: t("inbox.bulk.assignDone"),
               error: t("inbox.bulk.error"),
-              rowToggleLabel: t("inbox.bulk.rowToggleLabel")
+              rowToggleLabel: t("inbox.bulk.rowToggleLabel"),
+              rowToggleLabelFor: t("inbox.bulk.rowToggleLabelFor")
             }}
             realtimeToastLabel={t("inbox.realtime.newRequest")}
             paletteLabels={{

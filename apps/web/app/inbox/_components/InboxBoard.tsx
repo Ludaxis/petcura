@@ -17,23 +17,15 @@ type InboxBoardProps = {
   formatDateTime: (iso: string) => string;
 };
 
-/**
- * Server-rendered shell around the client DnD board. We resolve every
- * localized string here so the client island stays pure — no translator
- * instantiation in the browser bundle.
- *
- * The five columns are kept in lockstep with `inboxViewColumns` (the shared
- * source of truth) so a future column rename only touches one file.
- */
 export function InboxBoard({ rows, locale, formatDateTime }: InboxBoardProps) {
   const t = createTranslator(locale);
 
   const columnLabels = inboxViewColumns.reduce(
     (acc, column) => {
-      acc[column.value as BoardColumnId] = getRequestStatusLabel(
-        column.labelKey,
-        locale
-      );
+      acc[column.value as BoardColumnId] =
+        column.value === "urgent"
+          ? t("inbox.board.column.urgent")
+          : getRequestStatusLabel(column.labelKey, locale);
       return acc;
     },
     {} as Record<BoardColumnId, string>

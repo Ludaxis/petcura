@@ -20,6 +20,7 @@ describe("sidebar-nav", () => {
       "pets",
       "reports",
       "settings",
+      "profile",
       "admin"
     ]);
     expect(SIDEBAR_NAV.find((item) => item.id === "admin")?.requires).toBe(

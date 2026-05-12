@@ -1,8 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+/* eslint-disable @next/next/no-img-element -- Profile avatars use short-lived signed Supabase Storage URLs. */
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LifeBuoy, LogOut, Monitor, Moon, Settings, Shield, Sun } from "lucide-react";
+import {
+  LifeBuoy,
+  LogOut,
+  Monitor,
+  Moon,
+  Settings,
+  Shield,
+  Sun,
+  UserRound
+} from "lucide-react";
 import {
   localeOptions,
   type SupportedLocale,
@@ -13,6 +23,7 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle
 } from "@/components/ui/sheet";
@@ -30,6 +41,7 @@ export type MobileMeSheetLabels = {
   themeDark: string;
   themeSystem: string;
   language: string;
+  profile: string;
   settings: string;
   admin: string;
   help: string;
@@ -41,6 +53,7 @@ export type MobileMeSheetLabels = {
 type MobileMeSheetProps = {
   email: string;
   displayName?: string | undefined;
+  avatarUrl?: string | null | undefined;
   clinicName?: string | undefined;
   roleLabel: string;
   initials: string;
@@ -49,7 +62,6 @@ type MobileMeSheetProps = {
   initialTheme: ThemePreference;
   isSuperAdmin: boolean;
   labels: MobileMeSheetLabels;
-  /** Server action for signing out. Posts a hidden `lang` field. */
   signOutAction: (formData: FormData) => void | Promise<void>;
 };
 
@@ -63,25 +75,10 @@ const THEME_OPTIONS: Array<{
   { value: "system", icon: Monitor, labelKey: "themeSystem" }
 ];
 
-/**
- * Account sheet surfaced from the mobile bottom nav's "Me" tab.
- *
- * Inspired by the Claude mobile pattern: a flat list with theme +
- * language as inline segmented controls (no submenus). The sheet listens
- * for `petcura:open-me-sheet` from MobileBottomNav and broadcasts its own
- * open state back through `petcura:me-sheet-state` so the tab's
- * `aria-expanded` mirrors reality even when the sheet is dismissed via
- * Esc or outside-click.
- *
- * Radix Dialog (Sheet) primitive handles focus trap, Escape, click-outside
- * and `aria-modal="true"`. The sheet animations respect
- * `prefers-reduced-motion` via shadcn's `data-open`/`data-closed` classes.
- *
- * Only rendered on mobile (`md:hidden`).
- */
 export function MobileMeSheet({
   email,
   displayName,
+  avatarUrl,
   clinicName,
   roleLabel,
   initials,
@@ -95,8 +92,6 @@ export function MobileMeSheet({
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState<ThemePreference>(initialTheme);
 
-  // Broadcast every open-state transition so the bottom-nav Me tab can
-  // mirror `aria-expanded` even on Esc / outside-click closures.
   const handleOpenChange = useCallback((next: boolean) => {
     setOpen(next);
     if (typeof window !== "undefined") {
@@ -106,8 +101,6 @@ export function MobileMeSheet({
     }
   }, []);
 
-  // Bridge: MobileBottomNav dispatches `petcura:open-me-sheet`. Toggle so
-  // a second tap on the Me tab dismisses the sheet.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onOpen = () => {
@@ -121,13 +114,12 @@ export function MobileMeSheet({
       );
   }, [open, handleOpenChange]);
 
+  const close = () => handleOpenChange(false);
+
   const handleThemeChange = (next: ThemePreference) => {
     setTheme(next);
     persistThemePreference(next);
     applyThemePreference(next);
-    // Mirror the legacy UserMenu: persist via cookie + API so SSR reflects
-    // the new theme on the next nav. We don't await — visual change is
-    // instant via applyThemePreference and the cookie write is best-effort.
     if (typeof window !== "undefined") {
       void fetch("/api/theme", {
         method: "POST",
@@ -144,33 +136,38 @@ export function MobileMeSheet({
         showCloseButton={false}
         data-me-sheet
         className={cn(
-          "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]",
-          "w-full sm:max-w-[320px]",
-          "flex flex-col gap-0 p-0 md:hidden"
+          "flex w-full flex-col gap-0 border-[var(--line)] bg-[var(--paper)] p-0 text-[var(--ink)] sm:max-w-[340px]",
+          "md:hidden"
         )}
       >
         <SheetHeader className="flex flex-row items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3">
           <SheetTitle className="text-[15px] font-semibold text-[var(--ink)]">
             {labels.sheetTitle}
           </SheetTitle>
+          <SheetDescription className="sr-only">
+            {labels.signedInAs} {email}
+          </SheetDescription>
           <SheetClose
             aria-label={labels.close}
             className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] transition hover:bg-[var(--soft)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           >
             <span aria-hidden="true" className="text-[18px] leading-none">
-              ×
+              x
             </span>
           </SheetClose>
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          {/* Identity row */}
           <div className="flex items-start gap-3 px-4 py-4">
             <span
               aria-hidden="true"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[12px] font-semibold text-[var(--primary-strong)]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--primary-soft)] text-[12px] font-semibold text-[var(--primary-strong)]"
             >
-              {initials || "?"}
+              {avatarUrl ? (
+                <img alt="" className="h-full w-full object-cover" src={avatarUrl} />
+              ) : (
+                initials || "?"
+              )}
             </span>
             <div className="min-w-0 flex-1">
               <p
@@ -201,7 +198,6 @@ export function MobileMeSheet({
 
           <div className="h-px bg-[var(--line)]" role="separator" />
 
-          {/* Theme row */}
           <div className="px-4 py-3">
             <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.06em] text-[var(--muted-2)]">
               {labels.theme}
@@ -211,18 +207,18 @@ export function MobileMeSheet({
               aria-label={labels.theme}
               className="grid grid-cols-3 gap-1 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--soft)] p-1"
             >
-              {THEME_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                const selected = theme === opt.value;
-                const optLabel = labels[opt.labelKey];
+              {THEME_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const selected = theme === option.value;
+                const optionLabel = labels[option.labelKey];
                 return (
                   <button
-                    key={opt.value}
+                    key={option.value}
                     type="button"
                     role="radio"
                     aria-checked={selected}
-                    aria-label={optLabel}
-                    onClick={() => handleThemeChange(opt.value)}
+                    aria-label={optionLabel}
+                    onClick={() => handleThemeChange(option.value)}
                     className={cn(
                       "inline-flex h-11 min-h-[44px] items-center justify-center gap-1.5 rounded-[6px] px-2 text-[11.5px] font-medium transition",
                       selected
@@ -231,14 +227,13 @@ export function MobileMeSheet({
                     )}
                   >
                     <Icon aria-hidden="true" size={14} />
-                    <span>{optLabel}</span>
+                    <span>{optionLabel}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Language row */}
           <div className="px-4 pb-3">
             <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.06em] text-[var(--muted-2)]">
               {labels.language}
@@ -255,7 +250,7 @@ export function MobileMeSheet({
                     key={option.value}
                     href={href}
                     aria-current={selected ? "page" : undefined}
-                    onClick={() => handleOpenChange(false)}
+                    onClick={close}
                     className={cn(
                       "inline-flex h-11 min-h-[44px] items-center justify-center gap-1.5 rounded-[6px] px-2 text-[11.5px] font-semibold transition",
                       selected
@@ -278,65 +273,46 @@ export function MobileMeSheet({
 
           <div className="h-px bg-[var(--line)]" role="separator" />
 
-          {/* Settings / Help / Admin rows */}
           <ul className="flex flex-col py-1">
-            <li>
-              <Link
-                href={withLocale("/settings", locale)}
-                onClick={() => handleOpenChange(false)}
-                className="flex min-h-[44px] w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--ink)] transition hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)] focus-visible:outline-none"
-              >
-                <span className="flex h-5 w-5 items-center justify-center text-[var(--muted)]">
-                  <Settings size={16} aria-hidden="true" />
-                </span>
-                <span className="flex-1">{labels.settings}</span>
-              </Link>
-            </li>
-            <li>
-              <a
-                href={labels.helpHref}
-                onClick={() => handleOpenChange(false)}
-                className="flex min-h-[44px] w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--ink)] transition hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)] focus-visible:outline-none"
-              >
-                <span className="flex h-5 w-5 items-center justify-center text-[var(--muted)]">
-                  <LifeBuoy size={16} aria-hidden="true" />
-                </span>
-                <span className="flex-1">{labels.help}</span>
-              </a>
-            </li>
+            <SheetLink
+              href={withLocale("/profile", locale)}
+              icon={<UserRound aria-hidden="true" size={16} />}
+              label={labels.profile}
+              onClick={close}
+            />
+            <SheetLink
+              href={withLocale("/settings", locale)}
+              icon={<Settings aria-hidden="true" size={16} />}
+              label={labels.settings}
+              onClick={close}
+            />
+            <SheetLink
+              href={labels.helpHref}
+              icon={<LifeBuoy aria-hidden="true" size={16} />}
+              label={labels.help}
+              onClick={close}
+            />
             {isSuperAdmin ? (
-              <li>
-                <Link
-                  href={withLocale("/admin", locale)}
-                  onClick={() => handleOpenChange(false)}
-                  data-me-sheet-admin
-                  className="flex min-h-[44px] w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--ink)] transition hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)] focus-visible:outline-none"
-                >
-                  <span className="flex h-5 w-5 items-center justify-center text-[var(--muted)]">
-                    <Shield size={16} aria-hidden="true" />
-                  </span>
-                  <span className="flex-1">{labels.admin}</span>
-                </Link>
-              </li>
+              <SheetLink
+                href={withLocale("/admin", locale)}
+                icon={<Shield aria-hidden="true" size={16} />}
+                label={labels.admin}
+                onClick={close}
+              />
             ) : null}
           </ul>
 
           <div className="h-px bg-[var(--line)]" role="separator" />
 
-          {/* Sign out row */}
-          <form
-            action={signOutAction}
-            onSubmit={() => handleOpenChange(false)}
-            className="px-0 py-1"
-          >
-            <input type="hidden" name="lang" value={locale} />
+          <form action={signOutAction} onSubmit={close} className="px-0 py-1">
+            <input name="lang" type="hidden" value={locale} />
             <button
               type="submit"
               data-me-sheet-signout
               className="flex min-h-[44px] w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--red)] transition hover:bg-[var(--red-soft)] focus-visible:bg-[var(--red-soft)] focus-visible:outline-none"
             >
               <span className="flex h-5 w-5 items-center justify-center">
-                <LogOut size={16} aria-hidden="true" />
+                <LogOut aria-hidden="true" size={16} />
               </span>
               <span className="flex-1">{labels.signOut}</span>
             </button>
@@ -344,5 +320,45 @@ export function MobileMeSheet({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function SheetLink({
+  href,
+  icon,
+  label,
+  onClick
+}: {
+  href: string;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  const external = /^mailto:|^https?:/i.test(href);
+  const className =
+    "flex min-h-[44px] w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--ink)] transition hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)] focus-visible:outline-none";
+
+  if (external) {
+    return (
+      <li>
+        <a className={className} href={href} onClick={onClick}>
+          <span className="flex h-5 w-5 items-center justify-center text-[var(--muted)]">
+            {icon}
+          </span>
+          <span className="flex-1">{label}</span>
+        </a>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <Link className={className} href={href} onClick={onClick}>
+        <span className="flex h-5 w-5 items-center justify-center text-[var(--muted)]">
+          {icon}
+        </span>
+        <span className="flex-1">{label}</span>
+      </Link>
+    </li>
   );
 }

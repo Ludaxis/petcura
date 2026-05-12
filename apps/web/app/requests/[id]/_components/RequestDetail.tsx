@@ -94,10 +94,33 @@ export function RequestDetail({
   const currentAssignee = request.staffOptions.find(
     (staff) => staff.id === request.assignedStaffId
   );
-  const getStaffLabel = (staff: (typeof request.staffOptions)[number]) =>
-    staff.userId === currentStaffUserId
-      ? `${staff.role} (${t("request.you")})`
-      : staff.role;
+  // Display-label policy for the Assigned dropdown:
+  //   * Current viewer        → "<name> (<role>) · you" / "<role> · you" fallback
+  //   * Known email           → "<local-part-of-email> (<role>)" e.g. "anna (vet)"
+  //   * Unknown / fixture     → "<role>" only — UUID-shaped local-parts are
+  //                             treated as unknown to keep dev fixtures
+  //                             ("petcura-detail-1778…") from polluting the list.
+  // Before this change every non-current staff option rendered as the bare
+  // role string, so a clinic with N admins surfaced N identical "admin"
+  // entries and nobody could route to a specific person.
+  const displayNameFromEmail = (email: string | null) => {
+    if (!email) return null;
+    const local = email.split("@", 1)[0];
+    if (!local) return null;
+    if (/^[0-9a-f-]{8,}$/i.test(local)) return null;
+    return local;
+  };
+  const getStaffLabel = (staff: (typeof request.staffOptions)[number]) => {
+    const roleLabel = t(`role.${staff.role}` as Parameters<typeof t>[0]);
+    const youSuffix = ` · ${t("request.you")}`;
+    const name = displayNameFromEmail(staff.email);
+    if (staff.userId === currentStaffUserId) {
+      return name
+        ? `${name} (${roleLabel})${youSuffix}`
+        : `${roleLabel}${youSuffix}`;
+    }
+    return name ? `${name} (${roleLabel})` : roleLabel;
+  };
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col self-stretch overflow-hidden bg-[var(--paper)]">

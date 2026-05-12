@@ -2,43 +2,36 @@
 -- Final urgency is staff-owned; AI writes suggestions and risk flags only.
 
 create extension if not exists "pgcrypto";
-
 do $$ begin
-  create type public.staff_role as enum ('owner', 'admin', 'vet', 'tech', 'reception', 'viewer');
+  create type public.staff_role as enum ('owner', 'admin', 'vet', 'tech', 'reception');
 exception
   when duplicate_object then null;
 end $$;
-
 do $$ begin
   create type public.request_category as enum ('medical_question', 'refill', 'appointment', 'follow_up', 'admin');
 exception
   when duplicate_object then null;
 end $$;
-
 do $$ begin
   create type public.request_status as enum ('new', 'waiting_staff', 'waiting_owner', 'resolved');
 exception
   when duplicate_object then null;
 end $$;
-
 do $$ begin
   create type public.request_urgency as enum ('low', 'medium', 'high');
 exception
   when duplicate_object then null;
 end $$;
-
 do $$ begin
   create type public.message_sender_type as enum ('owner', 'staff', 'system', 'ai');
 exception
   when duplicate_object then null;
 end $$;
-
 do $$ begin
   create type public.owner_channel as enum ('whatsapp', 'sms', 'web');
 exception
   when duplicate_object then null;
 end $$;
-
 create or replace function public.current_clinic_id()
 returns uuid
 language sql
@@ -46,7 +39,6 @@ stable
 as $$
   select nullif(auth.jwt() ->> 'active_clinic_id', '')::uuid
 $$;
-
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -56,7 +48,6 @@ begin
   return new;
 end;
 $$;
-
 create table if not exists public.clinics (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -68,7 +59,6 @@ create table if not exists public.clinics (
   settings jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.clinic_staff (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -79,7 +69,6 @@ create table if not exists public.clinic_staff (
   created_at timestamptz not null default now(),
   unique (clinic_id, user_id)
 );
-
 create table if not exists public.owners (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -93,7 +82,6 @@ create table if not exists public.owners (
   deleted_at timestamptz,
   unique (clinic_id, phone)
 );
-
 create table if not exists public.owner_channel_identities (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -106,7 +94,6 @@ create table if not exists public.owner_channel_identities (
   created_at timestamptz not null default now(),
   unique (clinic_id, channel, external_id)
 );
-
 create table if not exists public.pets (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -123,7 +110,6 @@ create table if not exists public.pets (
   created_at timestamptz not null default now(),
   deleted_at timestamptz
 );
-
 create table if not exists public.requests (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -137,19 +123,16 @@ create table if not exists public.requests (
   assigned_staff_id uuid references public.clinic_staff(id) on delete set null,
   channel public.owner_channel not null default 'web',
   ai_summary text,
-  ai_summary_translations_json jsonb not null default '{}'::jsonb,
   ai_summary_version text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   resolved_at timestamptz,
   sla_due_at timestamptz
 );
-
 create trigger set_requests_updated_at
 before update on public.requests
 for each row
 execute function public.set_updated_at();
-
 create table if not exists public.messages (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null references public.requests(id) on delete cascade,
@@ -162,7 +145,6 @@ create table if not exists public.messages (
   external_id text,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.attachments (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null references public.requests(id) on delete cascade,
@@ -174,7 +156,6 @@ create table if not exists public.attachments (
   uploaded_by uuid,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.message_delivery_events (
   id uuid primary key default gen_random_uuid(),
   message_id uuid not null references public.messages(id) on delete cascade,
@@ -187,7 +168,6 @@ create table if not exists public.message_delivery_events (
   created_at timestamptz not null default now(),
   unique (provider, external_event_id)
 );
-
 create table if not exists public.internal_notes (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null references public.requests(id) on delete cascade,
@@ -196,7 +176,6 @@ create table if not exists public.internal_notes (
   body text not null,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.request_events (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null references public.requests(id) on delete cascade,
@@ -207,7 +186,6 @@ create table if not exists public.request_events (
   payload_json jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.ai_outputs (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -226,7 +204,6 @@ create table if not exists public.ai_outputs (
   edited_output_json jsonb,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.reminders (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -244,7 +221,6 @@ create table if not exists public.reminders (
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.clinic_channels (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -256,7 +232,6 @@ create table if not exists public.clinic_channels (
   created_at timestamptz not null default now(),
   unique (clinic_id, channel, external_id)
 );
-
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -269,14 +244,12 @@ create table if not exists public.audit_logs (
   payload_json jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
 create index if not exists requests_inbox_idx on public.requests (clinic_id, status, urgency, updated_at desc);
 create index if not exists requests_assignee_open_idx on public.requests (clinic_id, assigned_staff_id) where status <> 'resolved';
 create index if not exists messages_request_time_idx on public.messages (request_id, created_at);
 create index if not exists request_events_request_time_idx on public.request_events (request_id, created_at);
 create index if not exists reminders_scheduled_idx on public.reminders (clinic_id, status, due_at) where status = 'scheduled';
 create index if not exists ai_outputs_request_kind_idx on public.ai_outputs (request_id, kind, created_at desc);
-
 alter table public.clinics enable row level security;
 alter table public.clinic_staff enable row level security;
 alter table public.owners enable row level security;
@@ -292,61 +265,46 @@ alter table public.ai_outputs enable row level security;
 alter table public.reminders enable row level security;
 alter table public.clinic_channels enable row level security;
 alter table public.audit_logs enable row level security;
-
 create policy clinics_isolation on public.clinics
   using (id = public.current_clinic_id());
-
 create policy clinic_staff_isolation on public.clinic_staff
   using (clinic_id = public.current_clinic_id());
-
 create policy owners_isolation on public.owners
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy owner_channel_identities_isolation on public.owner_channel_identities
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy pets_isolation on public.pets
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy requests_isolation on public.requests
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy messages_isolation on public.messages
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy attachments_isolation on public.attachments
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy message_delivery_events_isolation on public.message_delivery_events
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy internal_notes_isolation on public.internal_notes
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy request_events_isolation on public.request_events
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy ai_outputs_isolation on public.ai_outputs
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy reminders_isolation on public.reminders
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy clinic_channels_isolation on public.clinic_channels
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());
-
 create policy audit_logs_isolation on public.audit_logs
   using (clinic_id = public.current_clinic_id())
   with check (clinic_id = public.current_clinic_id());

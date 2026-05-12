@@ -1,7 +1,20 @@
-import { Languages, Mail, MessageSquareText, PawPrint, Phone, Users } from "lucide-react";
+import type { ReactNode } from "react";
+import { Languages, MessageSquareText, PawPrint, Phone, Users } from "lucide-react";
+import {
+  createTranslator,
+  hasClinicPermission,
+  localeOptions,
+  type StaffRole
+} from "@petcura/shared";
 import { Badge } from "@petcura/ui";
-import { createTranslator } from "@petcura/shared";
+import {
+  ProfileEditorCard,
+  ProfileField,
+  profileInputClass,
+  profileTextareaClass
+} from "@/app/_components/profile/ProfileEditor";
 import { AppShell } from "@/app/_components/AppShell";
+import { updateCustomerProfile } from "@/app/customers/actions";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { listClinicCustomers } from "@/lib/clinic/directory";
 import { getRequestLocale } from "@/lib/locale";
@@ -10,8 +23,38 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type Props = {
-  searchParams?: Promise<{ lang?: string | string[] }>;
+  searchParams?: Promise<{
+    lang?: string | string[];
+    customers_error?: string | string[];
+    customers_status?: string | string[];
+  }>;
 };
+
+function getSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function MiniMetric({
+  icon,
+  label,
+  value
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="rounded-[var(--radius)] bg-[var(--surface-soft)] p-2">
+      <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
+        {icon}
+        {label}
+      </dt>
+      <dd className="mt-1 truncate font-semibold text-[var(--ink)]">
+        {value || "—"}
+      </dd>
+    </div>
+  );
+}
 
 export default async function CustomersPage({ searchParams }: Props) {
   const sp = (await searchParams) ?? {};
@@ -19,6 +62,8 @@ export default async function CustomersPage({ searchParams }: Props) {
   const locale = await getRequestLocale(langParam);
   const t = createTranslator(locale);
   const staffContext = await requireStaffContext(locale, "/customers");
+  const actorRole = staffContext.membership.role as StaffRole;
+  const canManageCustomers = hasClinicPermission(actorRole, "customers:manage");
   const rows = await listClinicCustomers(
     staffContext.supabase,
     staffContext.clinic.id
@@ -27,6 +72,8 @@ export default async function CustomersPage({ searchParams }: Props) {
     dateStyle: "medium",
     timeStyle: "short"
   });
+  const hasError = Boolean(getSearchParam(sp.customers_error));
+  const status = getSearchParam(sp.customers_status);
 
   return (
     <AppShell
@@ -52,6 +99,17 @@ export default async function CustomersPage({ searchParams }: Props) {
             </div>
             <Badge tone="teal">{rows.length}</Badge>
           </div>
+
+          {status === "saved" ? (
+            <p className="mt-3 rounded-[var(--radius)] bg-[var(--primary-soft)] px-3 py-2 text-[13px] font-medium text-[var(--primary-strong)]">
+              {t("profile.saved")}
+            </p>
+          ) : null}
+          {hasError ? (
+            <p className="mt-3 rounded-[var(--radius)] bg-[var(--red-soft)] px-3 py-2 text-[13px] font-medium text-[var(--red)]">
+              {t("profile.error")}
+            </p>
+          ) : null}
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--soft)] p-3 sm:p-4">
@@ -60,81 +118,118 @@ export default async function CustomersPage({ searchParams }: Props) {
               {t("customers.empty")}
             </div>
           ) : (
-            <ol className="mx-auto grid max-w-6xl gap-2">
+            <ol className="mx-auto grid max-w-6xl gap-3">
               {rows.map((owner) => (
-                <li
-                  className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-3 shadow-sm"
-                  key={owner.id}
-                >
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.9fr)] lg:items-center">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="break-words text-[15px] font-semibold text-[var(--ink)]">
-                          {owner.name}
-                        </h2>
+                <li key={owner.id}>
+                  <ProfileEditorCard
+                    action={updateCustomerProfile}
+                    disabled={!canManageCustomers}
+                    hiddenFields={
+                      <>
+                        <input name="lang" type="hidden" value={locale} />
+                        <input name="ownerId" type="hidden" value={owner.id} />
+                      </>
+                    }
+                    imageLabel={t("profile.photo")}
+                    imageUrl={owner.photoUrl}
+                    name={owner.name}
+                    submitLabel={t("profile.save")}
+                    title={owner.name}
+                    description={
+                      <span className="inline-flex flex-wrap items-center gap-2">
+                        <span>{owner.phone}</span>
                         <Badge tone="neutral">
                           {owner.preferredLanguage.toUpperCase()}
                         </Badge>
-                      </div>
-                      <dl className="mt-2 grid gap-1.5 text-[12.5px] text-[var(--muted)] sm:grid-cols-2">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <Phone aria-hidden="true" size={13} />
-                          <dt className="sr-only">{t("customers.phone")}</dt>
-                          <dd className="truncate">{owner.phone}</dd>
-                        </div>
-                        <div className="flex min-w-0 items-center gap-2">
-                          <Mail aria-hidden="true" size={13} />
-                          <dt className="sr-only">{t("customers.email")}</dt>
-                          <dd className="truncate">{owner.email ?? "—"}</dd>
-                        </div>
-                      </dl>
-                      {owner.notes ? (
-                        <p className="mt-2 line-clamp-2 text-[12.5px] leading-5 text-[var(--ink-2)]">
-                          {owner.notes}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <dl className="grid grid-cols-2 gap-2 text-[12.5px] text-[var(--ink-2)] sm:grid-cols-4 lg:grid-cols-2">
-                      <div className="rounded-[var(--radius)] bg-[var(--surface-soft)] p-2">
-                        <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
-                          <PawPrint aria-hidden="true" size={12} />
-                          {t("customers.pets")}
-                        </dt>
-                        <dd className="mt-1 font-semibold text-[var(--ink)]">
-                          {owner.petCount}
-                        </dd>
-                      </div>
-                      <div className="rounded-[var(--radius)] bg-[var(--surface-soft)] p-2">
-                        <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
-                          <MessageSquareText aria-hidden="true" size={12} />
-                          {t("customers.requests")}
-                        </dt>
-                        <dd className="mt-1 font-semibold text-[var(--ink)]">
-                          {owner.requestCount}
-                        </dd>
-                      </div>
-                      <div className="rounded-[var(--radius)] bg-[var(--surface-soft)] p-2">
-                        <dt className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
-                          <Languages aria-hidden="true" size={12} />
-                          {t("customers.language")}
-                        </dt>
-                        <dd className="mt-1 font-semibold text-[var(--ink)]">
-                          {owner.preferredLanguage.toUpperCase()}
-                        </dd>
-                      </div>
-                      <div className="rounded-[var(--radius)] bg-[var(--surface-soft)] p-2">
-                        <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
-                          {t("customers.latestRequest")}
-                        </dt>
-                        <dd className="mt-1 truncate font-semibold text-[var(--ink)]">
-                          {owner.latestRequestAt
+                      </span>
+                    }
+                  >
+                    <ProfileField htmlFor={`owner-name-${owner.id}`} label={t("profile.fullName")}>
+                      <input
+                        className={profileInputClass}
+                        defaultValue={owner.name}
+                        disabled={!canManageCustomers}
+                        id={`owner-name-${owner.id}`}
+                        name="name"
+                        required
+                      />
+                    </ProfileField>
+                    <ProfileField htmlFor={`owner-phone-${owner.id}`} label={t("customers.phone")}>
+                      <input
+                        className={profileInputClass}
+                        defaultValue={owner.phone}
+                        disabled={!canManageCustomers}
+                        id={`owner-phone-${owner.id}`}
+                        name="phone"
+                        required
+                        type="tel"
+                      />
+                    </ProfileField>
+                    <ProfileField htmlFor={`owner-email-${owner.id}`} label={t("customers.email")}>
+                      <input
+                        className={profileInputClass}
+                        defaultValue={owner.email ?? ""}
+                        disabled={!canManageCustomers}
+                        id={`owner-email-${owner.id}`}
+                        name="email"
+                        placeholder={t("profile.noEmail")}
+                        type="email"
+                      />
+                    </ProfileField>
+                    <ProfileField
+                      htmlFor={`owner-language-${owner.id}`}
+                      label={t("customers.language")}
+                    >
+                      <select
+                        className={profileInputClass}
+                        defaultValue={owner.preferredLanguage}
+                        disabled={!canManageCustomers}
+                        id={`owner-language-${owner.id}`}
+                        name="preferredLanguage"
+                      >
+                        {localeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </ProfileField>
+                    <ProfileField htmlFor={`owner-notes-${owner.id}`} label={t("pets.notes")} wide>
+                      <textarea
+                        className={profileTextareaClass}
+                        defaultValue={owner.notes ?? ""}
+                        disabled={!canManageCustomers}
+                        id={`owner-notes-${owner.id}`}
+                        name="notes"
+                      />
+                    </ProfileField>
+                    <dl className="grid gap-2 sm:col-span-2 sm:grid-cols-4">
+                      <MiniMetric
+                        icon={<PawPrint aria-hidden="true" size={12} />}
+                        label={t("customers.pets")}
+                        value={owner.petCount}
+                      />
+                      <MiniMetric
+                        icon={<MessageSquareText aria-hidden="true" size={12} />}
+                        label={t("customers.requests")}
+                        value={owner.requestCount}
+                      />
+                      <MiniMetric
+                        icon={<Languages aria-hidden="true" size={12} />}
+                        label={t("customers.language")}
+                        value={owner.preferredLanguage.toUpperCase()}
+                      />
+                      <MiniMetric
+                        icon={<Phone aria-hidden="true" size={12} />}
+                        label={t("customers.latestRequest")}
+                        value={
+                          owner.latestRequestAt
                             ? dateFormatter.format(new Date(owner.latestRequestAt))
-                            : "—"}
-                        </dd>
-                      </div>
+                            : "—"
+                        }
+                      />
                     </dl>
-                  </div>
+                  </ProfileEditorCard>
                 </li>
               ))}
             </ol>

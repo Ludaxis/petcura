@@ -61,10 +61,19 @@ export default async function IntakePage({ searchParams }: IntakePageProps) {
           </div>
         </div>
 
+        {/*
+         * Owner-facing photo affordance. The legacy copy ("Photo/video
+         * attachments will be enabled with Supabase Storage.") leaked
+         * implementation language into the intake form — an unfamiliar
+         * product name to a worried pet owner. Until storage ships, we
+         * lead with the owner promise ("coming soon") and keep the
+         * affordance visible so we don't lose the signal that owners
+         * expect to attach a photo.
+         */}
         <div className="mb-4 rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-4">
           <div className="flex items-center gap-3 text-sm text-[var(--muted)]">
             <Camera aria-hidden="true" size={18} />
-            {t("intake.attachments")}
+            {t("intake.attachments.comingSoon")}
           </div>
         </div>
 
