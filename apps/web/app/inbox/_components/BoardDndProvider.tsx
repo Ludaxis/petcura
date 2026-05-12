@@ -114,10 +114,16 @@ function applyColumnToRow(
 export function BoardDndProvider({
   initialRows,
   locale,
-  formatDateTime,
   labels
 }: BoardDndProviderProps) {
   const router = useRouter();
+  const formatDateTime = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeStyle: "short"
+    });
+    return (iso: string) => formatter.format(new Date(iso));
+  }, [locale]);
   const [rows, setRows] = useState<InboxRowData[]>(initialRows);
   // When the server hands us a fresh `initialRows` (after a router.refresh
   // resolves), adopt it as authoritative. Storing the previous reference in

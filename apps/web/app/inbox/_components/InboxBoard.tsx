@@ -27,10 +27,9 @@ import { LazyBoardDndProvider } from "./LazyBoardDndProvider";
 type InboxBoardProps = {
   rows: InboxRowData[];
   locale: SupportedLocale;
-  formatDateTime: (iso: string) => string;
 };
 
-export function InboxBoard({ rows, locale, formatDateTime }: InboxBoardProps) {
+export function InboxBoard({ rows, locale }: InboxBoardProps) {
   const t = createTranslator(locale);
 
   const columnLabels = inboxViewColumns.reduce(
@@ -63,7 +62,6 @@ export function InboxBoard({ rows, locale, formatDateTime }: InboxBoardProps) {
     <LazyBoardDndProvider
       initialRows={rows}
       locale={locale}
-      formatDateTime={formatDateTime}
       labels={labels}
     />
   );

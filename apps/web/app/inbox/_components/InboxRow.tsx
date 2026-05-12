@@ -23,7 +23,7 @@ type InboxRowProps = {
   locale: SupportedLocale;
   selected: boolean;
   density: "comfortable" | "compact";
-  formatRelative: (iso: string) => string;
+  updatedAtLabel: string;
   href: string;
   index: number;
 };
@@ -58,7 +58,7 @@ export function InboxRow({
   locale,
   selected,
   density,
-  formatRelative,
+  updatedAtLabel,
   href,
   index
 }: InboxRowProps) {
@@ -215,7 +215,7 @@ export function InboxRow({
             </span>
           ) : null}
           <span className="ml-auto font-mono text-[10.5px] text-[var(--muted-2)]">
-            {formatRelative(row.updatedAt)}
+            {updatedAtLabel}
           </span>
         </span>
       </span>
@@ -227,11 +227,11 @@ export function InboxRow({
       <span
         aria-label={t("inbox.row.updatedLabel").replace(
           "{time}",
-          formatRelative(row.updatedAt)
+          updatedAtLabel
         )}
         className="hidden whitespace-nowrap font-mono text-[11px] text-[var(--muted-2)] md:block"
       >
-        {formatRelative(row.updatedAt)}
+        {updatedAtLabel}
       </span>
 
       <span

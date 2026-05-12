@@ -30,7 +30,7 @@ type OwnerRowProps = {
   selected: boolean;
   density: "comfortable" | "compact";
   href: string;
-  formatRelative: (iso: string) => string;
+  latestRequestLabel: string | null;
   index: number;
   canEdit: boolean;
 };
@@ -46,7 +46,7 @@ export function OwnerRow({
   selected,
   density,
   href,
-  formatRelative,
+  latestRequestLabel,
   index,
   canEdit
 }: OwnerRowProps) {
@@ -143,9 +143,9 @@ export function OwnerRow({
         ) : (
           <span className="text-[var(--muted-2)]">—</span>
         )}
-        {owner.latestRequestAt ? (
+        {latestRequestLabel ? (
           <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
-            {t("directory.owner.latestLabel")} · {formatRelative(owner.latestRequestAt)}
+            {t("directory.owner.latestLabel")} · {latestRequestLabel}
           </span>
         ) : null}
       </span>

@@ -27,7 +27,7 @@ type PetRowProps = {
   selected: boolean;
   density: "comfortable" | "compact";
   href: string;
-  formatRelative: (iso: string) => string;
+  latestRequestLabel: string | null;
   index: number;
   canEdit: boolean;
 };
@@ -54,7 +54,7 @@ export function PetRow({
   selected,
   density,
   href,
-  formatRelative,
+  latestRequestLabel,
   index,
   canEdit
 }: PetRowProps) {
@@ -153,9 +153,9 @@ export function PetRow({
             </span>
           ) : null}
         </span>
-        {pet.latestRequestAt ? (
+        {latestRequestLabel ? (
           <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
-            {t("directory.owner.latestLabel")} · {formatRelative(pet.latestRequestAt)}
+            {t("directory.owner.latestLabel")} · {latestRequestLabel}
           </span>
         ) : null}
       </span>
