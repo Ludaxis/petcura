@@ -787,6 +787,7 @@ test.describe("Request detail tri-pane", () => {
       const aiCard = page.getByRole("region", {
         name: /AI draft suggestion|AI mustandi soovitus|Подсказка AI-черновика/i
       });
+      await expect(aiCard).toBeVisible();
       await aiCard.scrollIntoViewIfNeeded();
       await aiCard.getByRole("button", { name: /^Edit|Muuda|Изменить/ }).click();
       const dialog = page.getByRole("dialog", {
@@ -851,6 +852,7 @@ test.describe("Request detail tri-pane", () => {
       const aiCard = page.getByRole("region", {
         name: /AI draft suggestion|AI mustandi soovitus|Подсказка AI-черновика/i
       });
+      await expect(aiCard).toBeVisible();
       await aiCard.scrollIntoViewIfNeeded();
       await aiCard
         .getByRole("button", { name: /^Reject|Lükka tagasi|Отклонить/ })
@@ -899,6 +901,7 @@ test.describe("Request detail tri-pane", () => {
         `/requests/${seed.primaryRequestId}`
       );
       const composer = page.locator("[data-composer-textarea]");
+      await expect(composer).toBeVisible();
       await composer.scrollIntoViewIfNeeded();
       await composer.focus();
       const replyBody = `e2e ⌘↵ reply ${Date.now()}`;
