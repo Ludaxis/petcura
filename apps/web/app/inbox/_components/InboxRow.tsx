@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Languages } from "lucide-react";
 import {
@@ -13,6 +16,7 @@ import {
   type SupportedLocale
 } from "@petcura/shared";
 import type { InboxRowData } from "@/lib/inbox/queries";
+import { useIsOptimisticallyResolved } from "./InboxOptimisticContext";
 
 type InboxRowProps = {
   row: InboxRowData;
@@ -59,6 +63,37 @@ export function InboxRow({
   index
 }: InboxRowProps) {
   const t = createTranslator(locale);
+  const optimisticallyResolved = useIsOptimisticallyResolved(row.id);
+  // The fade-out is a two-step transition: the StatusPill flips to
+  // `resolved` immediately so the action lands in the user's foveal
+  // vision, then ~200ms later the row dims with a soft sage glow. The
+  // delay lets the eye register the pill flip before the row fades.
+  // PRM users skip the delay entirely — the dim snaps in alongside the
+  // pill flip, no transition.
+  //
+  // The dim is a per-mount latch driven only when `optimisticallyResolved`
+  // becomes true. The effect's cleanup clears the latch when the optimistic
+  // flag flips back off (rollback path), which keeps the row visually in
+  // sync without needing a separate setState inside the effect body.
+  const [dimmed, setDimmed] = useState(false);
+  useEffect(() => {
+    if (!optimisticallyResolved) return;
+    const prm =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // PRM users snap to dim (0ms delay); everyone else gets the 200ms
+    // settle window so the StatusPill flip reads before the row fades.
+    // Both paths defer via setTimeout so we never call setState
+    // synchronously inside the effect — keeps `react-hooks/set-state-in-
+    // effect` happy and avoids cascading renders.
+    const delay = prm ? 0 : 200;
+    const handle = window.setTimeout(() => setDimmed(true), delay);
+    return () => {
+      window.clearTimeout(handle);
+      setDimmed(false);
+    };
+  }, [optimisticallyResolved]);
+
   const urgencyKey =
     row.tier === "urgent" ? "high" : row.tier === "today" ? "medium" : "low";
   const tierLabel = getUrgencyLabel(urgencyKey, locale);
@@ -66,14 +101,17 @@ export function InboxRow({
     "{urgency}",
     tierLabel
   );
-  const statusLabel = getRequestStatusLabel(statusLocaleKey(row), locale);
+  const effectiveStatusKey = optimisticallyResolved
+    ? "resolved"
+    : statusLocaleKey(row);
+  const statusLabel = getRequestStatusLabel(effectiveStatusKey, locale);
   const statusAriaLabel = t("request.status.label").replace(
     "{status}",
     statusLabel
   );
   const categoryLabel = getRequestCategoryLabel(row.category, locale);
   const showTranslate = row.ownerLanguage !== locale;
-  const status = statusPillKind(row);
+  const status = optimisticallyResolved ? "resolved" : statusPillKind(row);
 
   const isCompact = density === "compact";
 
@@ -104,14 +142,21 @@ export function InboxRow({
           viewTransitionName: `pc-request-${row.id}`
         } as React.CSSProperties
       }
+      data-optimistic-resolved={optimisticallyResolved ? "true" : undefined}
+      aria-busy={optimisticallyResolved ? "true" : undefined}
       className={cn(
-        "group relative grid items-center gap-3 border-b border-[var(--line)] px-4 transition-colors",
+        "group relative grid items-center gap-3 border-b border-[var(--line)] px-4 transition-[opacity,background-color,box-shadow] duration-200 motion-reduce:transition-none",
         "hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)]",
         "data-[selected=true]:bg-[var(--primary-soft)]",
         isCompact ? "py-2.5 sm:py-3" : "py-3.5 sm:py-4",
         // grid: bulk-select | urgency dot | pet/owner | preview | status | meta | caret
         "grid-cols-[22px_14px_minmax(110px,max-content)_minmax(0,1fr)_auto_auto_18px]",
-        "max-md:grid-cols-[22px_14px_minmax(0,1fr)_auto]"
+        "max-md:grid-cols-[22px_14px_minmax(0,1fr)_auto]",
+        // Optimistic fade — sage tint over the row, dimmed to 60% so the
+        // user feels the row is on its way out without losing the canonical
+        // hover/focus affordances if they navigate away from it.
+        dimmed &&
+          "opacity-60 bg-[var(--primary-soft)]/30 shadow-[inset_0_0_0_1px_var(--primary-soft)]"
       )}
     >
       <span

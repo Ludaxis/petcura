@@ -17,6 +17,10 @@ import {
   resolveInboxRequest,
   assignInboxRequestToMe
 } from "../_actions";
+import {
+  clearOptimisticallyResolved,
+  markOptimisticallyResolved
+} from "./InboxOptimisticContext";
 import type { InboxStream } from "@/lib/inbox/queries";
 import {
   applyThemePreference,
@@ -224,16 +228,30 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
       }
 
       if (currentRowId) {
+        const resolveTargetId = currentRowId;
         list.push({
           id: "action-resolve",
           group: labels.actionsHeading,
           label: labels.resolveCurrent,
           hint: "E",
-          perform: () =>
+          perform: () => {
+            // Mirror the InboxKeyboard `E` shortcut: optimistic pill flip
+            // + 200ms row dim, then rollback on error / clear-on-success
+            // after the canonical refresh.
+            markOptimisticallyResolved(resolveTargetId);
             startTransition(async () => {
-              const result = await resolveInboxRequest(currentRowId, locale);
-              if (result.ok) router.refresh();
-            })
+              const result = await resolveInboxRequest(
+                resolveTargetId,
+                locale
+              );
+              if (result.ok) {
+                router.refresh();
+                clearOptimisticallyResolved(resolveTargetId);
+              } else {
+                clearOptimisticallyResolved(resolveTargetId);
+              }
+            });
+          }
         });
         list.push({
           id: "action-assign",
