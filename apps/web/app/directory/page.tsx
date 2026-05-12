@@ -2,12 +2,19 @@ import { Suspense } from "react";
 import { FolderOpen, PawPrint, Search, UserRound } from "lucide-react";
 import {
   createTranslator,
+  hasClinicPermission,
   localeOptions,
+  type StaffRole,
   type SupportedLocale
 } from "@petcura/shared";
 import { Badge, Button, cn } from "@petcura/ui";
 import { AppShell } from "@/app/_components/AppShell";
-import { ProfileField, profileInputClass } from "@/app/_components/profile/ProfileEditor";
+import {
+  ProfileField,
+  profileInputClass
+} from "@/app/_components/profile/ProfileEditor";
+import { OwnerRow } from "@/app/directory/_components/OwnerRow";
+import { PetRow } from "@/app/directory/_components/PetRow";
 import { requireStaffContext } from "@/lib/auth/staff";
 import {
   listClinicSpecies,
@@ -34,6 +41,7 @@ type Props = {
     open?: string | string[];
     directory_status?: string | string[];
     directory_error?: string | string[];
+    id?: string | string[];
   }>;
 };
 
@@ -86,6 +94,34 @@ function directoryUrl({
   return `/directory?${params.toString()}`;
 }
 
+function formatRelativeFor(locale: SupportedLocale) {
+  // Lightweight relative-time formatter consumed by the row components.
+  // Falls back to a localized date for anything older than ~30 days so
+  // staff scanning a list still see a fixed anchor instead of "1 month ago".
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const dtf = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  return (iso: string) => {
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return "";
+    const diffMs = then - Date.now();
+    const minute = 60_000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const abs = Math.abs(diffMs);
+    if (abs < hour) return rtf.format(Math.round(diffMs / minute), "minute");
+    if (abs < day) return rtf.format(Math.round(diffMs / hour), "hour");
+    if (abs < 30 * day) return rtf.format(Math.round(diffMs / day), "day");
+    return dtf.format(new Date(iso));
+  };
+}
+
+function countLabel(
+  t: ReturnType<typeof createTranslator>,
+  count: number
+) {
+  return t("directory.results.count").replace("{count}", String(count));
+}
+
 export default async function DirectoryPage({ searchParams }: Props) {
   const sp = (await searchParams) ?? {};
   const langParam = getParam(sp.lang);
@@ -101,6 +137,12 @@ export default async function DirectoryPage({ searchParams }: Props) {
   const hasOpenRequest = getParam(sp.open) === "1";
   const status = getParam(sp.directory_status);
   const hasError = Boolean(getParam(sp.directory_error));
+  const selectedId = getParam(sp.id);
+
+  const actorRole = staffContext.membership.role as StaffRole;
+  const canEditOwners = hasClinicPermission(actorRole, "customers:manage");
+  const canEditPets = hasClinicPermission(actorRole, "pets:manage");
+  const formatRelative = formatRelativeFor(locale);
 
   // Species powers the filter dropdown in the header and is cheap (single
   // SELECT DISTINCT). The per-tab list fetch was hoisted into
@@ -285,11 +327,13 @@ export default async function DirectoryPage({ searchParams }: Props) {
               </Button>
             </form>
 
-            {/* 
+            {/*
               List section streams independently. The Suspense key includes
               every param that triggers a refetch so tab/filter/sort/search
-              changes re-fall back to DirectoryListSkeleton (rendering in
-              ~100ms) while the header above stays interactive.
+              changes re-fall back to DirectoryListSkeleton (~100ms) while
+              the header above stays interactive. DirectoryListSection
+              renders OwnerRow / PetRow with the inline expand-to-edit
+              affordance (canEditOwners / canEditPets are passed through).
             */}
             <Suspense
               key={`directory-${tab}-${q}-${sort}-${hasOpenRequest ? 1 : 0}-${recentDays ?? "all"}-${selectedLanguage ?? "any"}-${selectedSpecies ?? "any"}`}
@@ -305,6 +349,10 @@ export default async function DirectoryPage({ searchParams }: Props) {
                 selectedSpecies={selectedSpecies ?? undefined}
                 recentDays={recentDays ?? undefined}
                 hasOpenRequest={hasOpenRequest}
+                canEditOwners={canEditOwners}
+                canEditPets={canEditPets}
+                selectedId={selectedId}
+                queryString={q ? `&id=` : "&id="}
               />
             </Suspense>
           </div>

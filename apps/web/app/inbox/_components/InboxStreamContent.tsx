@@ -47,7 +47,6 @@ type InboxStreamContentProps = {
   locale: SupportedLocale;
   initialFocusedId?: string | undefined;
   formatRelative: (iso: string) => string;
-  formatDateTime: (iso: string) => string;
 };
 
 /**
@@ -64,8 +63,7 @@ export async function InboxStreamContent({
   density,
   locale,
   initialFocusedId,
-  formatRelative,
-  formatDateTime
+  formatRelative
 }: InboxStreamContentProps) {
   const rows = await loadInboxRows(supabase, clinicId, {
     stream,
@@ -100,13 +98,7 @@ export async function InboxStreamContent({
   const listHeading = t(listHeadingKey).replace("{count}", String(rows.length));
 
   if (view === "board") {
-    return (
-      <InboxBoard
-        rows={rows}
-        locale={locale}
-        formatDateTime={formatDateTime}
-      />
-    );
+    return <InboxBoard rows={rows} locale={locale} />;
   }
 
   if (rows.length === 0) {
