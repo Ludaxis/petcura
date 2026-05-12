@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Sparkles } from "lucide-react";
-import { Button, cn } from "@petcura/ui";
+import {
+  AiTypingCaret,
+  Button,
+  Spinner,
+  StreamingDots,
+  cn
+} from "@petcura/ui";
 import { acceptAiDraft, editAiDraft, rejectAiDraft } from "../actions";
 import {
   Dialog,
@@ -69,7 +75,58 @@ export function AiDraftCard({
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState(draft.text);
   const [pending, startTransition] = useTransition();
+  // Track which action is in flight so we can show a Spinner inside the
+  // specific button (Accept / Edit / Reject) rather than dimming everything
+  // equally — gives staff a clearer "this is the one I clicked".
+  const [activeAction, setActiveAction] = useState<
+    "accept" | "reject" | "save" | null
+  >(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // "Fresh draft" = arrived within the last 30s. We use this to drive the
+  // typewriter reveal so realtime drafts feel like the AI is typing, while
+  // returning to a thread with an existing draft renders the text instantly.
+  // The real SSE token stream lives behind a Codex-owned contract; until
+  // that endpoint exists this client-side reveal gives the right *feel*
+  // without coupling to backend timing.
+  //
+  // useState lazy init captures `Date.now()` once on mount so the value is
+  // pure across re-renders (React's purity rules disallow Date.now() in
+  // render bodies).
+  const [isFresh] = useState(() => {
+    const ageMs = Date.now() - new Date(draft.createdAt).getTime();
+    return ageMs >= 0 && ageMs < 30_000;
+  });
+
+  const [revealedChars, setRevealedChars] = useState(
+    isFresh ? 0 : draftText.length
+  );
+
+  // Reset mirror + reveal when a different draft arrives (different id).
+  // Render-time state reset is the React 19 recommended pattern for
+  // "deriveStateFromProps"; it avoids the cascading-render lint that the
+  // useEffect equivalent triggers.
+  const [trackedDraftId, setTrackedDraftId] = useState(draft.id);
+  if (trackedDraftId !== draft.id) {
+    setTrackedDraftId(draft.id);
+    setDraftText(draft.text);
+    setRevealedChars(draft.text.length);
+  }
+
+  const isStreaming = revealedChars < draftText.length;
+
+  useEffect(() => {
+    if (!isFresh) return;
+    if (revealedChars >= draftText.length) return;
+    if (typeof window === "undefined") return;
+    // Reveal ~8 chars per tick so a 280-character draft completes in
+    // ~35 ticks (~840ms). Long drafts stay snappy; short ones still
+    // register the caret blink before finishing.
+    const id = window.setTimeout(() => {
+      setRevealedChars((n) => Math.min(draftText.length, n + 8));
+    }, 24);
+    return () => window.clearTimeout(id);
+  }, [isFresh, revealedChars, draftText]);
 
   // Focus the textarea (and place caret at end) once Radix has mounted the
   // Dialog content. Radix already handles focus restoration to the trigger
@@ -99,6 +156,7 @@ export function AiDraftCard({
     .replace("{target}", targetLocale);
 
   const handleAccept = () => {
+    setActiveAction("accept");
     startTransition(async () => {
       const result = await acceptAiDraft({
         requestId,
@@ -106,6 +164,7 @@ export function AiDraftCard({
       });
       if (!result.ok) {
         onAnnounce(labels.errorAccept);
+        setActiveAction(null);
         return;
       }
       onAccept(draftText);
@@ -115,6 +174,7 @@ export function AiDraftCard({
   };
 
   const handleReject = () => {
+    setActiveAction("reject");
     startTransition(async () => {
       const result = await rejectAiDraft({
         requestId,
@@ -122,6 +182,7 @@ export function AiDraftCard({
       });
       if (!result.ok) {
         onAnnounce(labels.errorReject);
+        setActiveAction(null);
         return;
       }
       onAnnounce(labels.rejected);
@@ -131,6 +192,7 @@ export function AiDraftCard({
 
   const handleSaveEdit = (mode: "saveOnly" | "saveAndAccept") => {
     if (draftText.trim().length === 0) return;
+    setActiveAction("save");
     startTransition(async () => {
       const result = await editAiDraft({
         requestId,
@@ -140,6 +202,7 @@ export function AiDraftCard({
       });
       if (!result.ok) {
         onAnnounce(labels.errorEdit);
+        setActiveAction(null);
         return;
       }
       onAnnounce(labels.edited);
@@ -148,9 +211,8 @@ export function AiDraftCard({
         setEditing(false);
         setHidden(true);
       } else {
-        // saveOnly: keep card visible so staff can review again or finalize.
-        // The card now reflects the edited text (rendered from local state).
         setEditing(false);
+        setActiveAction(null);
       }
     });
   };
@@ -160,7 +222,15 @@ export function AiDraftCard({
       role="region"
       aria-label={labels.region}
       data-ai-draft-card
-      className="mx-4 mt-3 rounded-[10px] border border-[var(--line)] border-l-2 border-l-[var(--primary)] bg-[var(--paper)] px-3.5 py-3 sm:mx-6"
+      aria-busy={pending}
+      className={cn(
+        "mx-4 mt-3 rounded-[10px] border border-[var(--line)] border-l-2 border-l-[var(--primary)] bg-[var(--paper)] px-3.5 py-3 transition-colors sm:mx-6",
+        // Optimistic tint while a server action is in flight — the card
+        // settles into the accepted/rejected state on resolve. Sage on
+        // accept/save, neutral on reject, no flash on first paint.
+        pending && activeAction !== "reject" && "bg-[var(--primary-soft)]/40",
+        pending && activeAction === "reject" && "opacity-70"
+      )}
     >
       <header className="flex flex-wrap items-center gap-2">
         <Sparkles
@@ -171,6 +241,9 @@ export function AiDraftCard({
         <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--ink)]">
           {labels.eyebrow}
         </span>
+        {isStreaming ? (
+          <StreamingDots className="ml-1" label={labels.eyebrow} />
+        ) : null}
         <span className="ml-auto flex flex-wrap items-center gap-2 font-mono text-[10.5px] text-[var(--muted-2)]">
           {draft.sourceMessageId ? (
             <span>
@@ -184,8 +257,23 @@ export function AiDraftCard({
       <p
         className="mt-2 break-words text-[13.5px] leading-[1.55] text-[var(--ink-2)] whitespace-pre-wrap"
         data-ai-draft-text
+        data-streaming={isStreaming ? "true" : undefined}
       >
-        {draftText}
+        {/*
+          Visible token-by-token reveal for fresh drafts; instant render for
+          existing ones. The full text is mirrored to screen readers via the
+          sr-only span below so SR users hear the whole draft once instead
+          of each character.
+        */}
+        <span aria-hidden={isStreaming ? "true" : undefined}>
+          {isStreaming ? draftText.slice(0, revealedChars) : draftText}
+        </span>
+        {isStreaming ? <AiTypingCaret className="ml-px" /> : null}
+        {isStreaming ? (
+          <span className="sr-only" role="status">
+            {draftText}
+          </span>
+        ) : null}
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         <Button
@@ -194,6 +282,9 @@ export function AiDraftCard({
           disabled={pending}
           data-ai-draft-action="accept"
         >
+          {activeAction === "accept" ? (
+            <Spinner size={12} label={labels.accept} tone="current" />
+          ) : null}
           {labels.accept}
         </Button>
         <Button
@@ -216,6 +307,9 @@ export function AiDraftCard({
              default which dims via opacity-50. */
           className="text-[var(--ink-2)] aria-disabled:text-[var(--muted)]"
         >
+          {activeAction === "reject" ? (
+            <Spinner size={12} label={labels.reject} tone="current" />
+          ) : null}
           {labels.reject}
         </Button>
       </div>

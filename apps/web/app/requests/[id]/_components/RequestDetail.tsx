@@ -74,6 +74,18 @@ export function RequestDetail({
       {/* Detail header — pet identity + crumbs + actions row */}
       <header
         data-detail-head
+        /*
+         * Shared name for the View Transitions API. Pairs with the matching
+         * `pc-request-{id}` on the inbox row so clicking a row morphs the
+         * row into this header during the route swap. The browser pairs by
+         * name; with one detail visible at a time only the source row's
+         * name matches, so we never get a multi-element conflict.
+         */
+        style={
+          {
+            viewTransitionName: `pc-request-${request.id}`
+          } as React.CSSProperties
+        }
         className="flex shrink-0 flex-col gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">

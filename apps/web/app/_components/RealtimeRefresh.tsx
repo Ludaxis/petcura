@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { TopProgressBar } from "@petcura/ui";
 import { createClient } from "@/lib/supabase/client";
 import {
   createDebouncedRefresh,
@@ -13,24 +14,38 @@ type RealtimeRefreshProps = {
   targets: RealtimeRefreshTarget[];
   debounceMs?: number;
   pollMs?: number;
+  /**
+   * When true (default), renders a 2px sage top progress bar while the
+   * debounced `router.refresh()` is in flight. Set to false on detail panes
+   * where another RealtimeRefresh on the same page already owns the bar.
+   */
+  showProgress?: boolean;
 };
 
 export function RealtimeRefresh({
   channelName,
   targets,
   debounceMs = 600,
-  pollMs
+  pollMs,
+  showProgress = true
 }: RealtimeRefreshProps) {
   const router = useRouter();
   const [refreshCount, setRefreshCount] = useState(0);
   const [subscriptionStatus, setSubscriptionStatus] = useState("idle");
+  // useTransition makes `isPending` true while React replays the server
+  // render after router.refresh(). We expose that as a thin sage progress bar
+  // so the realtime path has a visible signal (otherwise live updates feel
+  // ghostly — content swaps without any indication something happened).
+  const [isRefreshing, startRefreshTransition] = useTransition();
   const targetKey = JSON.stringify(targets);
 
   useEffect(() => {
     const supabase = createClient();
     const { cancel, schedule } = createDebouncedRefresh(() => {
       setRefreshCount((count) => count + 1);
-      router.refresh();
+      startRefreshTransition(() => {
+        router.refresh();
+      });
     }, debounceMs);
     const parsedTargets = JSON.parse(targetKey) as RealtimeRefreshTarget[];
     const channel = supabase.channel(channelName);
@@ -100,11 +115,17 @@ export function RealtimeRefresh({
   }, [channelName, debounceMs, pollMs, router, targetKey]);
 
   return (
-    <span
-      data-realtime-channel={channelName}
-      data-realtime-refresh-count={refreshCount}
-      data-realtime-status={subscriptionStatus}
-      hidden
-    />
+    <>
+      {showProgress ? (
+        <TopProgressBar active={isRefreshing} label="Updating" />
+      ) : null}
+      <span
+        data-realtime-channel={channelName}
+        data-realtime-refresh-count={refreshCount}
+        data-realtime-status={subscriptionStatus}
+        data-realtime-pending={isRefreshing ? "true" : "false"}
+        hidden
+      />
+    </>
   );
 }
