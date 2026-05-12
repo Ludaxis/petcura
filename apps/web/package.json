@@ -14,6 +14,8 @@
     "check:bundle": "next build && node --experimental-strip-types scripts/check-bundle.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@petcura/ai": "*",
     "@petcura/shared": "*",
     "@petcura/ui": "*",

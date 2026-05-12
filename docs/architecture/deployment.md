@@ -1,5 +1,7 @@
 # Deployment
 
+Last updated: 2026-05-12.
+
 ## Vercel Project
 
 - Team: `Joyixir`
@@ -63,6 +65,13 @@ Vercel Git auto-deploy is active for:
 - Vercel team: `Joyixir`
 
 Pushes to `main` should create production deployments. Manual CLI deploy remains available when an explicit deployment is needed.
+
+Latest verified production deployment:
+
+- Commit: `ca9a95a` (`Fix AI draft locale metadata`)
+- Deployment ID: `dpl_KARXBvwFHVnD8wbSjTq6YGTfQbWK`
+- State: `READY`
+- Scope: AI Memory V1 final QA polish; generated reply drafts now store source locale metadata.
 
 ## Cron Jobs
 

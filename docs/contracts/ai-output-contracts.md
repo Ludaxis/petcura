@@ -1,9 +1,12 @@
 # AI Output Contracts
 
+Last updated: 2026-05-12.
+
 ## Kinds
 
 - `intake_question`
 - `summary`
+- `summary_translation`
 - `reply_draft`
 - `translation`
 - `category_suggestion`
@@ -73,6 +76,18 @@
   - Translations must preserve uncertainty and never add advice.
   - Translation reveal audit remains a staff action through `request_events.translation_revealed`.
 
+## Summary Translation V1
+
+- Prompt version: `summary_translation.v1.2026-05-12`
+- Default model: `PETCURA_AI_SUMMARY_TRANSLATION_MODEL`, `PETCURA_AI_TRANSLATION_MODEL`, or `anthropic/claude-haiku-4.5`
+- Trigger: staff requests a localized summary view
+- Storage:
+  - `ai_outputs.kind = summary_translation`
+  - `requests.ai_summary_translations_json`
+- Safety:
+  - Summary translations must preserve clinical uncertainty and urgency language.
+  - Staff edits are stored as localized summary entries and do not rewrite the source summary.
+
 ## Memory Extraction V1
 
 - Prompt version: `memory_extraction.v1.2026-05-12`
@@ -80,8 +95,10 @@
 - Trigger: new request data that may affect staff-facing AI context
 - Storage:
   - `ai_outputs.kind = memory_extraction`
-  - `output_json.facts[]`
-  - each fact includes source type, source ID, confidence, and optional expiry
+  - `output_json.candidates[]`
+  - each candidate includes scope, memory type, text, source IDs, confidence, optional source locale, and optional expiry
+  - candidate rows are stored in `ai_memory_items`
+  - source provenance rows are stored in `ai_memory_sources`
 - Safety:
   - Output is staff-facing only.
   - Facts must be grounded in request-scoped source rows.
@@ -95,11 +112,30 @@
 - Trigger: AI task needs accepted prior context for summary, reply draft, or follow-up assistance
 - Storage:
   - `ai_outputs.kind = context_retrieval`
-  - `output_json.selected_fact_ids[]`
-  - `output_json.source_refs[]`
-  - `output_json.prompt_context_hash`
+  - `output_json.selectedMemoryIds[]`
+  - `output_json.contextItems[]`
+  - `output_json.promptContextHash`
 - Safety:
   - Retrieval is scoped to one `clinic_id` and the active request's `request`, `pet`, and `owner` memory scopes.
   - Retrieved context is advisory and must be visible through source references or audit detail.
   - Owner-facing medical content that uses retrieved context still requires staff approval.
   - Translation prompts intentionally do not use memory so source wording stays faithful.
+
+## Reply Draft V1
+
+- Prompt version: `reply_draft.v1.2026-05-12`
+- Default model: `PETCURA_AI_REPLY_DRAFT_MODEL` or `anthropic/claude-haiku-4.5`
+- Trigger: staff clicks generate or regenerate draft on request detail
+- Storage:
+  - `ai_outputs.kind = reply_draft`
+  - `input_json.source_locale`
+  - `input_json.target_locale`
+  - `input_json.context_retrieval_ai_output_id`
+  - `input_json.memory_ids`
+  - `output_json.text`
+  - `output_json.usedMemoryIds[]`
+  - `output_json.safetyNotes[]`
+- Safety:
+  - Drafts are never sent automatically.
+  - Drafts can use accepted memory only as prior context, not as current symptoms.
+  - Staff accept, edit-and-accept, or reject remains the human approval path.

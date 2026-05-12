@@ -20,9 +20,10 @@ function adminClient() {
 /**
  * Slice C coverage:
  *
- *   1. MobileBottomNav renders on viewport < md (390×844) with all three
- *      tabs (Inbox / Search / Me). Search dispatches the cmdk event;
- *      Me opens the mobile account sheet.
+ *   1. MobileBottomNav renders on viewport < md (390×844) with all four
+ *      tabs (Inbox / Search / Reminders / Me). Search dispatches the
+ *      cmdk event; Me dispatches the open-me-sheet event which surfaces
+ *      MobileMeSheet.
  *
  *   2. Bulk select on /inbox: select two rows via checkbox clicks, then
  *      click "Resolve" — both rows disappear from the default "all" view
@@ -35,7 +36,7 @@ function adminClient() {
  *      spec keeps the toast surface independently regressable.)
  */
 test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
-  test("bottom nav renders three tabs on mobile and dispatches cmdk/user-menu events", async ({
+  test("bottom nav renders four tabs on mobile and surfaces cmdk + me sheet", async ({
     page,
     baseURL
   }) => {
@@ -99,10 +100,17 @@ test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
       await expect(
         bottomNav.getByRole("button", { name: /^Search$/i })
       ).toBeVisible();
+      // Reminders is the new 3rd tab.
+      await expect(
+        bottomNav.locator("[data-bottom-nav-reminders]")
+      ).toBeVisible();
       // The Me tab uses the localized aria-label from menu.ariaLabel.
       await expect(
         bottomNav.getByRole("button", { name: /account menu/i })
       ).toBeVisible();
+
+      // All four tabs should be present (Inbox, Search, Reminders, Me).
+      await expect(bottomNav.locator("a, button")).toHaveCount(4);
 
       // Search tab opens the command palette.
       let cmdkOpened = false;
@@ -120,13 +128,30 @@ test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
       await page.waitForTimeout(50);
       expect(cmdkOpened).toBe(true);
 
-      // Me tab opens the mobile account sheet.
-      await bottomNav.getByRole("button", { name: /account menu/i }).click();
+      // Me tab opens the MobileMeSheet (Radix Dialog). aria-expanded on
+      // the tab mirrors the sheet's actual open state via the
+      // petcura:me-sheet-state event.
+      const meTab = bottomNav.locator("[data-bottom-nav-me]");
+      await expect(meTab).toHaveAttribute("aria-expanded", "false");
+      await meTab.click();
       const meSheet = page.locator("[data-me-sheet]");
       await expect(meSheet).toBeVisible({ timeout: 3_000 });
+      await expect(meTab).toHaveAttribute("aria-expanded", "true", {
+        timeout: 3_000
+      });
+      // Theme + language inline controls are present (Claude-style flat list).
+      await expect(
+        meSheet.getByRole("radiogroup").first()
+      ).toBeVisible();
       await expect(
         meSheet.getByRole("link", { name: /^Profile$/i })
       ).toBeVisible({ timeout: 3_000 });
+      // Esc closes and aria-expanded flips back to false.
+      await meSheet.press("Escape");
+      await expect(page.locator("[data-me-sheet]")).toHaveCount(0, {
+        timeout: 3_000
+      });
+      await expect(meTab).toHaveAttribute("aria-expanded", "false");
     } finally {
       if (staffUserId) {
         await admin.from("clinic_staff").delete().eq("user_id", staffUserId);

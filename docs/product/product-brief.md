@@ -4,7 +4,7 @@
 
 PetCura is the WhatsApp-native ClientOps inbox for veterinary clinics.
 
-It captures owner requests, structures intake, suggests category and risk flags, helps staff reply faster, manages reminders, and exports clean case records into the clinic's existing PMS.
+It captures owner requests, structures intake, suggests category and risk flags, helps staff reply faster with reviewed AI context, manages reminders, and exports clean case records into the clinic's existing PMS.
 
 ## Wedge
 
@@ -22,6 +22,7 @@ Independent or small-chain EU veterinary clinics with 2-10 vets, high phone or W
 - request detail
 - staff-approved replies
 - AI summaries, translations, category suggestions, risk flags, and reply drafts
+- reviewed AI memory for request, pet, and owner context
 - staff-confirmed urgency
 - reminders
 - PDF/CSV export
@@ -33,6 +34,7 @@ Independent or small-chain EU veterinary clinics with 2-10 vets, high phone or W
 - marketplace, commerce, delivery, payments
 - insurance, grooming, pet sitters
 - diagnosis, prescription, or autonomous medical advice
+- staff, clinic-wide, or cross-clinic AI memory
 - full PMS replacement
 - public API
 - multi-region expansion outside the EU

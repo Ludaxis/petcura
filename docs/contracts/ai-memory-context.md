@@ -1,10 +1,14 @@
 # AI Memory Context Contract
 
+Last updated: 2026-05-12.
+
 ## Scope
 
 AI Memory V1 provides reviewed request, pet, and owner context for staff-facing AI assistance. It extracts operational facts from existing PetCura records into staff-reviewable candidates, then retrieves accepted memory so summaries, reply drafts, and follow-up suggestions can stay consistent.
 
 AI memory is not a medical record, not a PMS replacement, and not an autonomous hidden profile. The PMS remains the medical system of record, and staff decide which memory becomes trusted context.
+
+Implementation status: shipped to `main` and production deployed. V1 scope remains request, pet, and owner memory only.
 
 ## Sources
 
@@ -21,20 +25,22 @@ Allowed V1 sources:
 
 Rejected, failed, or unreviewed AI outputs may be cited for audit, but they must not become trusted memory facts.
 
+Current structured source refs are limited to `request`, `message`, `internal_note`, and `ai_output`; attachment, reminder, PMS export, owner, and pet data can be included only through the active request context until their source-ref types are added.
+
 ## Output Kinds
 
 ### `memory_extraction`
 
 Extracts stable, source-grounded facts from one request. Output facts must include:
 
-- `fact_id`
-- `category`
+- `scopeType`
+- `scopeId`
+- `memoryType`
 - `text`
-- `source_type`
-- `source_id`
-- `source_created_at`
 - `confidence`
-- `expires_at` when the fact is time-bound
+- `sources[]` with `sourceType` and `sourceId`
+- `sourceLocale` when known
+- `expiresAt` when the fact is time-bound
 
 Allowed memory types:
 
@@ -50,14 +56,27 @@ Allowed memory types:
 
 Selects relevant memory facts for one AI task. Output context must include:
 
-- `task_kind`
-- `selected_fact_ids`
-- `source_refs`
+- `taskKind`
+- `selectedMemoryIds`
+- `contextItems`
 - `rationale`
-- `omitted_fact_ids` when potentially relevant facts were excluded
-- `prompt_context_hash`
+- `promptContextHash`
 
 Context retrieval must cite source rows instead of returning unsupported background knowledge.
+
+### `reply_draft`
+
+Drafts are generated on demand by staff action. Draft generation retrieves accepted memory first, writes `context_retrieval`, then writes `ai_outputs.kind = reply_draft`.
+
+`reply_draft.input_json` must include:
+
+- `prompt_version`
+- `source_locale`
+- `target_locale`
+- `context_retrieval_ai_output_id`
+- `memory_ids`
+
+Draft output includes text, confidence, used memory IDs, and safety notes. The draft only prefills the composer.
 
 ## Boundaries
 
@@ -68,6 +87,7 @@ Context retrieval must cite source rows instead of returning unsupported backgro
 - Translation prompts intentionally do not use memory so source wording stays faithful.
 - Memory must not diagnose, prescribe, set final urgency, or auto-send medical advice.
 - Owner-facing content that uses memory still requires staff approval unless it is non-medical intake collection or translation.
+- Prior memory context must be labeled as prior context, not current symptoms.
 
 ## Retention and Erasure
 

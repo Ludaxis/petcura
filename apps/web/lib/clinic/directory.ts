@@ -17,7 +17,9 @@ export type CustomerListItem = {
   createdAt: string;
   petCount: number;
   requestCount: number;
+  openRequestCount: number;
   latestRequestAt: string | null;
+  petNames: string[];
 };
 
 export type PetListItem = {
@@ -33,15 +35,102 @@ export type PetListItem = {
   photoPath: string | null;
   photoUrl: string | null;
   createdAt: string;
+  ownerId: string;
   ownerName: string;
   ownerPhone: string;
+  ownerLanguage: string;
   requestCount: number;
+  openRequestCount: number;
+  latestRequestAt: string | null;
 };
+
+export type DirectorySort = "recent" | "name" | "latest" | "pets";
+
+export type CustomerListFilters = {
+  q?: string;
+  lang?: string;
+  hasOpenRequest?: boolean;
+  recentDays?: number;
+  sort?: DirectorySort;
+  limit?: number;
+  offset?: number;
+};
+
+export type PetListFilters = {
+  q?: string;
+  species?: string;
+  lang?: string;
+  hasOpenRequest?: boolean;
+  recentDays?: number;
+  sort?: DirectorySort;
+  limit?: number;
+  offset?: number;
+};
+
+export type CustomerListResult = {
+  rows: CustomerListItem[];
+  total: number;
+};
+
+export type PetListResult = {
+  rows: PetListItem[];
+  total: number;
+};
+
+const OPEN_REQUEST_STATUSES = ["new", "waiting_staff", "waiting_owner"] as const;
+
+function withinRecentWindow(iso: string | null, recentDays: number | undefined) {
+  if (!recentDays || !iso) return recentDays ? false : true;
+  const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+  return new Date(iso).getTime() >= cutoff;
+}
+
+function compareCustomers(
+  a: CustomerListItem,
+  b: CustomerListItem,
+  sort: DirectorySort
+) {
+  switch (sort) {
+    case "name":
+      return a.name.localeCompare(b.name);
+    case "latest": {
+      const aT = a.latestRequestAt ? new Date(a.latestRequestAt).getTime() : 0;
+      const bT = b.latestRequestAt ? new Date(b.latestRequestAt).getTime() : 0;
+      return bT - aT;
+    }
+    case "pets":
+      return b.petCount - a.petCount || a.name.localeCompare(b.name);
+    case "recent":
+    default:
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  }
+}
+
+function comparePets(a: PetListItem, b: PetListItem, sort: DirectorySort) {
+  switch (sort) {
+    case "name":
+      return a.name.localeCompare(b.name);
+    case "latest": {
+      const aT = a.latestRequestAt ? new Date(a.latestRequestAt).getTime() : 0;
+      const bT = b.latestRequestAt ? new Date(b.latestRequestAt).getTime() : 0;
+      return bT - aT;
+    }
+    case "pets":
+    case "recent":
+    default:
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  }
+}
+
+function normalize(value: string | undefined | null) {
+  return (value ?? "").trim().toLocaleLowerCase("en-US");
+}
 
 export async function listClinicCustomers(
   supabase: SupabaseClient,
-  clinicId: string
-): Promise<CustomerListItem[]> {
+  clinicId: string,
+  filters: CustomerListFilters = {}
+): Promise<CustomerListResult> {
   const [ownersResult, petsResult, requestsResult] = await Promise.all([
     supabase
       .from("owners")
@@ -53,12 +142,12 @@ export async function listClinicCustomers(
       .order("created_at", { ascending: false }),
     supabase
       .from("pets")
-      .select("id, owner_id")
+      .select("id, owner_id, name")
       .eq("clinic_id", clinicId)
       .is("deleted_at", null),
     supabase
       .from("requests")
-      .select("id, owner_id, updated_at")
+      .select("id, owner_id, status, updated_at")
       .eq("clinic_id", clinicId)
       .order("updated_at", { ascending: false })
   ]);
@@ -75,18 +164,31 @@ export async function listClinicCustomers(
     );
   }
 
-  const petCounts = new Map<string, number>();
+  const petNamesByOwner = new Map<string, string[]>();
   for (const pet of petsResult.data ?? []) {
-    petCounts.set(pet.owner_id, (petCounts.get(pet.owner_id) ?? 0) + 1);
+    const names = petNamesByOwner.get(pet.owner_id) ?? [];
+    names.push(pet.name);
+    petNamesByOwner.set(pet.owner_id, names);
   }
 
   const requestCounts = new Map<string, number>();
+  const openRequestCounts = new Map<string, number>();
   const latestRequestByOwner = new Map<string, string>();
   for (const request of requestsResult.data ?? []) {
     requestCounts.set(
       request.owner_id,
       (requestCounts.get(request.owner_id) ?? 0) + 1
     );
+    if (
+      OPEN_REQUEST_STATUSES.includes(
+        request.status as (typeof OPEN_REQUEST_STATUSES)[number]
+      )
+    ) {
+      openRequestCounts.set(
+        request.owner_id,
+        (openRequestCounts.get(request.owner_id) ?? 0) + 1
+      );
+    }
     if (!latestRequestByOwner.has(request.owner_id)) {
       latestRequestByOwner.set(request.owner_id, request.updated_at);
     }
@@ -96,39 +198,83 @@ export async function listClinicCustomers(
     (ownersResult.data ?? []).map((owner) => owner.photo_url)
   );
 
-  return (ownersResult.data ?? []).map((owner) => ({
-    id: owner.id,
-    name: owner.name ?? owner.phone,
-    phone: owner.phone,
-    email: owner.email,
-    preferredLanguage: owner.preferred_language,
-    notes: owner.notes,
-    photoPath: owner.photo_url,
-    photoUrl: owner.photo_url ? photoUrls.get(owner.photo_url) ?? null : null,
-    createdAt: owner.created_at,
-    petCount: petCounts.get(owner.id) ?? 0,
-    requestCount: requestCounts.get(owner.id) ?? 0,
-    latestRequestAt: latestRequestByOwner.get(owner.id) ?? null
-  }));
+  const enriched: CustomerListItem[] = (ownersResult.data ?? []).map((owner) => {
+    const petNames = petNamesByOwner.get(owner.id) ?? [];
+    return {
+      id: owner.id,
+      name: owner.name ?? owner.phone,
+      phone: owner.phone,
+      email: owner.email,
+      preferredLanguage: owner.preferred_language,
+      notes: owner.notes,
+      photoPath: owner.photo_url,
+      photoUrl: owner.photo_url
+        ? photoUrls.get(owner.photo_url) ?? null
+        : null,
+      createdAt: owner.created_at,
+      petCount: petNames.length,
+      requestCount: requestCounts.get(owner.id) ?? 0,
+      openRequestCount: openRequestCounts.get(owner.id) ?? 0,
+      latestRequestAt: latestRequestByOwner.get(owner.id) ?? null,
+      petNames
+    };
+  });
+
+  const q = normalize(filters.q);
+  const lang = filters.lang;
+  const filtered = enriched.filter((owner) => {
+    if (q) {
+      const haystack = [
+        owner.name,
+        owner.phone,
+        owner.email ?? "",
+        owner.petNames.join(" ")
+      ]
+        .join(" ")
+        .toLocaleLowerCase("en-US");
+      if (!haystack.includes(q)) return false;
+    }
+    if (lang && owner.preferredLanguage !== lang) return false;
+    if (filters.hasOpenRequest && owner.openRequestCount === 0) return false;
+    if (
+      filters.recentDays &&
+      !withinRecentWindow(owner.latestRequestAt, filters.recentDays)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const sort = filters.sort ?? "recent";
+  filtered.sort((a, b) => compareCustomers(a, b, sort));
+
+  const offset = Math.max(0, filters.offset ?? 0);
+  const limit = filters.limit && filters.limit > 0 ? filters.limit : filtered.length;
+  return {
+    rows: filtered.slice(offset, offset + limit),
+    total: filtered.length
+  };
 }
 
 export async function listClinicPets(
   supabase: SupabaseClient,
-  clinicId: string
-): Promise<PetListItem[]> {
+  clinicId: string,
+  filters: PetListFilters = {}
+): Promise<PetListResult> {
   const [petsResult, requestsResult] = await Promise.all([
     supabase
       .from("pets")
       .select(
-        "id, owner_id, name, species, breed, sex, birth_date, weight_kg, allergies, medical_notes, photo_url, created_at, owners(id, name, phone)"
+        "id, owner_id, name, species, breed, sex, birth_date, weight_kg, allergies, medical_notes, photo_url, created_at, owners(id, name, phone, preferred_language)"
       )
       .eq("clinic_id", clinicId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
     supabase
       .from("requests")
-      .select("id, pet_id")
+      .select("id, pet_id, status, updated_at")
       .eq("clinic_id", clinicId)
+      .order("updated_at", { ascending: false })
   ]);
 
   if (petsResult.error) {
@@ -139,16 +285,31 @@ export async function listClinicPets(
   }
 
   const requestCounts = new Map<string, number>();
+  const openRequestCounts = new Map<string, number>();
+  const latestRequestByPet = new Map<string, string>();
   for (const request of requestsResult.data ?? []) {
     if (!request.pet_id) continue;
     requestCounts.set(request.pet_id, (requestCounts.get(request.pet_id) ?? 0) + 1);
+    if (
+      OPEN_REQUEST_STATUSES.includes(
+        request.status as (typeof OPEN_REQUEST_STATUSES)[number]
+      )
+    ) {
+      openRequestCounts.set(
+        request.pet_id,
+        (openRequestCounts.get(request.pet_id) ?? 0) + 1
+      );
+    }
+    if (!latestRequestByPet.has(request.pet_id)) {
+      latestRequestByPet.set(request.pet_id, request.updated_at);
+    }
   }
 
   const photoUrls = await getSignedProfileImageUrls(
     (petsResult.data ?? []).map((pet) => pet.photo_url)
   );
 
-  return (petsResult.data ?? []).map((pet) => {
+  const enriched: PetListItem[] = (petsResult.data ?? []).map((pet) => {
     const owner = Array.isArray(pet.owners) ? pet.owners[0] : pet.owners;
     return {
       id: pet.id,
@@ -163,9 +324,62 @@ export async function listClinicPets(
       photoPath: pet.photo_url,
       photoUrl: pet.photo_url ? photoUrls.get(pet.photo_url) ?? null : null,
       createdAt: pet.created_at,
+      ownerId: owner?.id ?? pet.owner_id,
       ownerName: owner?.name ?? owner?.phone ?? "Unknown owner",
       ownerPhone: owner?.phone ?? "",
-      requestCount: requestCounts.get(pet.id) ?? 0
+      ownerLanguage: owner?.preferred_language ?? "en",
+      requestCount: requestCounts.get(pet.id) ?? 0,
+      openRequestCount: openRequestCounts.get(pet.id) ?? 0,
+      latestRequestAt: latestRequestByPet.get(pet.id) ?? null
     };
   });
+
+  const q = normalize(filters.q);
+  const species = normalize(filters.species);
+  const lang = filters.lang;
+  const filtered = enriched.filter((pet) => {
+    if (q) {
+      const haystack = [pet.name, pet.breed ?? "", pet.ownerName, pet.ownerPhone]
+        .join(" ")
+        .toLocaleLowerCase("en-US");
+      if (!haystack.includes(q)) return false;
+    }
+    if (species && normalize(pet.species) !== species) return false;
+    if (lang && pet.ownerLanguage !== lang) return false;
+    if (filters.hasOpenRequest && pet.openRequestCount === 0) return false;
+    if (
+      filters.recentDays &&
+      !withinRecentWindow(pet.latestRequestAt, filters.recentDays)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const sort = filters.sort ?? "recent";
+  filtered.sort((a, b) => comparePets(a, b, sort));
+
+  const offset = Math.max(0, filters.offset ?? 0);
+  const limit = filters.limit && filters.limit > 0 ? filters.limit : filtered.length;
+  return {
+    rows: filtered.slice(offset, offset + limit),
+    total: filtered.length
+  };
+}
+
+export async function listClinicSpecies(
+  supabase: SupabaseClient,
+  clinicId: string
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("pets")
+    .select("species")
+    .eq("clinic_id", clinicId)
+    .is("deleted_at", null);
+  if (error || !data) return [];
+  const set = new Set<string>();
+  for (const pet of data) {
+    if (pet.species) set.add(pet.species);
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
 }

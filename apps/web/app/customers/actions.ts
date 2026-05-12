@@ -18,14 +18,30 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 function customersRedirect(
   locale: SupportedLocale,
-  params: Record<string, string>
+  params: Record<string, string>,
+  ownerId?: string
 ): never {
+  // Remap legacy customers_* keys onto the unified directory_* keys so the
+  // new /directory route renders the same status/error surface.
+  const directoryParams: Record<string, string> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (key === "customers_status") {
+      directoryParams.directory_status = value;
+    } else if (key === "customers_error") {
+      directoryParams.directory_error = value;
+    } else {
+      directoryParams[key] = value;
+    }
+  }
+
   const searchParams = new URLSearchParams({
     lang: locale,
-    ...params
+    tab: "owners",
+    ...directoryParams
   });
+  if (ownerId) searchParams.set("id", ownerId);
 
-  redirect(`/customers?${searchParams.toString()}`);
+  redirect(`/directory?${searchParams.toString()}`);
 }
 
 function getString(formData: FormData, key: string) {
@@ -125,5 +141,6 @@ export async function updateCustomerProfile(formData: FormData) {
   });
 
   revalidatePath("/customers");
-  customersRedirect(locale, { customers_status: "saved" });
+  revalidatePath("/directory");
+  customersRedirect(locale, { customers_status: "saved" }, owner.id);
 }

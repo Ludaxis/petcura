@@ -242,3 +242,27 @@ export const aiReplyDraftGenerationSchema = z.object({
   requestId: uuidSchema,
   locale: supportedLocaleSchema.default("en")
 });
+
+/**
+ * Kanban board drop targets. Mixes two axes:
+ *  - `urgent` flips urgency=high (status untouched).
+ *  - Everything else maps to a RequestStatus.
+ *
+ * Server action picks the axis based on the column name so the schema can stay
+ * a single enum — the visual columns are the source of truth for both UI and
+ * audit events.
+ */
+export const boardColumnSchema = z.enum([
+  "new",
+  "urgent",
+  "waiting_staff",
+  "waiting_owner",
+  "resolved"
+]);
+
+export const boardMoveSchema = z.object({
+  requestId: uuidSchema,
+  targetColumn: boardColumnSchema
+});
+
+export type BoardMoveInput = z.infer<typeof boardMoveSchema>;

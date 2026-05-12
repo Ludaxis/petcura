@@ -109,11 +109,17 @@ export function InboxRow({
         "hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)]",
         "data-[selected=true]:bg-[var(--primary-soft)]",
         isCompact ? "py-2.5 sm:py-3" : "py-3.5 sm:py-4",
-        // grid: dot | pet/owner | preview | status | meta | caret
-        "grid-cols-[14px_minmax(110px,max-content)_minmax(0,1fr)_auto_auto_18px]",
-        "max-md:grid-cols-[14px_minmax(0,1fr)_auto]"
+        // grid: bulk-select | urgency dot | pet/owner | preview | status | meta | caret
+        "grid-cols-[22px_14px_minmax(110px,max-content)_minmax(0,1fr)_auto_auto_18px]",
+        "max-md:grid-cols-[22px_14px_minmax(0,1fr)_auto]"
       )}
     >
+      <span
+        data-inbox-bulk-checkbox-slot
+        data-inbox-bulk-row-id={row.id}
+        className="flex h-5 w-[22px] items-center justify-start"
+      />
+
       <span className="flex items-center justify-center">
         <UrgencyDot
           level={tierToUrgencyLevel[row.tier]}

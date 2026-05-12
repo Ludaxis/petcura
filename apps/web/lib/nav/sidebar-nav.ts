@@ -139,16 +139,10 @@ export const SIDEBAR_NAV: NavItem[] = [
     countSource: "remindersTotal"
   },
   {
-    id: "customers",
-    labelKey: "nav.customers",
-    href: "/customers",
+    id: "directory",
+    labelKey: "nav.directory",
+    href: "/directory",
     icon: Users
-  },
-  {
-    id: "pets",
-    labelKey: "nav.pets",
-    href: "/pets",
-    icon: PawPrint
   },
   {
     id: "reports",

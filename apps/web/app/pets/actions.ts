@@ -18,14 +18,28 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 function petsRedirect(
   locale: SupportedLocale,
-  params: Record<string, string>
+  params: Record<string, string>,
+  petId?: string
 ): never {
+  const directoryParams: Record<string, string> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (key === "pets_status") {
+      directoryParams.directory_status = value;
+    } else if (key === "pets_error") {
+      directoryParams.directory_error = value;
+    } else {
+      directoryParams[key] = value;
+    }
+  }
+
   const searchParams = new URLSearchParams({
     lang: locale,
-    ...params
+    tab: "pets",
+    ...directoryParams
   });
+  if (petId) searchParams.set("id", petId);
 
-  redirect(`/pets?${searchParams.toString()}`);
+  redirect(`/directory?${searchParams.toString()}`);
 }
 
 function getString(formData: FormData, key: string) {
@@ -135,5 +149,6 @@ export async function updatePetProfile(formData: FormData) {
   });
 
   revalidatePath("/pets");
-  petsRedirect(locale, { pets_status: "saved" });
+  revalidatePath("/directory");
+  petsRedirect(locale, { pets_status: "saved" }, pet.id);
 }

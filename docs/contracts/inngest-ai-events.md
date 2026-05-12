@@ -1,5 +1,7 @@
 # Inngest AI Events Contract
 
+Last updated: 2026-05-12.
+
 PetCura AI Memory V1 uses Inngest events as ID-only job triggers. Event payloads
 must not include message bodies, owner free text, clinic secrets, or generated AI
 content. Workers load durable context by `clinicId`, `requestId`, and message IDs.
@@ -22,3 +24,6 @@ content. Workers load durable context by `clinicId`, `requestId`, and message ID
   duplicate work.
 - AI outputs remain accountable through `ai_outputs`; request timeline changes
   remain accountable through `request_events`.
+- Intake and webhook writes complete before AI jobs run; AI failure must not fail request creation.
+- Current implementation handles `owner.message.created` through `petcura-owner-message-ai-v1`, which runs summary, translations, accepted-memory retrieval, and memory extraction together.
+- Current implementation handles `ai.reply_draft.requested` through `petcura-reply-draft-ai-v1`, which generates on-demand drafts only.

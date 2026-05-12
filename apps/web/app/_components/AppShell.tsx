@@ -220,6 +220,7 @@ export async function AppShell({
           )}
           avatarUrl={avatarUrl}
           meAriaLabel={t("menu.ariaLabel")}
+          reminderCount={openReminderCount}
         />
         <MobileMeSheet
           email={staffContext.user.email ?? ""}
