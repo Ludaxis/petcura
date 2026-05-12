@@ -23,6 +23,12 @@ import {
   persistThemePreference,
   type ThemePreference
 } from "@/app/_components/ThemeToggle";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 type ThreadItem = {
   id: string;
@@ -90,25 +96,18 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
     const [query, setQuery] = useState("");
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
-    const dialogRef = useRef<HTMLDivElement>(null);
-    const lastFocusedRef = useRef<HTMLElement | null>(null);
     const liveRef = useRef<HTMLDivElement>(null);
     const [, startTransition] = useTransition();
 
     const openPalette = useCallback(() => {
-      lastFocusedRef.current = document.activeElement as HTMLElement | null;
+      // Radix Dialog handles focus restoration (returns focus to whatever
+      // had it before the dialog opened) and the focus trap.
       setOpen(true);
       setQuery("");
       setActive(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
     }, []);
     const closePalette = useCallback(() => {
       setOpen(false);
-      // Restore focus to whatever opened the palette.
-      const target = lastFocusedRef.current;
-      if (target && typeof target.focus === "function") {
-        target.focus();
-      }
     }, []);
 
     useImperativeHandle(
@@ -292,103 +291,94 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
     // Clamp the active index instead of resetting in an effect.
     const clampedActive = Math.min(active, Math.max(filtered.length - 1, 0));
 
-    if (!open) return null;
-
     return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={labels.dialogLabel}
-        className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-4 pt-[12vh]"
-        onClick={closePalette}
-        onKeyDown={(e) => {
-          if (e.key !== "Tab") return;
-          const container = dialogRef.current;
-          if (!container) return;
-          const focusable = container.querySelectorAll<HTMLElement>(
-            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusable.length === 0) return;
-          const first = focusable.item(0);
-          const last = focusable.item(focusable.length - 1);
-          if (!first || !last) return;
-          const activeEl = document.activeElement as HTMLElement | null;
-          if (e.shiftKey) {
-            if (activeEl === first || !container.contains(activeEl)) {
-              e.preventDefault();
-              last.focus();
-            }
-          } else if (activeEl === last) {
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          size="lg"
+          // The palette is anchored near the top of the viewport (it's a
+          // command surface, not a centered dialog). Override the centering
+          // by pinning to a top offset and clearing the y-translate.
+          className="top-[12vh] translate-y-0 sm:top-[18vh]"
+          aria-label={labels.dialogLabel}
+          // The search input is both the heading and the filter; we don't
+          // render a separate <DialogTitle> visually. Provide an SR-only
+          // title for a11y and skip the description warning.
+          aria-describedby={undefined}
+          showCloseButton={false}
+          onOpenAutoFocus={(e) => {
+            // Radix would focus the first focusable child; we want the
+            // search input specifically (the close X is suppressed above,
+            // but be explicit).
             e.preventDefault();
-            first.focus();
-          }
-        }}
-      >
-        <div
-          ref={dialogRef}
-          className="w-full max-w-xl overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--paper)] shadow-xl"
-          onClick={(e) => e.stopPropagation()}
+            inputRef.current?.focus();
+          }}
         >
+          <DialogHeader className="border-b border-[var(--line)] px-3 py-2.5 pr-3">
+            <DialogTitle className="sr-only">
+              {labels.dialogLabel}
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Search
+                aria-hidden="true"
+                size={14}
+                className="text-[var(--muted)]"
+              />
+              <input
+                ref={inputRef}
+                data-cmdk-input
+                type="text"
+                role="combobox"
+                aria-controls="cmdk-list"
+                aria-expanded="true"
+                aria-activedescendant={
+                  filtered[clampedActive]
+                    ? `cmdk-item-${filtered[clampedActive].id}`
+                    : undefined
+                }
+                placeholder={labels.placeholder}
+                className="flex-1 bg-transparent text-[13.5px] text-[var(--ink)] outline-none placeholder:text-[var(--muted-2)]"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setActive(0);
+                }}
+                onKeyDown={(e) => {
+                  // Escape is owned by Radix Dialog; let it bubble.
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setActive((a) =>
+                      Math.min(a + 1, Math.max(0, filtered.length - 1))
+                    );
+                    return;
+                  }
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setActive((a) => Math.max(a - 1, 0));
+                    return;
+                  }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const cmd = filtered[clampedActive];
+                    if (cmd) {
+                      closePalette();
+                      void cmd.perform();
+                    }
+                    return;
+                  }
+                }}
+              />
+              <kbd className="rounded border border-[var(--line)] bg-[var(--soft)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--muted-2)]">
+                esc
+              </kbd>
+            </div>
+          </DialogHeader>
+
           <div
             ref={liveRef}
             aria-live="polite"
             aria-atomic="true"
             className="sr-only"
           />
-          <div className="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2.5">
-            <Search aria-hidden="true" size={14} className="text-[var(--muted)]" />
-            <input
-              ref={inputRef}
-              data-cmdk-input
-              type="text"
-              role="combobox"
-              aria-controls="cmdk-list"
-              aria-expanded="true"
-              aria-activedescendant={
-                filtered[clampedActive]
-                  ? `cmdk-item-${filtered[clampedActive].id}`
-                  : undefined
-              }
-              placeholder={labels.placeholder}
-              className="flex-1 bg-transparent text-[13.5px] text-[var(--ink)] outline-none placeholder:text-[var(--muted-2)]"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActive(0);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  closePalette();
-                  return;
-                }
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setActive((a) =>
-                    Math.min(a + 1, Math.max(0, filtered.length - 1))
-                  );
-                  return;
-                }
-                if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  setActive((a) => Math.max(a - 1, 0));
-                  return;
-                }
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const cmd = filtered[clampedActive];
-                  if (cmd) {
-                    closePalette();
-                    void cmd.perform();
-                  }
-                  return;
-                }
-              }}
-            />
-            <kbd className="rounded border border-[var(--line)] bg-[var(--soft)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--muted-2)]">
-              esc
-            </kbd>
-          </div>
 
           <ul
             id="cmdk-list"
@@ -430,8 +420,8 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
               </li>
             ))}
           </ul>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 );

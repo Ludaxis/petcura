@@ -153,6 +153,13 @@ test.describe("Inbox board — drag and drop", () => {
         page.locator("[data-board-dnd-root]")
       ).toBeVisible({ timeout: 15_000 });
 
+      // Capture the resting board state before any drag occurs. This is the
+      // baseline screenshot reviewers compare drag overlays against.
+      await page.screenshot({
+        path: "screenshots/board-dnd-default.png",
+        fullPage: false
+      });
+
       const cardId = requestIds[0]!;
       const card = page
         .locator(`[data-board-card-id="${cardId}"]`)
@@ -182,7 +189,19 @@ test.describe("Inbox board — drag and drop", () => {
       // Move in a few steps to exceed the activation distance and to trigger
       // dragOver against the destination column.
       await page.mouse.move(fromX + 20, fromY + 20, { steps: 5 });
+      // Mid-drag — pointer has passed the activation distance; the drag
+      // overlay should be visible at the pointer location.
+      await page.screenshot({
+        path: "screenshots/board-dnd-dragging.png",
+        fullPage: false
+      });
       await page.mouse.move(toX, toY, { steps: 20 });
+      // Hovering over the destination column — the column should display
+      // its drop-target affordance.
+      await page.screenshot({
+        path: "screenshots/board-dnd-hover.png",
+        fullPage: false
+      });
       await page.mouse.up();
 
       // The card should now be inside the Resolved column. Optimistic update
@@ -508,6 +527,121 @@ test.describe("Inbox board — drag and drop", () => {
         await admin.from("clinic_staff").delete().eq("user_id", staffUserId);
         await admin.auth.admin.deleteUser(staffUserId);
       }
+    }
+  });
+
+  test("captures a mobile board screenshot at 390x844", async ({
+    browser,
+    baseURL
+  }) => {
+    // Forced viewport — independent of the parent project so the mobile
+    // capture renders identically on desktop and mobile project runs.
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 }
+    });
+    const page = await context.newPage();
+    const admin = adminClient();
+    const unique = Date.now() + 3;
+    const staffEmail = `petcura-board-mobile-${unique}@example.test`;
+    const ownerName = `Mobile Owner ${unique}`;
+    const ownerPhone = `+372${unique}`;
+    let clinicId: string | undefined;
+    let staffUserId: string | undefined;
+    let ownerId: string | undefined;
+    let petId: string | undefined;
+    const requestIds: string[] = [];
+    try {
+      const { data: clinic } = await admin
+        .from("clinics")
+        .select("id")
+        .eq("slug", defaultClinicSlug)
+        .single();
+      clinicId = clinic!.id;
+      const { data: staffUser } = await admin.auth.admin.createUser({
+        email: staffEmail,
+        email_confirm: true
+      });
+      staffUserId = staffUser.user!.id;
+      await admin.from("clinic_staff").upsert(
+        {
+          clinic_id: clinicId,
+          user_id: staffUserId,
+          role: "admin",
+          is_active: true
+        },
+        { onConflict: "clinic_id,user_id" }
+      );
+      const { data: owner } = await admin
+        .from("owners")
+        .insert({
+          clinic_id: clinicId,
+          name: ownerName,
+          phone: ownerPhone,
+          preferred_language: "en"
+        })
+        .select("id")
+        .single();
+      ownerId = owner!.id;
+      const { data: pet } = await admin
+        .from("pets")
+        .insert({
+          clinic_id: clinicId,
+          owner_id: ownerId,
+          name: `MobilePet ${unique}`,
+          species: "Dog"
+        })
+        .select("id")
+        .single();
+      petId = pet!.id;
+      for (let i = 0; i < 3; i += 1) {
+        const { data: req } = await admin
+          .from("requests")
+          .insert({
+            clinic_id: clinicId,
+            owner_id: ownerId,
+            pet_id: petId,
+            category: "medical_question",
+            channel: "web",
+            status: "new",
+            urgency: "low",
+            ai_summary: `Mobile seed ${unique}-${i}`
+          })
+          .select("id")
+          .single();
+        if (req?.id) requestIds.push(req.id);
+      }
+
+      await signInAt(page, baseURL, staffEmail, admin);
+      await expect(page.locator("[data-board-dnd-root]")).toBeVisible({
+        timeout: 15_000
+      });
+      await page.screenshot({
+        path: "screenshots/board-dnd-mobile.png",
+        fullPage: false
+      });
+    } finally {
+      if (clinicId && ownerId) {
+        await admin
+          .from("requests")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .eq("owner_id", ownerId);
+        await admin
+          .from("pets")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .eq("owner_id", ownerId);
+        await admin
+          .from("owners")
+          .delete()
+          .eq("clinic_id", clinicId)
+          .eq("id", ownerId);
+      }
+      if (staffUserId) {
+        await admin.from("clinic_staff").delete().eq("user_id", staffUserId);
+        await admin.auth.admin.deleteUser(staffUserId);
+      }
+      await context.close();
     }
   });
 });
