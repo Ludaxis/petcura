@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ChevronRight,
@@ -5,10 +7,22 @@ import {
   MessageSquareText,
   PawPrint
 } from "lucide-react";
-import { Badge, cn } from "@petcura/ui";
-import { createTranslator, type SupportedLocale } from "@petcura/shared";
+import { Badge, Button, cn } from "@petcura/ui";
+import {
+  createTranslator,
+  localeOptions,
+  type SupportedLocale
+} from "@petcura/shared";
 import type { CustomerListItem } from "@/lib/clinic/directory";
-import { ProfileAvatar } from "@/app/_components/profile/ProfileEditor";
+import {
+  ProfileAvatar,
+  ProfileEditorCard,
+  ProfileField,
+  profileInputClass,
+  profileTextareaClass
+} from "@/app/_components/profile/ProfileEditor";
+import { updateCustomerProfile } from "@/app/customers/actions";
+import { InlineEditRow } from "./InlineEditRow";
 
 type OwnerRowProps = {
   owner: CustomerListItem;
@@ -33,7 +47,8 @@ export function OwnerRow({
   density,
   href,
   formatRelative,
-  index
+  index,
+  canEdit
 }: OwnerRowProps) {
   const t = createTranslator(locale);
   const isCompact = density === "compact";
@@ -42,7 +57,7 @@ export function OwnerRow({
   const overflowPets =
     owner.petNames.length > 3 ? ` +${owner.petNames.length - 3}` : "";
 
-  return (
+  const rowSummary = (
     <div
       data-directory-row
       data-row-id={owner.id}
@@ -57,12 +72,14 @@ export function OwnerRow({
         } as React.CSSProperties
       }
       className={cn(
-        "pc-row-in group relative grid items-center gap-3 border-b border-[var(--line)] px-4 transition-colors",
+        "pc-row-in group relative grid items-center gap-3 px-4 transition-colors",
         "hover:bg-[var(--soft)] focus-within:bg-[var(--soft)]",
         "data-[selected=true]:bg-[var(--primary-soft)]",
         isCompact ? "py-2 sm:py-2.5" : "py-3 sm:py-3.5",
-        "grid-cols-[40px_minmax(160px,1.2fr)_minmax(0,1.4fr)_auto_auto_18px]",
-        "max-md:grid-cols-[36px_minmax(0,1fr)_auto]"
+        // Reserve room on the right for the Edit trigger overlay (about
+        // 88px on desktop, 36px on mobile) plus the chevron column.
+        "grid-cols-[40px_minmax(160px,1.2fr)_minmax(0,1.4fr)_auto_auto_88px]",
+        "max-md:grid-cols-[36px_minmax(0,1fr)_36px]"
       )}
     >
       {/* Cover-all link below interactive controls. Empty anchor with full
@@ -154,7 +171,9 @@ export function OwnerRow({
         </span>
       </span>
 
-      {/* Quick actions — relative + z-10 so they sit above the cover Link */}
+      {/* Quick actions — relative + z-10 so they sit above the cover Link.
+          Quick action stays mounted; Edit button is rendered as an absolute
+          overlay by InlineEditRow so it can survive across both columns. */}
       <span className="relative z-10 hidden items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 md:inline-flex">
         {wa ? (
           <a
@@ -162,6 +181,7 @@ export function OwnerRow({
             target="_blank"
             rel="noreferrer"
             aria-label={t("directory.action.message")}
+            onClick={(event) => event.stopPropagation()}
             className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--primary-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           >
             <MessageSquareText aria-hidden="true" size={13} />
@@ -190,5 +210,130 @@ export function OwnerRow({
         </span>
       </span>
     </div>
+  );
+
+  if (!canEdit) {
+    // Read-only viewers get the row without the Edit affordance or the
+    // outer panel chrome — the border-b rendered by the parent list keeps
+    // the visual rhythm consistent.
+    return (
+      <div className="border-b border-[var(--line)]">{rowSummary}</div>
+    );
+  }
+
+  return (
+    <InlineEditRow
+      editLabel={`${t("directory.action.edit")} ${owner.name}`}
+      editText={t("directory.action.edit")}
+      regionLabel={`${t("directory.action.edit")} ${owner.name}`}
+      row={rowSummary}
+      form={({ requestClose }) => (
+        <div className="grid gap-3">
+          <ProfileEditorCard
+            action={updateCustomerProfile}
+            // Suppress the editor's own card chrome — we're already inside
+            // the row's panel, which has its own border + tint. Avoids the
+            // "card-inside-card" look the design system warns about.
+            className="!border-0 !bg-transparent !p-0 !shadow-none"
+            description={
+              <span>
+                {owner.phone}
+                {owner.email ? ` · ${owner.email}` : ""}
+              </span>
+            }
+            hiddenFields={
+              <>
+                <input name="lang" type="hidden" value={locale} />
+                <input name="ownerId" type="hidden" value={owner.id} />
+              </>
+            }
+            imageLabel={t("profile.photo")}
+            imageUrl={owner.photoUrl}
+            name={owner.name}
+            submitLabel={t("profile.save")}
+            title={owner.name}
+          >
+            <ProfileField
+              htmlFor={`owner-name-${owner.id}`}
+              label={t("profile.fullName")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={owner.name}
+                id={`owner-name-${owner.id}`}
+                name="name"
+                required
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`owner-phone-${owner.id}`}
+              label={t("profile.phone")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={owner.phone}
+                id={`owner-phone-${owner.id}`}
+                name="phone"
+                required
+                type="tel"
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`owner-email-${owner.id}`}
+              label={t("settings.email")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={owner.email ?? ""}
+                id={`owner-email-${owner.id}`}
+                name="email"
+                type="email"
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`owner-language-${owner.id}`}
+              label={t("profile.language")}
+            >
+              <select
+                className={profileInputClass}
+                defaultValue={owner.preferredLanguage}
+                id={`owner-language-${owner.id}`}
+                name="preferredLanguage"
+              >
+                {localeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </ProfileField>
+            <ProfileField
+              htmlFor={`owner-notes-${owner.id}`}
+              label={t("directory.detail.notes")}
+              wide
+            >
+              <textarea
+                className={profileTextareaClass}
+                defaultValue={owner.notes ?? ""}
+                id={`owner-notes-${owner.id}`}
+                name="notes"
+              />
+            </ProfileField>
+          </ProfileEditorCard>
+          {/* Cancel sits outside the form so it never submits. The Save
+              button is rendered by ProfileEditorCard above. */}
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={requestClose}
+              className="min-w-[96px]"
+            >
+              {t("inbox.bulk.cancel")}
+            </Button>
+          </div>
+        </div>
+      )}
+    />
   );
 }

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ChevronRight,
@@ -6,10 +8,18 @@ import {
   Scale,
   User
 } from "lucide-react";
-import { Badge, cn } from "@petcura/ui";
+import { Badge, Button, cn } from "@petcura/ui";
 import { createTranslator, type SupportedLocale } from "@petcura/shared";
 import type { PetListItem } from "@/lib/clinic/directory";
-import { ProfileAvatar } from "@/app/_components/profile/ProfileEditor";
+import {
+  ProfileAvatar,
+  ProfileEditorCard,
+  ProfileField,
+  profileInputClass,
+  profileTextareaClass
+} from "@/app/_components/profile/ProfileEditor";
+import { updatePetProfile } from "@/app/pets/actions";
+import { InlineEditRow } from "./InlineEditRow";
 
 type PetRowProps = {
   pet: PetListItem;
@@ -45,13 +55,14 @@ export function PetRow({
   density,
   href,
   formatRelative,
-  index
+  index,
+  canEdit
 }: PetRowProps) {
   const t = createTranslator(locale);
   const isCompact = density === "compact";
   const age = ageFromBirth(pet.birthDate);
 
-  return (
+  const rowSummary = (
     <div
       data-directory-row
       data-row-id={pet.id}
@@ -66,12 +77,13 @@ export function PetRow({
         } as React.CSSProperties
       }
       className={cn(
-        "pc-row-in group relative grid items-center gap-3 border-b border-[var(--line)] px-4 transition-colors",
+        "pc-row-in group relative grid items-center gap-3 px-4 transition-colors",
         "hover:bg-[var(--soft)] focus-within:bg-[var(--soft)]",
         "data-[selected=true]:bg-[var(--primary-soft)]",
         isCompact ? "py-2 sm:py-2.5" : "py-3 sm:py-3.5",
-        "grid-cols-[40px_minmax(160px,1.2fr)_minmax(0,1.4fr)_auto_18px]",
-        "max-md:grid-cols-[36px_minmax(0,1fr)_auto]"
+        // Mirror OwnerRow's right-edge reservation for the Edit overlay.
+        "grid-cols-[40px_minmax(160px,1.2fr)_minmax(0,1.4fr)_auto_88px]",
+        "max-md:grid-cols-[36px_minmax(0,1fr)_36px]"
       )}
     >
       <Link
@@ -176,5 +188,146 @@ export function PetRow({
         </span>
       </span>
     </div>
+  );
+
+  if (!canEdit) {
+    return (
+      <div className="border-b border-[var(--line)]">{rowSummary}</div>
+    );
+  }
+
+  return (
+    <InlineEditRow
+      editLabel={`${t("directory.action.edit")} ${pet.name}`}
+      editText={t("directory.action.edit")}
+      regionLabel={`${t("directory.action.edit")} ${pet.name}`}
+      row={rowSummary}
+      form={({ requestClose }) => (
+        <div className="grid gap-3">
+          <ProfileEditorCard
+            action={updatePetProfile}
+            className="!border-0 !bg-transparent !p-0 !shadow-none"
+            description={
+              <span>
+                {pet.species}
+                {pet.breed ? ` · ${pet.breed}` : ""}
+                {` · ${pet.ownerName}`}
+              </span>
+            }
+            hiddenFields={
+              <>
+                <input name="lang" type="hidden" value={locale} />
+                <input name="petId" type="hidden" value={pet.id} />
+              </>
+            }
+            imageLabel={t("profile.photo")}
+            imageUrl={pet.photoUrl}
+            name={pet.name}
+            submitLabel={t("profile.save")}
+            title={pet.name}
+          >
+            <ProfileField
+              htmlFor={`pet-name-${pet.id}`}
+              label={t("profile.fullName")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={pet.name}
+                id={`pet-name-${pet.id}`}
+                name="name"
+                required
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`pet-species-${pet.id}`}
+              label={t("directory.filter.species")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={pet.species}
+                id={`pet-species-${pet.id}`}
+                name="species"
+                required
+              />
+            </ProfileField>
+            <ProfileField htmlFor={`pet-breed-${pet.id}`} label="Breed">
+              <input
+                className={profileInputClass}
+                defaultValue={pet.breed ?? ""}
+                id={`pet-breed-${pet.id}`}
+                name="breed"
+              />
+            </ProfileField>
+            <ProfileField htmlFor={`pet-sex-${pet.id}`} label="Sex">
+              <input
+                className={profileInputClass}
+                defaultValue={pet.sex ?? ""}
+                id={`pet-sex-${pet.id}`}
+                name="sex"
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`pet-birth-date-${pet.id}`}
+              label={t("directory.pet.ageLabel")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={pet.birthDate ?? ""}
+                id={`pet-birth-date-${pet.id}`}
+                name="birthDate"
+                type="date"
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`pet-weight-${pet.id}`}
+              label={t("directory.pet.weightLabel")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={pet.weightKg ?? ""}
+                id={`pet-weight-${pet.id}`}
+                name="weightKg"
+                step="0.1"
+                type="number"
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`pet-allergies-${pet.id}`}
+              label={t("directory.detail.medical")}
+              wide
+            >
+              <textarea
+                className={profileTextareaClass}
+                defaultValue={pet.allergies ?? ""}
+                id={`pet-allergies-${pet.id}`}
+                name="allergies"
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`pet-medical-notes-${pet.id}`}
+              label={t("directory.detail.notes")}
+              wide
+            >
+              <textarea
+                className={profileTextareaClass}
+                defaultValue={pet.medicalNotes ?? ""}
+                id={`pet-medical-notes-${pet.id}`}
+                name="medicalNotes"
+              />
+            </ProfileField>
+          </ProfileEditorCard>
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={requestClose}
+              className="min-w-[96px]"
+            >
+              {t("inbox.bulk.cancel")}
+            </Button>
+          </div>
+        </div>
+      )}
+    />
   );
 }

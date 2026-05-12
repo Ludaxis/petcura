@@ -1,19 +1,21 @@
 import { FolderOpen, PawPrint, Search, UserRound } from "lucide-react";
 import {
   createTranslator,
+  hasClinicPermission,
   localeOptions,
+  type StaffRole,
   type SupportedLocale
 } from "@petcura/shared";
 import { Badge, Button, cn } from "@petcura/ui";
 import { AppShell } from "@/app/_components/AppShell";
 import {
-  ProfileEditorCard,
   ProfileField,
-  profileInputClass,
-  profileTextareaClass
+  profileInputClass
 } from "@/app/_components/profile/ProfileEditor";
-import { updateCustomerProfile } from "@/app/customers/actions";
-import { updatePetProfile } from "@/app/pets/actions";
+import { OwnerRow } from "@/app/directory/_components/OwnerRow";
+import { PetRow } from "@/app/directory/_components/PetRow";
+// formatDate is no longer needed at the page level — the rows now render
+// their own relative-time labels via formatRelativeFor() below.
 import { requireStaffContext } from "@/lib/auth/staff";
 import {
   listClinicCustomers,
@@ -40,6 +42,7 @@ type Props = {
     open?: string | string[];
     directory_status?: string | string[];
     directory_error?: string | string[];
+    id?: string | string[];
   }>;
 };
 
@@ -92,12 +95,25 @@ function directoryUrl({
   return `/directory?${params.toString()}`;
 }
 
-function formatDate(value: string | null, locale: SupportedLocale) {
-  if (!value) return "No activity";
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
+function formatRelativeFor(locale: SupportedLocale) {
+  // Lightweight relative-time formatter consumed by the row components.
+  // Falls back to a localized date for anything older than ~30 days so
+  // staff scanning a list still see a fixed anchor instead of "1 month ago".
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const dtf = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  return (iso: string) => {
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return "";
+    const diffMs = then - Date.now();
+    const minute = 60_000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const abs = Math.abs(diffMs);
+    if (abs < hour) return rtf.format(Math.round(diffMs / minute), "minute");
+    if (abs < day) return rtf.format(Math.round(diffMs / hour), "hour");
+    if (abs < 30 * day) return rtf.format(Math.round(diffMs / day), "day");
+    return dtf.format(new Date(iso));
+  };
 }
 
 function countLabel(
@@ -122,6 +138,12 @@ export default async function DirectoryPage({ searchParams }: Props) {
   const hasOpenRequest = getParam(sp.open) === "1";
   const status = getParam(sp.directory_status);
   const hasError = Boolean(getParam(sp.directory_error));
+  const selectedId = getParam(sp.id);
+
+  const actorRole = staffContext.membership.role as StaffRole;
+  const canEditOwners = hasClinicPermission(actorRole, "customers:manage");
+  const canEditPets = hasClinicPermission(actorRole, "pets:manage");
+  const formatRelative = formatRelativeFor(locale);
 
   const [owners, pets, species] = await Promise.all([
     listClinicCustomers(staffContext.supabase, staffContext.clinic.id, {
@@ -316,100 +338,29 @@ export default async function DirectoryPage({ searchParams }: Props) {
             </form>
 
             {tab === "owners" ? (
-              <div className="grid gap-3">
+              <div className="grid">
                 {owners.rows.length ? (
-                  owners.rows.map((owner) => (
-                    <ProfileEditorCard
-                      action={updateCustomerProfile}
-                      description={
-                        <span>
-                          {owner.phone}
-                          {owner.email ? ` · ${owner.email}` : ""}
-                          {` · ${owner.petCount} ${t("directory.owner.petsLabel")}`}
-                          {` · ${owner.openRequestCount} ${t("directory.owner.openLabel")}`}
-                          {` · ${formatDate(owner.latestRequestAt, locale)}`}
-                        </span>
-                      }
-                      hiddenFields={
-                        <>
-                          <input name="lang" type="hidden" value={locale} />
-                          <input name="ownerId" type="hidden" value={owner.id} />
-                        </>
-                      }
-                      imageLabel={t("profile.photo")}
-                      imageUrl={owner.photoUrl}
+                  owners.rows.map((owner, index) => (
+                    <OwnerRow
+                      canEdit={canEditOwners}
+                      density="comfortable"
+                      formatRelative={formatRelative}
+                      href={directoryUrl({
+                        locale,
+                        tab,
+                        ...(q ? { q } : {}),
+                        language: selectedLanguage ?? undefined,
+                        species: selectedSpecies ?? undefined,
+                        sort,
+                        recent: recentDays,
+                        open: hasOpenRequest
+                      }) + `&id=${owner.id}`}
+                      index={index}
                       key={owner.id}
-                      name={owner.name}
-                      submitLabel={t("profile.save")}
-                      title={owner.name}
-                    >
-                      <ProfileField
-                        htmlFor={`owner-name-${owner.id}`}
-                        label={t("profile.fullName")}
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={owner.name}
-                          id={`owner-name-${owner.id}`}
-                          name="name"
-                          required
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`owner-phone-${owner.id}`}
-                        label={t("profile.phone")}
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={owner.phone}
-                          id={`owner-phone-${owner.id}`}
-                          name="phone"
-                          required
-                          type="tel"
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`owner-email-${owner.id}`}
-                        label={t("settings.email")}
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={owner.email ?? ""}
-                          id={`owner-email-${owner.id}`}
-                          name="email"
-                          type="email"
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`owner-language-${owner.id}`}
-                        label={t("profile.language")}
-                      >
-                        <select
-                          className={profileInputClass}
-                          defaultValue={owner.preferredLanguage}
-                          id={`owner-language-${owner.id}`}
-                          name="preferredLanguage"
-                        >
-                          {localeOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`owner-notes-${owner.id}`}
-                        label={t("directory.detail.notes")}
-                        wide
-                      >
-                        <textarea
-                          className={profileTextareaClass}
-                          defaultValue={owner.notes ?? ""}
-                          id={`owner-notes-${owner.id}`}
-                          name="notes"
-                        />
-                      </ProfileField>
-                    </ProfileEditorCard>
+                      locale={locale}
+                      owner={owner}
+                      selected={selectedId === owner.id}
+                    />
                   ))
                 ) : (
                   <p className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-6 text-[13px] text-[var(--muted)]">
@@ -418,126 +369,29 @@ export default async function DirectoryPage({ searchParams }: Props) {
                 )}
               </div>
             ) : (
-              <div className="grid gap-3">
+              <div className="grid">
                 {pets.rows.length ? (
-                  pets.rows.map((pet) => (
-                    <ProfileEditorCard
-                      action={updatePetProfile}
-                      description={
-                        <span>
-                          {pet.species}
-                          {pet.breed ? ` · ${pet.breed}` : ""}
-                          {` · ${pet.ownerName}`}
-                          {` · ${pet.openRequestCount} ${t("directory.pet.openLabel")}`}
-                          {` · ${formatDate(pet.latestRequestAt, locale)}`}
-                        </span>
-                      }
-                      hiddenFields={
-                        <>
-                          <input name="lang" type="hidden" value={locale} />
-                          <input name="petId" type="hidden" value={pet.id} />
-                        </>
-                      }
-                      imageLabel={t("profile.photo")}
-                      imageUrl={pet.photoUrl}
+                  pets.rows.map((pet, index) => (
+                    <PetRow
+                      canEdit={canEditPets}
+                      density="comfortable"
+                      formatRelative={formatRelative}
+                      href={directoryUrl({
+                        locale,
+                        tab,
+                        ...(q ? { q } : {}),
+                        language: selectedLanguage ?? undefined,
+                        species: selectedSpecies ?? undefined,
+                        sort,
+                        recent: recentDays,
+                        open: hasOpenRequest
+                      }) + `&id=${pet.id}`}
+                      index={index}
                       key={pet.id}
-                      name={pet.name}
-                      submitLabel={t("profile.save")}
-                      title={pet.name}
-                    >
-                      <ProfileField
-                        htmlFor={`pet-name-${pet.id}`}
-                        label={t("profile.fullName")}
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={pet.name}
-                          id={`pet-name-${pet.id}`}
-                          name="name"
-                          required
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`pet-species-${pet.id}`}
-                        label={t("directory.filter.species")}
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={pet.species}
-                          id={`pet-species-${pet.id}`}
-                          name="species"
-                          required
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`pet-breed-${pet.id}`}
-                        label="Breed"
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={pet.breed ?? ""}
-                          id={`pet-breed-${pet.id}`}
-                          name="breed"
-                        />
-                      </ProfileField>
-                      <ProfileField htmlFor={`pet-sex-${pet.id}`} label="Sex">
-                        <input
-                          className={profileInputClass}
-                          defaultValue={pet.sex ?? ""}
-                          id={`pet-sex-${pet.id}`}
-                          name="sex"
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`pet-birth-date-${pet.id}`}
-                        label={t("directory.pet.ageLabel")}
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={pet.birthDate ?? ""}
-                          id={`pet-birth-date-${pet.id}`}
-                          name="birthDate"
-                          type="date"
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`pet-weight-${pet.id}`}
-                        label={t("directory.pet.weightLabel")}
-                      >
-                        <input
-                          className={profileInputClass}
-                          defaultValue={pet.weightKg ?? ""}
-                          id={`pet-weight-${pet.id}`}
-                          name="weightKg"
-                          step="0.1"
-                          type="number"
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`pet-allergies-${pet.id}`}
-                        label={t("directory.detail.medical")}
-                        wide
-                      >
-                        <textarea
-                          className={profileTextareaClass}
-                          defaultValue={pet.allergies ?? ""}
-                          id={`pet-allergies-${pet.id}`}
-                          name="allergies"
-                        />
-                      </ProfileField>
-                      <ProfileField
-                        htmlFor={`pet-medical-notes-${pet.id}`}
-                        label={t("directory.detail.notes")}
-                        wide
-                      >
-                        <textarea
-                          className={profileTextareaClass}
-                          defaultValue={pet.medicalNotes ?? ""}
-                          id={`pet-medical-notes-${pet.id}`}
-                          name="medicalNotes"
-                        />
-                      </ProfileField>
-                    </ProfileEditorCard>
+                      locale={locale}
+                      pet={pet}
+                      selected={selectedId === pet.id}
+                    />
                   ))
                 ) : (
                   <p className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-6 text-[13px] text-[var(--muted)]">
