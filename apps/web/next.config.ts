@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
     "@petcura/validation"
   ],
   experimental: {
+    serverActions: {
+      // Profile/customer/pet photo uploads are validated at 5 MB in
+      // `profile-media.ts`. Multipart overhead can push the POST over that
+      // raw file size, so keep the Server Action ceiling slightly higher.
+      bodySizeLimit: "8mb"
+    },
     // Enables React's View Transitions API integration so client-side
     // navigations (Link clicks, router.push) wrap the route swap in a
     // document.startViewTransition. Elements with matching

@@ -125,12 +125,17 @@ test.describe("Profile management", () => {
       await page.getByLabel("Phone").fill(`+37258${unique}`);
       await page.getByLabel("Job title").fill("Practice manager");
       await page.getByLabel("Language").selectOption("et");
+      await page.locator('input[name="photo"]').setInputFiles({
+        name: "avatar.png",
+        mimeType: "image/png",
+        buffer: Buffer.alloc(1_250_000, 1)
+      });
       await page.getByRole("button", { name: /save/i }).click();
       await expect(page.getByText("Profile saved.")).toBeVisible();
 
       const { data: profile } = await admin
         .from("user_profiles")
-        .select("full_name, display_name, phone, job_title, locale")
+        .select("full_name, display_name, phone, job_title, locale, avatar_url")
         .eq("user_id", staffUserId)
         .single();
       expect(profile).toMatchObject({
@@ -140,6 +145,9 @@ test.describe("Profile management", () => {
         job_title: "Practice manager",
         locale: "et"
       });
+      expect(profile?.avatar_url).toContain(
+        `${clinicId}/staff/${staffUserId}/avatar-`
+      );
 
       await page.goto(`${baseURL}/customers?lang=en`, {
         waitUntil: "domcontentloaded"
@@ -202,6 +210,14 @@ test.describe("Profile management", () => {
       if (petId) await admin.from("pets").delete().eq("id", petId);
       if (ownerId) await admin.from("owners").delete().eq("id", ownerId);
       if (staffUserId) {
+        const { data: profile } = await admin
+          .from("user_profiles")
+          .select("avatar_url")
+          .eq("user_id", staffUserId)
+          .maybeSingle();
+        if (profile?.avatar_url) {
+          await admin.storage.from("profile-media").remove([profile.avatar_url]);
+        }
         await admin.from("clinic_staff").delete().eq("user_id", staffUserId);
         await admin.from("user_profiles").delete().eq("user_id", staffUserId);
         await admin.auth.admin.deleteUser(staffUserId);
