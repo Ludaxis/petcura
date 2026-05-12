@@ -42,6 +42,12 @@ type AiDraftCardProps = {
     from: string;
     /** Template "conf {confidence}" — substituted client-side. */
     confidence: string;
+    /** Bucket labels for confidence (text alternative to numeric value). */
+    confidenceBucketLow: string;
+    confidenceBucketMedium: string;
+    confidenceBucketHigh: string;
+    /** Template "AI confidence {bucket} ({value})" — substituted client-side. */
+    confidenceLabel: string;
     /** Template "{source} → {target}" — substituted client-side. */
     locale: string;
     accept: string;
@@ -59,6 +65,18 @@ type AiDraftCardProps = {
     errorReject: string;
   };
 };
+
+/**
+ * Map a numeric confidence (0–1) into a coarse text bucket so the AI draft
+ * card communicates certainty without relying on color or numeric literacy
+ * alone (WCAG 1.4.1 — use of color). The bucket text is the primary signal;
+ * the color hint applied at the call site is purely reinforcement.
+ */
+function confidenceBucket(value: number): "low" | "medium" | "high" {
+  if (value >= 0.8) return "high";
+  if (value >= 0.5) return "medium";
+  return "low";
+}
 
 export function AiDraftCard({
   requestId,
@@ -155,10 +173,37 @@ export function AiDraftCard({
     draft.sourceLocale ??
     locale
   ).toUpperCase();
-  const confidenceLabel =
-    typeof draft.confidence === "number"
-      ? labels.confidence.replace("{confidence}", draft.confidence.toFixed(2))
-      : null;
+  // Build the confidence display as { numeric, bucket, aria } so we can keep
+  // the numeric value visible (familiar to staff) while adding a text bucket
+  // label that satisfies WCAG 1.4.1 — the meaning is not encoded by color
+  // alone. The aria string condenses both into a single SR announcement so
+  // assistive tech doesn't read "conf 0.86 high" as two unrelated tokens.
+  const confidenceDisplay = (() => {
+    if (typeof draft.confidence !== "number") return null;
+    const valueText = draft.confidence.toFixed(2);
+    const bucket = confidenceBucket(draft.confidence);
+    const bucketText =
+      bucket === "high"
+        ? labels.confidenceBucketHigh
+        : bucket === "medium"
+          ? labels.confidenceBucketMedium
+          : labels.confidenceBucketLow;
+    const bucketToneClass =
+      bucket === "high"
+        ? "text-[var(--primary-strong)]"
+        : bucket === "medium"
+          ? "text-[var(--amber)]"
+          : "text-[var(--red)]";
+    return {
+      bucket,
+      numericText: labels.confidence.replace("{confidence}", valueText),
+      bucketText,
+      bucketToneClass,
+      ariaLabel: labels.confidenceLabel
+        .replace("{bucket}", bucketText)
+        .replace("{value}", valueText)
+    };
+  })();
   const localeLabel = labels.locale
     .replace("{source}", sourceLocale)
     .replace("{target}", targetLocale);
@@ -258,7 +303,27 @@ export function AiDraftCard({
               {labels.from.replace("{time}", formatTime(draft.createdAt))}
             </span>
           ) : null}
-          {confidenceLabel ? <span>{confidenceLabel}</span> : null}
+          {confidenceDisplay ? (
+            <span
+              className="inline-flex items-center gap-1"
+              aria-label={confidenceDisplay.ariaLabel}
+              data-ai-draft-confidence-bucket={confidenceDisplay.bucket}
+            >
+              <span aria-hidden="true">{confidenceDisplay.numericText}</span>
+              <span aria-hidden="true" className="text-[var(--muted-2)]">
+                ·
+              </span>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "font-semibold uppercase tracking-[0.06em]",
+                  confidenceDisplay.bucketToneClass
+                )}
+              >
+                {confidenceDisplay.bucketText}
+              </span>
+            </span>
+          ) : null}
           <span>{localeLabel}</span>
         </span>
       </header>
