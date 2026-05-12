@@ -100,7 +100,7 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
     () => false
   );
 
-  // Track which row ids have already been resolved to a DOM node. We
+  // Track which row ids have already been resolved to a checkbox slot. We
   // re-poll on selection mode toggles and on rowIds change so portals
   // mount when the list re-renders after a router.refresh().
   const [rowNodes, setRowNodes] = useState<Map<string, HTMLElement>>(
@@ -120,7 +120,7 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
       const next = new Map<string, HTMLElement>();
       for (const id of rowIds) {
         const node = document.querySelector<HTMLElement>(
-          `[data-inbox-row][data-row-id="${cssEscape(id)}"]`
+          `[data-inbox-bulk-checkbox-slot][data-inbox-bulk-row-id="${cssEscape(id)}"]`
         );
         if (node) next.set(id, node);
       }
@@ -267,8 +267,9 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
         // snapshot stored on the row element (InboxRow emits these as
         // data-* attributes). Falls back to the generic label when those
         // attrs aren't present.
-        const pet = node.dataset.rowPet;
-        const owner = node.dataset.rowOwner;
+        const row = node.closest<HTMLElement>("[data-inbox-row]");
+        const pet = row?.dataset.rowPet;
+        const owner = row?.dataset.rowOwner;
         const label =
           pet && owner
             ? labels.rowToggleLabelFor
@@ -372,7 +373,7 @@ function RowCheckbox({
     <span
       data-inbox-bulk-checkbox
       className={cn(
-        "pointer-events-auto absolute left-2 top-1/2 z-[1] -translate-y-1/2",
+        "pointer-events-auto inline-flex h-5 w-5 items-center justify-center",
         // Hidden by default; reveal on row hover/focus or once anything is
         // selected. `group` is the row Link's className root.
         sticky
