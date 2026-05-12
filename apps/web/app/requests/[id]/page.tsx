@@ -1,23 +1,15 @@
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import {
   createTranslator,
-  withLocale,
   type SupportedLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { requireStaffContext } from "@/lib/auth/staff";
-import { getRequestDetail } from "@/lib/requests";
-import { listInboxRequests, type InboxStream } from "@/lib/inbox/queries";
 import { AppShell } from "@/app/_components/AppShell";
-import { RequestList } from "./_components/RequestList";
-import { RequestDetail } from "./_components/RequestDetail";
-import { RequestPaneShell } from "./_components/RequestPaneShell";
-import type { ThreadMessage } from "./_components/Thread";
-import type { DraftPayload } from "./_components/AiDraftCard";
-import {
-  generateAiReplyDraft,
-  reviewAiMemoryCandidate
-} from "./actions";
+import { RequestListLoader } from "./_components/RequestListLoader";
+import { RequestListSkeleton } from "./_components/RequestListSkeleton";
+import { RequestDetailLoader } from "./_components/RequestDetailLoader";
+import { RequestDetailSkeleton } from "./_components/RequestDetailSkeleton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,53 +23,11 @@ type RequestDetailPageProps = {
   }>;
 };
 
-function makeRelativeFormatter(locale: SupportedLocale) {
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  return (iso: string) => {
-    const diffMs = new Date(iso).getTime() - Date.now();
-    const minutes = Math.round(diffMs / 60000);
-    if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute");
-    const hours = Math.round(minutes / 60);
-    if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
-    const days = Math.round(hours / 24);
-    return rtf.format(days, "day");
-  };
-}
-
-function formatMemoryKey(
+function resolveInitialAnnouncement(
   t: ReturnType<typeof createTranslator>,
-  prefix: string,
-  value: string
+  actionStatus: string | undefined,
+  actionError: string | undefined
 ) {
-  return t(`${prefix}.${value}` as Parameters<typeof t>[0]);
-}
-
-const STREAM_ORDER: InboxStream[] = [
-  "all",
-  "urgent",
-  "today",
-  "week",
-  "routine",
-  "mine",
-  "unassigned"
-];
-
-export default async function RequestDetailPage({
-  params,
-  searchParams
-}: RequestDetailPageProps) {
-  const { id } = await params;
-  const sp = (await searchParams) ?? {};
-  const langParam = Array.isArray(sp.lang) ? sp.lang[0] : sp.lang;
-  const locale = await getRequestLocale(langParam);
-  const t = createTranslator(locale);
-
-  const actionStatus = Array.isArray(sp.action_status)
-    ? sp.action_status[0]
-    : sp.action_status;
-  const actionError = Array.isArray(sp.action_error)
-    ? sp.action_error[0]
-    : sp.action_error;
   // Map server-action redirect tokens to localized toast strings. We resolve
   // here (server) so the Pane shell's single aria-live region announces them
   // to SR users on the next render.
@@ -99,304 +49,97 @@ export default async function RequestDetailPage({
     delivery: t("request.toast.error.delivery"),
     not_found: t("request.toast.error.notFound")
   };
-  const initialAnnouncement =
+  return (
     (actionError && (toastForError[actionError] ?? t("request.toast.error.generic"))) ||
     (actionStatus && toastForStatus[actionStatus]) ||
-    null;
+    null
+  );
+}
+
+/**
+ * /requests/[id] — tri-pane: left rail (thread navigation) + center pane
+ * (detail header + thread + AI draft + composer + side blocks).
+ *
+ * # Granular streaming (Phase 2)
+ *
+ * Up through Phase 1 this route awaited `getRequestDetail` and
+ * `listInboxRequests` together via `Promise.all`. That blocked the entire
+ * response on whichever fetch was slower (almost always the heavy detail
+ * join), so the left rail couldn't paint until the right pane was ready.
+ *
+ * Now the page only resolves the cheap, shared prologue (locale + staff
+ * context + toast token). The two heavy fetches are pushed into sibling
+ * server components, each behind its own Suspense boundary:
+ *
+ *   - <RequestListLoader>    → `loadInboxRows` (cached)        → SkeletonList
+ *   - <RequestDetailLoader>  → `getRequestDetail` + cached list → RequestDetailSkeleton
+ *
+ * Both loaders read the inbox-rows list through `React.cache(loadInboxRows)`
+ * so they de-duplicate to a single Supabase round-trip in one render. The
+ * detail loader needs the list too (for keyboard nav prev/next, palette
+ * thread search, and the PaneShell's `threads` prop) — cache hits make
+ * that free once the list-side promise resolves.
+ *
+ * # Why component split (not `use(promise)`)
+ *
+ * PaneShell already owns a tight client contract: `RealtimeRefresh` subs,
+ * `useOptimisticMessages(messages)` (the seed must arrive synchronously so
+ * the composer transition doesn't crash with "useOptimistic outside
+ * transition"), `CommandPalette`/`RequestKeyboard` with the full row
+ * metadata, and the shared aria-live region. Lifting promises into the
+ * client and `use()`-ing them inside PaneShell would force every child to
+ * tolerate undefined data with no operational win. Server-streamed
+ * components give us the same independent fallback without disturbing
+ * PaneShell's seed.
+ *
+ * # `loading.tsx` interaction
+ *
+ * The route-level `loading.tsx` is still the cold-navigation skeleton.
+ * The two Suspense boundaries below only fire on subsequent re-renders
+ * inside the segment (e.g. clicking a sibling row in the left rail).
+ *
+ * # View transitions
+ *
+ * `pc-request-{id}` on the detail header lives inside `RequestDetail`
+ * (under the detail Suspense). The skeleton intentionally does NOT carry
+ * that name — having two elements claim the same transition name during a
+ * row click would break the row→header pairing.
+ */
+export default async function RequestDetailPage({
+  params,
+  searchParams
+}: RequestDetailPageProps) {
+  const { id } = await params;
+  const sp = (await searchParams) ?? {};
+  const langParam = Array.isArray(sp.lang) ? sp.lang[0] : sp.lang;
+  const locale: SupportedLocale = await getRequestLocale(langParam);
+  const t = createTranslator(locale);
+
+  const actionStatus = Array.isArray(sp.action_status)
+    ? sp.action_status[0]
+    : sp.action_status;
+  const actionError = Array.isArray(sp.action_error)
+    ? sp.action_error[0]
+    : sp.action_error;
+  const initialAnnouncement = resolveInitialAnnouncement(
+    t,
+    actionStatus,
+    actionError
+  );
 
   const staffContext = await requireStaffContext(
     locale,
     `/requests/${encodeURIComponent(id)}`
   );
 
-  const [request, listRows] = await Promise.all([
-    getRequestDetail(staffContext.supabase, staffContext.clinic.id, id, locale),
-    listInboxRequests(staffContext.supabase, staffContext.clinic.id, {
-      stream: "all",
-      view: "list",
-      locale,
-      staffMembershipId: staffContext.membership.id
-    })
-  ]);
-
-  if (!request) {
-    notFound();
-  }
-
-  const formatRelative = makeRelativeFormatter(locale);
-  const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
-  const formatDateTime = (iso: string) =>
-    dateTimeFormatter.format(new Date(iso));
-
-  const hrefForRow = Object.fromEntries(
-    listRows.map((r) => [r.id, withLocale(`/requests/${r.id}`, locale)])
-  ) as Record<string, string>;
-  const rowIds = listRows.map((r) => r.id);
-
-  const messages: ThreadMessage[] = request.messages.map((m) => ({
-    id: m.id,
-    senderType: m.senderType,
-    body: m.body,
-    bodyTranslated: m.bodyTranslated,
-    sourceLocale: m.sourceLocale,
-    createdAt: m.createdAt,
-    deliveryStatus: m.deliveryStatus,
-    deliveryProvider: m.deliveryProvider,
-    deliveryUpdatedAt: m.deliveryUpdatedAt
-  }));
-
-  const draft: DraftPayload | null = request.pendingDraft
-    ? {
-        id: request.pendingDraft.id,
-        text: request.pendingDraft.text,
-        confidence: request.pendingDraft.confidence,
-        sourceMessageId: request.pendingDraft.sourceMessageId,
-        sourceLocale: request.pendingDraft.sourceLocale,
-        targetLocale: request.pendingDraft.targetLocale,
-        createdAt: request.pendingDraft.createdAt
-      }
-    : null;
-
-  const streamLabels: Record<InboxStream, string> = {
-    all: t("inbox.streams.all"),
-    urgent: t("inbox.streams.urgent"),
-    today: t("inbox.streams.today"),
-    week: t("inbox.streams.week"),
-    routine: t("inbox.streams.routine"),
-    mine: t("inbox.streams.mine"),
-    unassigned: t("inbox.streams.unassigned"),
-    // "resolved" stream landed in PR Slice A as a real inbox lane. The
-    // request detail screen consumes the same labels map for its breadcrumb
-    // back-to-stream chip — pick up the new key so the cool-down lane has
-    // a label.
-    resolved: t("inbox.streams.resolved")
-  };
-
-  const shortcuts = [
-    { keys: "J / K", description: t("inbox.kbd.navigate") },
-    { keys: "R", description: t("request.kbd.send") },
-    { keys: "T", description: t("request.kbd.translate") },
-    { keys: "E", description: t("inbox.kbd.resolve") },
-    { keys: "A", description: t("inbox.kbd.assign") },
-    { keys: "⌘↵", description: t("request.composer.send") },
-    { keys: "⌘K / Ctrl+K", description: t("inbox.kbd.command") },
-    { keys: "?", description: t("inbox.kbd.shortcuts") }
-  ];
-
-  const paletteLabels = {
-    dialogLabel: t("inbox.cmdk.dialogLabel"),
-    placeholder: t("inbox.cmdk.placeholder"),
-    empty: t("inbox.cmdk.empty"),
-    threadsHeading: t("inbox.cmdk.threads"),
-    streamsHeading: t("inbox.cmdk.streams"),
-    actionsHeading: t("inbox.cmdk.actions"),
-    appearanceHeading: t("inbox.cmdk.appearance"),
-    openThread: t("inbox.cmdk.openThread"),
-    filterStreamPrefix: t("inbox.cmdk.filterStream").replace(" {stream}", ""),
-    themeLight: t("inbox.cmdk.themeLight"),
-    themeDark: t("inbox.cmdk.themeDark"),
-    themeSystem: t("inbox.cmdk.themeSystem"),
-    themeAnnounceLight: t("inbox.cmdk.themeAnnounceLight"),
-    themeAnnounceDark: t("inbox.cmdk.themeAnnounceDark"),
-    themeAnnounceSystem: t("inbox.cmdk.themeAnnounceSystem"),
-    resolveCurrent: t("inbox.cmdk.resolveCurrent"),
-    assignCurrent: t("inbox.cmdk.assignCurrent"),
-    resolved: t("inbox.toast.resolved"),
-    assigned: t("inbox.toast.assigned")
-  };
-
-  const threadLabels = {
-    region: t("request.thread.region"),
-    showTranslation: t("request.translate.show"),
-    hideTranslation: t("request.translate.hide"),
-    error: t("request.translate.error"),
-    system: t("request.thread.system"),
-    deliveryStatus: t("request.delivery.status"),
-    delivery: {
-      queued: t("request.delivery.queued"),
-      sent: t("request.delivery.sent"),
-      delivered: t("request.delivery.delivered"),
-      read: t("request.delivery.read"),
-      acknowledged: t("request.delivery.acknowledged"),
-      failed: t("request.delivery.failed")
-    }
-  };
-
-  const draftLabels = {
-    region: t("request.aiDraft.region"),
-    eyebrow: t("request.aiDraft.eyebrow"),
-    from: t("request.aiDraft.from"),
-    confidence: t("request.aiDraft.confidence"),
-    confidenceBucketLow: t("request.aiDraft.confidence.low"),
-    confidenceBucketMedium: t("request.aiDraft.confidence.medium"),
-    confidenceBucketHigh: t("request.aiDraft.confidence.high"),
-    confidenceLabel: t("request.aiDraft.confidenceLabel"),
-    locale: t("request.aiDraft.locale"),
-    accept: t("request.aiDraft.accept"),
-    edit: t("request.aiDraft.edit"),
-    reject: t("request.aiDraft.reject"),
-    cancel: t("request.aiDraft.cancel"),
-    save: t("request.aiDraft.save"),
-    saveAndAccept: t("request.aiDraft.saveAndAccept"),
-    editLabel: t("request.aiDraft.editLabel"),
-    accepted: t("request.aiDraft.accepted.toast"),
-    rejected: t("request.aiDraft.rejected.toast"),
-    edited: t("request.aiDraft.edited.toast"),
-    errorAccept: t("request.aiDraft.error.accept"),
-    errorEdit: t("request.aiDraft.error.edit"),
-    errorReject: t("request.aiDraft.error.reject")
-  };
-
-  const composerLabels = {
-    label: t("request.composer.label"),
-    placeholder: t("request.composer.placeholder"),
-    send: t("request.composer.send"),
-    shortcut: t("request.composer.shortcut")
-  };
-
-  const aiMemoryLabels = {
-    region: t("request.aiMemory.region"),
-    title: t("request.aiMemory.title"),
-    draftControls: t("request.aiMemory.draftControls"),
-    generate: t("request.aiMemory.generate"),
-    regenerate: t("request.aiMemory.regenerate"),
-    generating: t("request.aiMemory.generating"),
-    contextHeading: t("request.aiMemory.contextHeading"),
-    contextEmpty: t("request.aiMemory.contextEmpty"),
-    candidatesHeading: t("request.aiMemory.candidatesHeading"),
-    candidatesEmpty: t("request.aiMemory.candidatesEmpty"),
-    candidateReason: t("request.aiMemory.candidateReason"),
-    editCandidate: t("request.aiMemory.editCandidate"),
-    approveCandidate: t("request.aiMemory.approveCandidate"),
-    dismissCandidate: t("request.aiMemory.dismissCandidate"),
-    approveCandidateAria: t("request.aiMemory.approveCandidateAria"),
-    dismissCandidateAria: t("request.aiMemory.dismissCandidateAria"),
-    draftQueued: t("request.aiMemory.draftQueued"),
-    candidateUpdated: t("request.aiMemory.candidateUpdated")
-  };
-
-  const aiMemory = {
-    labels: aiMemoryLabels,
-    contextItems: request.aiMemoryContext.map((item) => ({
-      id: item.id,
-      title: formatMemoryKey(t, "request.aiMemory.type", item.memoryType),
-      body: item.text,
-      pills: [
-        {
-          id: `${item.id}-scope`,
-          label: formatMemoryKey(t, "request.aiMemory.scope", item.scopeType),
-          tone: "teal" as const
-        }
-      ],
-      meta: [
-        item.confidence !== null
-          ? t("request.aiMemory.meta.confidence").replace(
-              "{confidence}",
-              item.confidence.toFixed(2)
-            )
-          : null,
-        item.updatedAt ? formatDateTime(item.updatedAt) : null
-      ].filter((value): value is string => Boolean(value))
-    })),
-    memoryCandidates: request.aiMemoryCandidates.map((candidate) => ({
-      id: candidate.id,
-      title: formatMemoryKey(
-        t,
-        "request.aiMemory.type",
-        candidate.memoryType
-      ),
-      body: candidate.contentText,
-      status: "pending" as const,
-      statusLabel: candidate.status,
-      pills: [
-        {
-          id: `${candidate.id}-scope`,
-          label: formatMemoryKey(
-            t,
-            "request.aiMemory.scope",
-            candidate.scopeType
-          ),
-          tone: "amber" as const
-        }
-      ],
-      meta: [
-        candidate.confidence !== null
-          ? t("request.aiMemory.meta.confidence").replace(
-              "{confidence}",
-              candidate.confidence.toFixed(2)
-            )
-          : null,
-        t("request.aiMemory.meta.sources").replace(
-          "{count}",
-          String(candidate.sourceCount)
-        ),
-        formatDateTime(candidate.createdAt)
-      ].filter((value): value is string => Boolean(value))
-    })),
-    draftControl: {
-      action: generateAiReplyDraft,
-      mode: draft ? ("regenerate" as const) : ("generate" as const),
-      statusLabel: draft
-        ? t("request.aiMemory.status.hasDraft")
-        : t("request.aiMemory.status.ready"),
-      hiddenFields: { lang: locale }
-    },
-    candidateAction: reviewAiMemoryCandidate,
-    candidateActionHiddenFields: { lang: locale }
-  };
-
-  const keyboardLabels = {
-    sheetTitle: t("inbox.kbdSheet.title"),
-    close: t("inbox.kbdSheet.close"),
-    resolved: t("inbox.toast.resolved"),
-    assigned: t("inbox.toast.assigned"),
-    errorResolve: t("inbox.toast.resolveError"),
-    errorAssign: t("inbox.toast.assignError")
-  };
-
-  const paneShell = (
-    <RequestPaneShell
-      requestId={request.id}
-      clinicId={staffContext.clinic.id}
-      rowIds={rowIds}
-      hrefForRow={hrefForRow}
-      threads={listRows.map((r) => ({
-        id: r.id,
-        petName: r.petName,
-        ownerName: r.ownerName,
-        preview: r.preview,
-        href: hrefForRow[r.id] ?? `/requests/${r.id}`
-      }))}
-      streams={STREAM_ORDER.map((value) => ({
-        value,
-        label: streamLabels[value]
-      }))}
-      locale={locale}
-      messages={messages}
-      draft={draft}
-      initialAnnouncement={initialAnnouncement}
-      paletteLabels={paletteLabels}
-      threadLabels={threadLabels}
-      translateAnnounce={{
-        shown: t("request.translate.announce.shown"),
-        hidden: t("request.translate.announce.hidden")
-      }}
-      draftLabels={draftLabels}
-      composerLabels={composerLabels}
-      keyboardLabels={keyboardLabels}
-      shortcuts={shortcuts}
-    />
-  );
-
-  // Page title for the mobile shell header. Desktop hides it; on mobile
-  // users see e.g. "Lumi — Reza" so they keep their place when the rail
-  // collapses into the Sheet drawer.
-  const pageTitle = `${request.petName}${
-    request.ownerName ? ` — ${request.ownerName}` : ""
-  }`;
+  // Page title for the mobile shell header. We don't know the pet/owner
+  // names yet (that requires the detail fetch we just deferred), so on
+  // mobile the AppShell renders the inbox title as a stable fallback
+  // until the detail loader resolves and the real header swaps in.
+  // Desktop hides the title row anyway. Reusing `inbox.title` keeps the
+  // EN/ET/RU triad satisfied without minting a new key for a string the
+  // user only sees for a few hundred ms.
+  const pageTitle = t("inbox.title");
 
   return (
     <AppShell
@@ -405,39 +148,59 @@ export default async function RequestDetailPage({
       pageTitle={pageTitle}
     >
       {/*
-        Two-pane layout below the sidebar: 320px list + flex detail. The
-        list and detail are hidden below `lg` (same as before) — mobile
-        users land on the detail panel and use the sidebar to walk back
-        to /inbox. RequestRail was removed; AppSidebar subsumes its job.
-      */}
-      {/*
+        Two-pane layout below the sidebar: 320px list + flex detail. List is
+        hidden below `lg` (same as before) — mobile users land on the detail
+        panel and use the sidebar to walk back to /inbox.
+
         AppShell main is h-svh overflow-hidden, so this fills it via flex-1
         instead of redoing the viewport calc. The list and detail own their
         own scroll containers below.
       */}
       <div className="flex h-full w-full min-w-0 flex-1 overflow-hidden">
-        <RequestList
-          rows={listRows}
-          currentRequestId={request.id}
-          locale={locale}
-          hrefForRow={hrefForRow}
-          formatRelative={formatRelative}
-          density="comfortable"
-          emptyLabel={t("inbox.empty")}
-          ariaLabel={t("request.detail.list")}
-        />
+        {/*
+          List Suspense — paints SkeletonList while `loadInboxRows` is in
+          flight. On a sibling-row click the URL changes (?) but the row
+          metadata is identical, so the cached `loadInboxRows` returns
+          synchronously and this Suspense never falls back on subsequent
+          navigations — the rail stays interactive.
+        */}
+        <Suspense
+          fallback={
+            <RequestListSkeleton ariaLabel={t("request.detail.list")} />
+          }
+        >
+          <RequestListLoader
+            supabase={staffContext.supabase}
+            clinicId={staffContext.clinic.id}
+            staffMembershipId={staffContext.membership.id}
+            currentRequestId={id}
+            locale={locale}
+          />
+        </Suspense>
 
-        <RequestDetail
-          request={request}
-          locale={locale}
-          formatDateTime={formatDateTime}
-          currentStaffUserId={staffContext.user.id}
-          paneShell={paneShell}
-          aiMemory={aiMemory}
-          hasDraft={Boolean(draft)}
-          closeHref={withLocale("/inbox", locale)}
-          closeLabel={t("request.detail.close")}
-        />
+        {/*
+          Detail Suspense — paints RequestDetailSkeleton while the heavy
+          `getRequestDetail` join is in flight. Keyed on the requestId so a
+          sibling-row click forces React to remount this subtree and the
+          skeleton swaps in immediately while the new detail fetch starts.
+          Without the key React would attempt to reconcile against the
+          previous detail tree and the skeleton would not appear.
+        */}
+        <Suspense
+          key={id}
+          fallback={
+            <RequestDetailSkeleton
+              label={t("request.detail.sidePanel")}
+            />
+          }
+        >
+          <RequestDetailLoader
+            staffContext={staffContext}
+            requestId={id}
+            locale={locale}
+            initialAnnouncement={initialAnnouncement}
+          />
+        </Suspense>
       </div>
     </AppShell>
   );
