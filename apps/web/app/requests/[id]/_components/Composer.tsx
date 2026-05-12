@@ -146,13 +146,26 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
             disabled={pending}
             aria-disabled={pending}
             data-composer-send
+            /*
+             * Pending state stays at full sage with a soft pulsing ring so
+             * the user has a strong "something is happening" signal even
+             * before reading the 16px rotating spinner. The label gets an
+             * ellipsis to confirm the action is in flight. `min-w` prevents
+             * width jitter between idle ("Send reply") and pending
+             * ("Send reply…").
+             */
+            className={cn(
+              "min-w-[112px]",
+              pending &&
+                "!opacity-100 ring-2 ring-offset-1 ring-[var(--primary-soft)] ring-offset-[var(--paper)] animate-pulse"
+            )}
           >
             {pending ? (
-              <Spinner size={14} label={labels.send} />
+              <Spinner size={16} label={labels.send} />
             ) : (
               <Send aria-hidden="true" size={13} />
             )}
-            {labels.send}
+            <span>{pending ? `${labels.send}…` : labels.send}</span>
           </Button>
         </div>
       </form>
