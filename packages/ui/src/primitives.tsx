@@ -37,6 +37,11 @@ export function Button({
 }: ButtonProps) {
   const classes = cn(
     "inline-flex items-center justify-center gap-2 border font-medium transition disabled:pointer-events-none disabled:opacity-50",
+    // Default keyboard-only focus ring. Without this, several variant
+    // backgrounds (especially `ghost`) gave keyboard users no visible
+    // focus target. Token-based so call sites can override via className
+    // when needed.
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]",
     buttonSizes[size],
     buttonVariants[variant],
     className

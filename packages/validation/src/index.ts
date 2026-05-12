@@ -98,6 +98,39 @@ export const updateClinicStaffRoleSchema = z.object({
   role: staffRoleSchema
 });
 
+export const userProfileSchema = z.object({
+  fullName: trimmedString.min(1).max(140),
+  displayName: trimmedString.max(80).optional(),
+  phone: trimmedString.max(32).optional(),
+  jobTitle: trimmedString.max(120).optional(),
+  locale: supportedLocaleSchema.default("en")
+});
+
+export const updateTeamMemberProfileSchema = userProfileSchema.extend({
+  membershipId: uuidSchema
+});
+
+export const ownerProfileSchema = z.object({
+  ownerId: uuidSchema,
+  name: trimmedString.min(1).max(140),
+  phone: trimmedString.min(6).max(32),
+  email: z.union([emailSchema, z.literal("")]).optional(),
+  preferredLanguage: supportedLocaleSchema.default("en"),
+  notes: trimmedString.max(1200).optional()
+});
+
+export const petProfileSchema = z.object({
+  petId: uuidSchema,
+  name: trimmedString.min(1).max(140),
+  species: trimmedString.min(1).max(80),
+  breed: trimmedString.max(120).optional(),
+  sex: trimmedString.max(40).optional(),
+  birthDate: z.union([z.iso.date(), z.literal("")]).optional(),
+  weightKg: z.union([z.literal(""), z.coerce.number().min(0).max(999)]).optional(),
+  allergies: trimmedString.max(1200).optional(),
+  medicalNotes: trimmedString.max(2000).optional()
+});
+
 export const staffReplySchema = z.object({
   requestId: uuidSchema,
   body: trimmedString.min(1).max(4000)

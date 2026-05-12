@@ -86,6 +86,11 @@ export function InboxRow({
       data-row-index={index}
       data-selected={selected ? "true" : undefined}
       data-tier={row.tier}
+      // Snapshot of pet + owner identity so the bulk-select checkbox
+      // portal (mounted from InboxBulkLayer) can compose a row-distinct
+      // aria-label without re-querying React state from the layer.
+      data-row-pet={row.petName}
+      data-row-owner={row.ownerName}
       tabIndex={selected ? 0 : -1}
       /*
        * Shared name for the View Transitions API. The destination route
@@ -149,7 +154,10 @@ export function InboxRow({
           {showTranslate ? (
             <span
               className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted-2)]"
-              aria-label={`source ${row.ownerLanguage}`}
+              aria-label={t("inbox.row.sourceShort").replace(
+                "{locale}",
+                row.ownerLanguage.toUpperCase()
+              )}
             >
               <Languages aria-hidden="true" size={10} />
               {row.ownerLanguage.toUpperCase()}
@@ -166,7 +174,10 @@ export function InboxRow({
       </span>
 
       <span
-        aria-label={`updated ${formatRelative(row.updatedAt)}`}
+        aria-label={t("inbox.row.updatedLabel").replace(
+          "{time}",
+          formatRelative(row.updatedAt)
+        )}
         className="hidden whitespace-nowrap font-mono text-[11px] text-[var(--muted-2)] md:block"
       >
         {formatRelative(row.updatedAt)}
@@ -181,7 +192,10 @@ export function InboxRow({
 
       {showTranslate ? (
         <span className="sr-only">
-          source language {row.ownerLanguage.toUpperCase()}
+          {t("inbox.row.sourceLanguage").replace(
+            "{locale}",
+            row.ownerLanguage.toUpperCase()
+          )}
         </span>
       ) : null}
     </Link>

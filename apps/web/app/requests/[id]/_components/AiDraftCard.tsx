@@ -344,7 +344,7 @@ export function AiDraftCard({
               onChange={(e) => setDraftText(e.target.value)}
               className={cn(
                 "min-h-32 w-full resize-y rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-3 text-[13.5px] leading-6 text-[var(--ink)]",
-                "focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
               )}
             />
             <div className="mt-3 flex flex-wrap items-center justify-end gap-2">

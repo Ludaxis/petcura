@@ -129,7 +129,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
           onKeyDown={onKeyDown}
           className={cn(
             "min-h-[56px] w-full resize-y rounded-[10px] border border-transparent bg-[var(--soft)] px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] placeholder:text-[var(--muted-2)]",
-            "focus:border-[var(--line)] focus:bg-[var(--paper)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            "focus-visible:border-[var(--line)] focus-visible:bg-[var(--paper)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
           )}
         />
         <div className="flex items-center gap-2">

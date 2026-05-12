@@ -3,6 +3,7 @@ import {
   canAssignStaffRole,
   canManageStaffMember,
   hasClinicPermission,
+  localeOptions,
   staffRoles,
   type CopyKey,
   type StaffRole
@@ -10,11 +11,17 @@ import {
 import { Badge, Button, cn } from "@petcura/ui";
 import { createTranslator } from "@petcura/shared";
 import { AppShell } from "@/app/_components/AppShell";
+import {
+  ProfileAvatar,
+  ProfileField,
+  profileInputClass
+} from "@/app/_components/profile/ProfileEditor";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { listClinicTeam } from "@/lib/clinic/team";
 import { getRequestLocale } from "@/lib/locale";
 import {
   addClinicTeamMember,
+  updateClinicTeamMemberProfile,
   updateClinicTeamMemberRole,
   updateClinicTeamMemberStatus
 } from "./actions";
@@ -47,6 +54,7 @@ function getStatusCopy(status: string | undefined): CopyKey | null {
   if (status === "staff_added") return "settings.status.staffAdded";
   if (status === "role_updated") return "settings.status.roleUpdated";
   if (status === "staff_updated") return "settings.status.staffUpdated";
+  if (status === "profile_saved") return "profile.saved";
   return null;
 }
 
@@ -135,12 +143,18 @@ export default async function SettingsPage({ searchParams }: Props) {
           </div>
 
           {statusKey ? (
-            <p className="mt-3 rounded-[var(--radius)] bg-[var(--primary-soft)] px-3 py-2 text-[13px] font-medium text-[var(--primary-strong)]">
+            <p
+              role="status"
+              className="mt-3 rounded-[var(--radius)] bg-[var(--primary-soft)] px-3 py-2 text-[13px] font-medium text-[var(--primary-strong)]"
+            >
               {t(statusKey)}
             </p>
           ) : null}
           {hasError ? (
-            <p className="mt-3 rounded-[var(--radius)] bg-[var(--red-soft)] px-3 py-2 text-[13px] font-medium text-[var(--red)]">
+            <p
+              role="alert"
+              className="mt-3 rounded-[var(--radius)] bg-[var(--red-soft)] px-3 py-2 text-[13px] font-medium text-[var(--red)]"
+            >
               {t("settings.error")}
             </p>
           ) : null}
@@ -233,6 +247,10 @@ export default async function SettingsPage({ searchParams }: Props) {
                   canManageTeam && canManageStaffMember(actorRole, memberRole);
                 const roleSelectId = `role-${member.id}`;
                 const statusTone = member.is_active ? "teal" : "neutral";
+                const profileName =
+                  member.profile.displayName ||
+                  member.profile.fullName ||
+                  member.email;
 
                 return (
                   <li
@@ -241,15 +259,32 @@ export default async function SettingsPage({ searchParams }: Props) {
                   >
                     <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)] lg:items-center">
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 break-words text-[14px] font-semibold text-[var(--ink)]">
-                            {member.email}
-                          </p>
-                          {member.isCurrentUser ? (
-                            <Badge tone="teal">
-                              {t("settings.currentUser")}
-                            </Badge>
-                          ) : null}
+                        <div className="flex min-w-0 items-start gap-3">
+                          <ProfileAvatar
+                            className="h-11 w-11"
+                            imageUrl={member.profile.avatarUrl}
+                            name={profileName}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="min-w-0 break-words text-[14px] font-semibold text-[var(--ink)]">
+                                {profileName}
+                              </p>
+                              {member.isCurrentUser ? (
+                                <Badge tone="teal">
+                                  {t("settings.currentUser")}
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <p className="mt-1 truncate text-[12.5px] text-[var(--muted)]">
+                              {member.email}
+                            </p>
+                            {member.profile.jobTitle ? (
+                              <p className="mt-1 truncate text-[12px] text-[var(--muted-2)]">
+                                {member.profile.jobTitle}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <Badge tone="neutral">
@@ -334,12 +369,133 @@ export default async function SettingsPage({ searchParams }: Props) {
                           )}
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 rounded-[var(--radius)] bg-[var(--surface-soft)] px-3 py-2 text-[12.5px] text-[var(--muted)]">
-                          <LockKeyhole aria-hidden="true" size={14} />
-                          {t("settings.noTeamManage")}
-                        </div>
+                        // Per-row read-only affordance. The full prose is
+                        // already shown once in the top-of-section banner
+                        // when the viewer can't manage the team at all
+                        // (`!canManageTeam`); repeating the same string
+                        // next to every row turned the team list into
+                        // visual noise. So:
+                        //   * canManageTeam=true but row not manageable
+                        //     (owner-vs-admin guard) → keep the prose so
+                        //     the user knows WHICH rows are locked.
+                        //   * !canManageTeam → compact lock affordance
+                        //     only; the top banner carries the why.
+                        canManageTeam ? (
+                          <div className="flex items-center gap-2 rounded-[var(--radius)] bg-[var(--surface-soft)] px-3 py-2 text-[12.5px] text-[var(--muted)]">
+                            <LockKeyhole aria-hidden="true" size={14} />
+                            {t("settings.noTeamManage")}
+                          </div>
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius)] bg-[var(--surface-soft)] text-[var(--muted-2)]"
+                          >
+                            <LockKeyhole size={14} />
+                          </span>
+                        )
                       )}
                     </div>
+
+                    {manageable ? (
+                      <details className="mt-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3">
+                        <summary className="cursor-pointer text-[12.5px] font-semibold text-[var(--ink)]">
+                          {t("profile.editProfile")}
+                        </summary>
+                        <form
+                          action={updateClinicTeamMemberProfile}
+                          className="mt-3 grid gap-3 sm:grid-cols-2"
+                          encType="multipart/form-data"
+                        >
+                          <input name="lang" type="hidden" value={locale} />
+                          <input
+                            name="membershipId"
+                            type="hidden"
+                            value={member.id}
+                          />
+                          <ProfileField
+                            htmlFor={`member-full-name-${member.id}`}
+                            label={t("profile.fullName")}
+                          >
+                            <input
+                              className={profileInputClass}
+                              defaultValue={member.profile.fullName ?? ""}
+                              id={`member-full-name-${member.id}`}
+                              name="fullName"
+                              placeholder={member.email}
+                              required
+                            />
+                          </ProfileField>
+                          <ProfileField
+                            htmlFor={`member-display-name-${member.id}`}
+                            label={t("profile.displayName")}
+                          >
+                            <input
+                              className={profileInputClass}
+                              defaultValue={member.profile.displayName ?? ""}
+                              id={`member-display-name-${member.id}`}
+                              name="displayName"
+                            />
+                          </ProfileField>
+                          <ProfileField
+                            htmlFor={`member-phone-${member.id}`}
+                            label={t("profile.phone")}
+                          >
+                            <input
+                              className={profileInputClass}
+                              defaultValue={member.profile.phone ?? ""}
+                              id={`member-phone-${member.id}`}
+                              name="phone"
+                              type="tel"
+                            />
+                          </ProfileField>
+                          <ProfileField
+                            htmlFor={`member-job-title-${member.id}`}
+                            label={t("profile.jobTitle")}
+                          >
+                            <input
+                              className={profileInputClass}
+                              defaultValue={member.profile.jobTitle ?? ""}
+                              id={`member-job-title-${member.id}`}
+                              name="jobTitle"
+                            />
+                          </ProfileField>
+                          <ProfileField
+                            htmlFor={`member-language-${member.id}`}
+                            label={t("profile.language")}
+                          >
+                            <select
+                              className={profileInputClass}
+                              defaultValue={member.profile.locale}
+                              id={`member-language-${member.id}`}
+                              name="profileLocale"
+                            >
+                              {localeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </ProfileField>
+                          <ProfileField
+                            htmlFor={`member-photo-${member.id}`}
+                            label={t("profile.photo")}
+                          >
+                            <input
+                              accept="image/jpeg,image/png,image/webp,image/heic"
+                              className={profileInputClass}
+                              id={`member-photo-${member.id}`}
+                              name="photo"
+                              type="file"
+                            />
+                          </ProfileField>
+                          <div className="flex justify-end sm:col-span-2">
+                            <Button type="submit" variant="secondary">
+                              {t("profile.save")}
+                            </Button>
+                          </div>
+                        </form>
+                      </details>
+                    ) : null}
                   </li>
                 );
               })}

@@ -33,7 +33,6 @@ set
   public = excluded.public,
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
-
 create policy "clinic staff can read request attachments"
 on storage.objects
 for select
@@ -42,7 +41,6 @@ using (
   bucket_id = 'request-attachments'
   and (storage.foldername(name))[1] = public.current_clinic_id()::text
 );
-
 create policy "clinic staff can upload request attachments"
 on storage.objects
 for insert
@@ -51,7 +49,6 @@ with check (
   bucket_id = 'request-attachments'
   and (storage.foldername(name))[1] = public.current_clinic_id()::text
 );
-
 create policy "clinic staff can read pet photos"
 on storage.objects
 for select
@@ -60,7 +57,6 @@ using (
   bucket_id = 'pet-photos'
   and (storage.foldername(name))[1] = public.current_clinic_id()::text
 );
-
 create policy "clinic staff can upload pet photos"
 on storage.objects
 for insert
@@ -69,7 +65,6 @@ with check (
   bucket_id = 'pet-photos'
   and (storage.foldername(name))[1] = public.current_clinic_id()::text
 );
-
 do $$
 begin
   if not exists (
@@ -112,7 +107,6 @@ begin
     alter publication supabase_realtime add table public.reminders;
   end if;
 end $$;
-
 alter table public.requests replica identity full;
 alter table public.messages replica identity full;
 alter table public.request_events replica identity full;

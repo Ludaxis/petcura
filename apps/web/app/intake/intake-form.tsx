@@ -45,7 +45,11 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
 
   if (state.ok) {
     return (
-      <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-4"
+      >
         <div className="flex items-start gap-3">
           <CheckCircle2
             aria-hidden="true"
@@ -76,7 +80,10 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
       <input name="clinicSlug" type="hidden" value={clinicSlug ?? ""} />
 
       {state.message && state.message !== "validation_error" ? (
-        <div className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm leading-6 text-[var(--red)]">
+        <div
+          role="alert"
+          className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm leading-6 text-[var(--red)]"
+        >
           {t("intake.error")}
         </div>
       ) : null}

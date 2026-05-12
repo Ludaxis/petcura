@@ -22,7 +22,7 @@ function adminClient() {
  *
  *   1. MobileBottomNav renders on viewport < md (390×844) with all three
  *      tabs (Inbox / Search / Me). Search dispatches the cmdk event;
- *      Me dispatches the user-menu event.
+ *      Me opens the mobile account sheet.
  *
  *   2. Bulk select on /inbox: select two rows via checkbox clicks, then
  *      click "Resolve" — both rows disappear from the default "all" view
@@ -120,14 +120,12 @@ test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
       await page.waitForTimeout(50);
       expect(cmdkOpened).toBe(true);
 
-      // Me tab opens the mobile sidebar drawer and toggles the user menu
-      // popover inside it. The UserMenu is anchored in the sidebar
-      // identity card; we assert the drawer surfaces a visible menu.
+      // Me tab opens the mobile account sheet.
       await bottomNav.getByRole("button", { name: /account menu/i }).click();
-      const drawer = page.locator('[data-mobile="true"]');
-      await expect(drawer).toBeVisible({ timeout: 3_000 });
+      const meSheet = page.locator("[data-me-sheet]");
+      await expect(meSheet).toBeVisible({ timeout: 3_000 });
       await expect(
-        drawer.getByRole("menu", { name: /account menu/i })
+        meSheet.getByRole("link", { name: /^Profile$/i })
       ).toBeVisible({ timeout: 3_000 });
     } finally {
       if (staffUserId) {

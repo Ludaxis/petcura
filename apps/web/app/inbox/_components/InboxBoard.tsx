@@ -39,7 +39,20 @@ export function InboxBoard({ rows, locale, formatDateTime }: InboxBoardProps) {
               <div className="flex items-center gap-2">
                 <Inbox aria-hidden="true" size={16} />
                 <h2 className="text-sm font-semibold">
-                  {getRequestStatusLabel(column.labelKey, locale)}
+                  {/*
+                   * The "urgent" board column is a synthetic high-urgency-
+                   * and-open bucket. The legacy label was the bare
+                   * "Urgent" string, which collided with the sidebar's
+                   * "Urgent" stream filter — two adjacent surfaces showing
+                   * the same word with two different counts read as a
+                   * subtotal mistake. Use a column-specific label here so
+                   * the heading reads "Urgent · open" while the row
+                   * status pill and the sidebar filter keep the unmodified
+                   * "Urgent" wording.
+                   */}
+                  {column.value === "urgent"
+                    ? t("inbox.board.column.urgent")
+                    : getRequestStatusLabel(column.labelKey, locale)}
                 </h2>
               </div>
               <span className="rounded-full bg-[var(--surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--muted)]">

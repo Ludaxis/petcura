@@ -387,6 +387,42 @@ export type Database = {
           },
         ]
       }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          full_name: string | null
+          job_title: string | null
+          locale: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          full_name?: string | null
+          job_title?: string | null
+          locale?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          full_name?: string | null
+          job_title?: string | null
+          locale?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clinics: {
         Row: {
           branding_json: Json
@@ -692,6 +728,7 @@ export type Database = {
           id: string
           name: string | null
           notes: string | null
+          photo_url: string | null
           phone: string
           preferred_language: string
         }
@@ -704,6 +741,7 @@ export type Database = {
           id?: string
           name?: string | null
           notes?: string | null
+          photo_url?: string | null
           phone: string
           preferred_language?: string
         }
@@ -716,6 +754,7 @@ export type Database = {
           id?: string
           name?: string | null
           notes?: string | null
+          photo_url?: string | null
           phone?: string
           preferred_language?: string
         }

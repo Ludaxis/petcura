@@ -12,5 +12,4 @@ begin
     alter publication supabase_realtime add table public.message_delivery_events;
   end if;
 end $$;
-
 alter table public.message_delivery_events replica identity full;

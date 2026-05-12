@@ -17,7 +17,8 @@ import {
   LogOut,
   Monitor,
   Moon,
-  Sun
+  Sun,
+  UserRound
 } from "lucide-react";
 import {
   localeOptions,
@@ -40,6 +41,7 @@ export type UserMenuLabels = {
   themeDark: string;
   themeSystem: string;
   language: string;
+  profile: string;
   help: string;
   helpHref: string;
   signOut: string;
@@ -289,6 +291,11 @@ export function UserMenu({
                   label={labels.language}
                   meta={localeOptions.find((o) => o.value === locale)?.shortLabel}
                   onClick={() => setPanel("language")}
+                />
+                <RowLink
+                  icon={<UserRound size={16} aria-hidden="true" />}
+                  label={labels.profile}
+                  href={withLocale("/profile", locale)}
                 />
                 <RowLink
                   icon={<HelpCircle size={16} aria-hidden="true" />}

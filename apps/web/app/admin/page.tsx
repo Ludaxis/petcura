@@ -3,6 +3,7 @@ import {
   Building2,
   ExternalLink,
   ShieldCheck,
+  ShieldOff,
   UserPlus
 } from "lucide-react";
 import { Badge, Button, Panel } from "@petcura/ui";
@@ -15,7 +16,7 @@ import {
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { listAdminClinics } from "@/lib/admin/bootstrap";
-import { requireSuperAdminContext } from "@/lib/auth/super-admin";
+import { getSuperAdminResult } from "@/lib/auth/super-admin";
 import { requirePublicEnv } from "@/lib/env";
 import { AppShell } from "@/app/_components/AppShell";
 import {
@@ -58,10 +59,66 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const params = await searchParams;
   const locale = await getRequestLocale(params?.lang);
   const t = createTranslator(locale);
-  // requireSuperAdminContext runs the auth gate; the AppShell also calls
-  // requireStaffContext (cached), which is fine — super-admins are seeded
-  // as clinic staff too in this build.
-  await requireSuperAdminContext(locale);
+  // getSuperAdminResult runs the auth gate (redirects unauthenticated
+  // visitors) but returns a discriminated "forbidden" result for
+  // authenticated non-super-admins. The old requireSuperAdminContext
+  // called notFound() — which collapsed "you lack permission" into the
+  // generic 404 page, leaving non-admin staff convinced the feature was
+  // missing or broken. AppShell still calls requireStaffContext (cached),
+  // which is fine — super-admins are seeded as clinic staff too.
+  const superAdmin = await getSuperAdminResult(locale);
+  if (superAdmin.kind === "forbidden") {
+    return (
+      <AppShell
+        locale={locale}
+        currentPath="/admin"
+        pageTitle={t("admin.title")}
+      >
+        <div className="mx-auto flex w-full min-h-0 max-w-2xl flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
+          <Panel
+            role="alert"
+            aria-labelledby="admin-forbidden-title"
+            className="w-full p-6"
+          >
+            <div className="flex items-start gap-3">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--red-soft)] text-[var(--red)]">
+                <ShieldOff aria-hidden="true" size={20} />
+              </span>
+              <div className="min-w-0">
+                <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
+                  PetCura · {t("admin.forbidden.kicker")}
+                </p>
+                <h1
+                  id="admin-forbidden-title"
+                  className="mt-1 text-[20px] font-semibold leading-tight text-[var(--ink)]"
+                >
+                  {t("admin.forbidden.title")}
+                </h1>
+                <p className="mt-2 text-[13.5px] leading-6 text-[var(--muted)]">
+                  {t("admin.forbidden.body")}
+                </p>
+                <p className="mt-3 break-words font-mono text-[11.5px] text-[var(--muted-2)]">
+                  {superAdmin.user.email}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href={withLocale("/inbox", locale)}>
+                    <Button size="sm">
+                      {t("admin.forbidden.backToInbox")}
+                    </Button>
+                  </Link>
+                  <Link href={withLocale("/settings", locale)}>
+                    <Button size="sm" variant="secondary">
+                      {t("admin.forbidden.viewSettings")}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </Panel>
+        </div>
+      </AppShell>
+    );
+  }
   const clinics = await listAdminClinics();
   const env = requirePublicEnv();
   const statusKey = getStatusCopy(getSearchParam(params?.admin_status));
@@ -101,13 +158,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </p>
 
       {statusKey ? (
-        <div className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]">
+        <div
+          role="status"
+          className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]"
+        >
           {t(statusKey)}
         </div>
       ) : null}
 
       {hasError ? (
-        <div className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm font-medium text-[var(--red)]">
+        <div
+          role="alert"
+          className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm font-medium text-[var(--red)]"
+        >
           {t("admin.error")}
         </div>
       ) : null}

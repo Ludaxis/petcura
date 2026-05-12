@@ -6,12 +6,15 @@ import {
   createReminderSchema,
   intakeRequestSchema,
   internalNoteSchema,
+  ownerProfileSchema,
+  petProfileSchema,
   reminderStatusActionSchema,
   requestAssignmentSchema,
   requestStatusSchema,
   requestStatusUpdateSchema,
   requestUrgencyUpdateSchema,
-  staffReplySchema
+  staffReplySchema,
+  userProfileSchema
 } from "./index";
 
 const requestId = "11111111-1111-4111-8111-111111111111";
@@ -175,5 +178,55 @@ describe("staff action schemas", () => {
     expect(internalNoteSchema.safeParse({ requestId, body: "" }).success).toBe(
       false
     );
+  });
+});
+
+describe("profile schemas", () => {
+  it("normalizes staff profile input", () => {
+    expect(
+      userProfileSchema.parse({
+        fullName: " Reza Hassanzadeh ",
+        displayName: " Reza ",
+        phone: " +37258046666 ",
+        jobTitle: " Founder ",
+        locale: "et"
+      })
+    ).toEqual({
+      fullName: "Reza Hassanzadeh",
+      displayName: "Reza",
+      phone: "+37258046666",
+      jobTitle: "Founder",
+      locale: "et"
+    });
+  });
+
+  it("accepts editable customer and pet profile fields", () => {
+    expect(
+      ownerProfileSchema.parse({
+        ownerId: "00000000-0000-4000-8000-000000000001",
+        name: " Alex Owner ",
+        phone: " +3725550000 ",
+        email: "",
+        preferredLanguage: "ru",
+        notes: " Needs Russian reminders. "
+      })
+    ).toMatchObject({
+      name: "Alex Owner",
+      preferredLanguage: "ru"
+    });
+
+    expect(
+      petProfileSchema.parse({
+        petId: "00000000-0000-4000-8000-000000000002",
+        name: " Lumi ",
+        species: " Cat ",
+        weightKg: "4.7",
+        birthDate: ""
+      })
+    ).toMatchObject({
+      name: "Lumi",
+      species: "Cat",
+      weightKg: 4.7
+    });
   });
 });

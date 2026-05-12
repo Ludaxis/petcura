@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { getSignedProfileImageUrls } from "@/lib/profile-media";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -11,6 +12,8 @@ export type CustomerListItem = {
   email: string | null;
   preferredLanguage: string;
   notes: string | null;
+  photoPath: string | null;
+  photoUrl: string | null;
   createdAt: string;
   petCount: number;
   requestCount: number;
@@ -23,9 +26,12 @@ export type PetListItem = {
   species: string;
   breed: string | null;
   sex: string | null;
+  birthDate: string | null;
   weightKg: number | null;
   allergies: string | null;
   medicalNotes: string | null;
+  photoPath: string | null;
+  photoUrl: string | null;
   createdAt: string;
   ownerName: string;
   ownerPhone: string;
@@ -39,7 +45,9 @@ export async function listClinicCustomers(
   const [ownersResult, petsResult, requestsResult] = await Promise.all([
     supabase
       .from("owners")
-      .select("id, name, phone, email, preferred_language, notes, created_at")
+      .select(
+        "id, name, phone, email, preferred_language, notes, photo_url, created_at"
+      )
       .eq("clinic_id", clinicId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
@@ -84,6 +92,10 @@ export async function listClinicCustomers(
     }
   }
 
+  const photoUrls = await getSignedProfileImageUrls(
+    (ownersResult.data ?? []).map((owner) => owner.photo_url)
+  );
+
   return (ownersResult.data ?? []).map((owner) => ({
     id: owner.id,
     name: owner.name ?? owner.phone,
@@ -91,6 +103,8 @@ export async function listClinicCustomers(
     email: owner.email,
     preferredLanguage: owner.preferred_language,
     notes: owner.notes,
+    photoPath: owner.photo_url,
+    photoUrl: owner.photo_url ? photoUrls.get(owner.photo_url) ?? null : null,
     createdAt: owner.created_at,
     petCount: petCounts.get(owner.id) ?? 0,
     requestCount: requestCounts.get(owner.id) ?? 0,
@@ -106,7 +120,7 @@ export async function listClinicPets(
     supabase
       .from("pets")
       .select(
-        "id, owner_id, name, species, breed, sex, weight_kg, allergies, medical_notes, created_at, owners(id, name, phone)"
+        "id, owner_id, name, species, breed, sex, birth_date, weight_kg, allergies, medical_notes, photo_url, created_at, owners(id, name, phone)"
       )
       .eq("clinic_id", clinicId)
       .is("deleted_at", null)
@@ -130,6 +144,10 @@ export async function listClinicPets(
     requestCounts.set(request.pet_id, (requestCounts.get(request.pet_id) ?? 0) + 1);
   }
 
+  const photoUrls = await getSignedProfileImageUrls(
+    (petsResult.data ?? []).map((pet) => pet.photo_url)
+  );
+
   return (petsResult.data ?? []).map((pet) => {
     const owner = Array.isArray(pet.owners) ? pet.owners[0] : pet.owners;
     return {
@@ -138,9 +156,12 @@ export async function listClinicPets(
       species: pet.species,
       breed: pet.breed,
       sex: pet.sex,
+      birthDate: pet.birth_date,
       weightKg: pet.weight_kg,
       allergies: pet.allergies,
       medicalNotes: pet.medical_notes,
+      photoPath: pet.photo_url,
+      photoUrl: pet.photo_url ? photoUrls.get(pet.photo_url) ?? null : null,
       createdAt: pet.created_at,
       ownerName: owner?.name ?? owner?.phone ?? "Unknown owner",
       ownerPhone: owner?.phone ?? "",

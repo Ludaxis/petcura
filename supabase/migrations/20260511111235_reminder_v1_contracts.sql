@@ -10,10 +10,8 @@ do $$ begin
 exception
   when duplicate_object then null;
 end $$;
-
 create index if not exists reminders_clinic_status_due_idx
   on public.reminders (clinic_id, status, due_at asc);
-
 create index if not exists reminders_request_due_idx
   on public.reminders (clinic_id, request_id, due_at desc)
   where request_id is not null;

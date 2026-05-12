@@ -1,10 +1,10 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Profile avatars use short-lived signed Supabase Storage URLs. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { Inbox as InboxIcon, Search } from "lucide-react";
-import { useSidebar } from "@/components/ui/sidebar";
 import {
   createTranslator,
   withLocale,
@@ -17,6 +17,7 @@ type MobileBottomNavProps = {
   /** Initials shown inside the "Me" avatar circle. Server-derived so the
    *  first paint is identical to the sidebar identity card. */
   meInitials: string;
+  avatarUrl?: string | null | undefined;
   /** aria-label for the Me tab — falls back to a generic account label.
    *  Reuses the existing menu.ariaLabel so the AT story matches the
    *  sidebar identity card popover. */
@@ -48,9 +49,8 @@ function getReducedMotionServerSnapshot() {
  *   Search · dispatches the petcura:open-cmdk window event used by the
  *            sidebar Search row and ⌘K on desktop; the CommandPalette
  *            mounts on /inbox so this is the primary mobile entry point
- *   Me     · dispatches petcura:open-user-menu so the sidebar identity
- *            card popover opens (the UserMenu is single-instance and
- *            already handles its own focus trap / Esc close)
+ *   Me     · dispatches petcura:open-me-sheet so the mobile account sheet
+ *            opens without forcing users through the sidebar drawer.
  *
  * Visible only below `md` (≥768px the persistent sidebar handles all of
  * this). Inset is paired with `pb-16` on the main content surface so rows
@@ -66,11 +66,11 @@ function getReducedMotionServerSnapshot() {
 export function MobileBottomNav({
   locale,
   meInitials,
+  avatarUrl,
   meAriaLabel
 }: MobileBottomNavProps) {
   const pathname = usePathname() ?? "/";
   const t = createTranslator(locale);
-  const { setOpenMobile } = useSidebar();
   const prefersReducedMotion = useSyncExternalStore(
     subscribeReducedMotion,
     getReducedMotionSnapshot,
@@ -87,17 +87,7 @@ export function MobileBottomNav({
 
   const openUserMenu = () => {
     if (typeof window === "undefined") return;
-    // The UserMenu lives inside the sidebar identity card. On mobile the
-    // sidebar itself is collapsed into shadcn's Sheet drawer, so we
-    // surface the drawer first and only then fire the open-user-menu
-    // event — the popover anchors to the identity card and the user can
-    // dismiss the Sheet to close everything at once.
-    setOpenMobile(true);
-    // Defer to the next frame so the SheetContent has mounted and the
-    // UserMenu's listener is attached before we dispatch.
-    requestAnimationFrame(() => {
-      window.dispatchEvent(new CustomEvent("petcura:open-user-menu"));
-    });
+    window.dispatchEvent(new CustomEvent("petcura:open-me-sheet"));
   };
 
   // Shared tab classes. Pill background renders only on active so taps
@@ -154,9 +144,13 @@ export function MobileBottomNav({
       >
         <span
           aria-hidden="true"
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[10px] font-semibold text-[var(--primary-strong)]"
+          className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-[var(--primary-soft)] text-[10px] font-semibold text-[var(--primary-strong)]"
         >
-          {meInitials || "?"}
+          {avatarUrl ? (
+            <img alt="" className="h-full w-full object-cover" src={avatarUrl} />
+          ) : (
+            meInitials || "?"
+          )}
         </span>
         <span>{t("nav.bottom.me")}</span>
       </button>

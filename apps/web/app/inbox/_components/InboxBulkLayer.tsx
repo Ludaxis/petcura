@@ -25,7 +25,11 @@ export type InboxBulkLayerLabels = {
   resolveDone: string; // "Resolved {count}"
   assignDone: string;
   error: string;
+  /** Generic fallback when the row's pet/owner snapshot isn't readable. */
   rowToggleLabel: string;
+  /** "Select request for {pet} · {owner}" template — used when the row
+   *  element carries `data-row-pet` and `data-row-owner` attributes. */
+  rowToggleLabelFor: string;
 };
 
 type Props = {
@@ -258,19 +262,31 @@ export function InboxBulkLayer({ locale, rowIds, labels }: Props) {
       {/* Per-row leading checkbox portals. We mount inside the row so the
           checkbox inherits the row's hover state via CSS group-hover, but
           stop pointer propagation so toggling never navigates. */}
-      {Array.from(rowNodes.entries()).map(([id, node]) =>
-        createPortal(
+      {Array.from(rowNodes.entries()).map(([id, node]) => {
+        // Compose a row-distinct checkbox aria-label from the pet+owner
+        // snapshot stored on the row element (InboxRow emits these as
+        // data-* attributes). Falls back to the generic label when those
+        // attrs aren't present.
+        const pet = node.dataset.rowPet;
+        const owner = node.dataset.rowOwner;
+        const label =
+          pet && owner
+            ? labels.rowToggleLabelFor
+                .replace("{pet}", pet)
+                .replace("{owner}", owner)
+            : labels.rowToggleLabel;
+        return createPortal(
           <RowCheckbox
             key={id}
             id={id}
             checked={isSelected(id)}
             sticky={selectionMode}
-            label={labels.rowToggleLabel}
+            label={label}
             onToggle={() => toggle(id)}
           />,
           node
-        )
-      )}
+        );
+      })}
 
       {/* Floating action bar. Renders only while at least one row is
           selected. Anchored above the mobile bottom-nav with a token-

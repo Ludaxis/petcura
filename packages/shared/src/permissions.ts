@@ -15,7 +15,9 @@ export type ClinicPermission =
   | "team:view"
   | "team:manage"
   | "customers:view"
+  | "customers:manage"
   | "pets:view"
+  | "pets:manage"
   | "requests:view"
   | "requests:reply"
   | "requests:manage"
@@ -28,7 +30,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "team:view",
     "team:manage",
     "customers:view",
+    "customers:manage",
     "pets:view",
+    "pets:manage",
     "requests:view",
     "requests:reply",
     "requests:manage",
@@ -40,7 +44,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "team:view",
     "team:manage",
     "customers:view",
+    "customers:manage",
     "pets:view",
+    "pets:manage",
     "requests:view",
     "requests:reply",
     "requests:manage",
@@ -51,7 +57,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
   vet: [
     "team:view",
     "customers:view",
+    "customers:manage",
     "pets:view",
+    "pets:manage",
     "requests:view",
     "requests:reply",
     "requests:manage",
@@ -62,7 +70,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
   tech: [
     "team:view",
     "customers:view",
+    "customers:manage",
     "pets:view",
+    "pets:manage",
     "requests:view",
     "requests:reply",
     "requests:manage",
@@ -73,7 +83,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
   reception: [
     "team:view",
     "customers:view",
+    "customers:manage",
     "pets:view",
+    "pets:manage",
     "requests:view",
     "requests:reply",
     "requests:manage",
