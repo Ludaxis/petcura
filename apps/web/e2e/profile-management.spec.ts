@@ -153,7 +153,7 @@ test.describe("Profile management", () => {
         waitUntil: "domcontentloaded"
       });
       await expect(
-        page.getByRole("heading", { exact: true, name: "Customer center" })
+        page.getByRole("heading", { exact: true, name: "Directory" })
       ).toBeVisible();
       const ownerForm = page.locator("form", {
         has: page.locator(`#owner-name-${ownerId}`)
@@ -181,7 +181,7 @@ test.describe("Profile management", () => {
         waitUntil: "domcontentloaded"
       });
       await expect(
-        page.getByRole("heading", { exact: true, name: "Pet center" })
+        page.getByRole("heading", { exact: true, name: "Directory" })
       ).toBeVisible();
       const petForm = page.locator("form", {
         has: page.locator(`#pet-name-${petId}`)
