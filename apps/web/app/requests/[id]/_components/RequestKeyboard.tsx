@@ -73,31 +73,16 @@ export function RequestKeyboard({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Block global hotkeys when ANOTHER modal owns the foreground. Two
-      // surfaces qualify:
-      //   1. The migrated shortcut sheet (this component's own Dialog) — let
-      //      `?` still toggle it closed below, but ignore everything else so
-      //      Radix owns Tab/Escape/click-outside.
-      //   2. The AI Edit modal in AiDraftCard, which is still a hand-rolled
-      //      `[role="dialog"][aria-modal="true"]` shell that owns its own
-      //      keys (Cmd+Enter save, Escape close, Tab trap). We must not steal
-      //      those keys at the document level.
-      // Both surfaces are detected by checking for an open Radix Dialog
-      // (`data-slot="dialog-content"[data-state="open"]`) or a hand-rolled
-      // modal that is NOT a Radix Dialog
-      // (`[role="dialog"][aria-modal="true"]:not([data-slot="dialog-content"])`).
+      // Block global hotkeys when another modal owns the foreground (the AI
+      // Edit modal, CreateReminderDialog, the command palette, etc.). Radix
+      // owns Tab/Escape/click-outside on every Dialog primitive, so the only
+      // signal we need is an open `data-slot="dialog-content"[data-state="open"]`.
+      // The own-sheet case is allowed to fall through so `?` can toggle it
+      // closed.
       if (typeof document !== "undefined") {
-        const handRolledModal = document.querySelector(
-          '[role="dialog"][aria-modal="true"]:not([data-slot="dialog-content"])'
-        );
-        if (handRolledModal) return;
         const openRadixDialog = document.querySelector(
           '[data-slot="dialog-content"][data-state="open"]'
         );
-        // If a Radix Dialog is open and it is NOT this component's shortcut
-        // sheet (i.e., it's something like CreateReminderDialog or the future
-        // migrated AI Edit modal), bail. The own-sheet case is allowed to
-        // fall through so `?` can toggle it closed.
         if (openRadixDialog && !showSheet) {
           return;
         }
@@ -221,7 +206,14 @@ export function RequestKeyboard({
         </div>
       ) : null}
       <Dialog open={showSheet} onOpenChange={setShowSheet}>
-        <DialogContent size="md" closeLabel={labels.close}>
+        <DialogContent
+          size="md"
+          closeLabel={labels.close}
+          // The sheet body is a list of shortcuts; the title is sufficient
+          // labeling. Pass undefined explicitly so Radix doesn't log a
+          // missing-description warning at dev time.
+          aria-describedby={undefined}
+        >
           <DialogHeader>
             <DialogTitle>{labels.sheetTitle}</DialogTitle>
           </DialogHeader>

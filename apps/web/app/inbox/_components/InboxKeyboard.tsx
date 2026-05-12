@@ -11,6 +11,14 @@ import {
   resolveInboxRequest,
   assignInboxRequestToMe
 } from "../_actions";
+import { isEditableTarget } from "@/app/_components/useFocusTrap";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 type Shortcut = {
   keys: string;
@@ -35,49 +43,6 @@ type InboxKeyboardProps = {
   };
 };
 
-function isEditable(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName.toLowerCase();
-  if (tag === "input" || tag === "textarea" || tag === "select") return true;
-  if (target.isContentEditable) return true;
-  const role = target.getAttribute("role");
-  if (role === "textbox" || role === "searchbox" || role === "combobox") {
-    return true;
-  }
-  if (
-    target.closest(
-      '[data-cmdk-input], [contenteditable="true"], [role="textbox"], [role="searchbox"], [role="combobox"]'
-    )
-  ) {
-    return true;
-  }
-  return false;
-}
-
-function trapTabKey(
-  event: KeyboardEvent,
-  container: HTMLElement | null
-) {
-  if (!container) return;
-  const focusable = container.querySelectorAll<HTMLElement>(
-    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-  );
-  if (focusable.length === 0) return;
-  const first = focusable.item(0);
-  const last = focusable.item(focusable.length - 1);
-  if (!first || !last) return;
-  const active = document.activeElement as HTMLElement | null;
-  if (event.shiftKey) {
-    if (active === first || !container.contains(active)) {
-      event.preventDefault();
-      last.focus();
-    }
-  } else if (active === last) {
-    event.preventDefault();
-    first.focus();
-  }
-}
-
 export function InboxKeyboard({
   rowIds,
   hrefForRow,
@@ -93,9 +58,6 @@ export function InboxKeyboard({
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const liveRef = useRef<HTMLDivElement>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   // Seed focused index from ?id= on mount and when the URL changes externally.
   useEffect(() => {
@@ -174,35 +136,21 @@ export function InboxKeyboard({
     }, 1500);
   }, [router]);
 
-  // Open/close the shortcut sheet with focus restoration.
-  const openSheet = useCallback(() => {
-    lastFocusedRef.current = document.activeElement as HTMLElement | null;
-    setShowSheet(true);
-  }, []);
-  const closeSheet = useCallback(() => {
-    setShowSheet(false);
-    const target = lastFocusedRef.current;
-    if (target && typeof target.focus === "function") {
-      target.focus();
-    }
-  }, []);
-
-  // Auto-focus the close button when the sheet opens.
-  useEffect(() => {
-    if (!showSheet) return;
-    const id = window.setTimeout(() => {
-      closeButtonRef.current?.focus();
-    }, 0);
-    return () => window.clearTimeout(id);
-  }, [showSheet]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Trap Tab inside the sheet while it is open.
-      if (showSheet && e.key === "Tab") {
-        trapTabKey(e, sheetRef.current);
-        return;
+      // Bail when any Radix Dialog (this sheet, the command palette, etc.)
+      // owns the foreground. Radix owns its own Tab/Escape/click-outside; we
+      // must not steal those keys at the document level. The own-sheet case
+      // is allowed to fall through so `?` can toggle it closed.
+      if (typeof document !== "undefined") {
+        const openRadixDialog = document.querySelector(
+          '[data-slot="dialog-content"][data-state="open"]'
+        );
+        if (openRadixDialog && !showSheet) {
+          return;
+        }
       }
+
       // Modal toggles always available
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -210,20 +158,18 @@ export function InboxKeyboard({
         return;
       }
 
-      if (isEditable(e.target)) return;
+      if (isEditableTarget(e.target)) return;
 
       if (e.key === "?") {
         e.preventDefault();
-        if (showSheet) closeSheet();
-        else openSheet();
+        setShowSheet((prev) => !prev);
         return;
       }
-      if (e.key === "Escape") {
-        if (showSheet) {
-          e.preventDefault();
-          closeSheet();
-          return;
-        }
+      if (showSheet) {
+        // Sheet open — Radix owns its own keys (Tab, Escape, click-outside).
+        // Don't fire row navigation or row actions while the overlay is in
+        // front of them.
+        return;
       }
 
       if (rowIds.length === 0) return;
@@ -283,7 +229,6 @@ export function InboxKeyboard({
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
   }, [
-    closeSheet,
     focusRow,
     focusedIndex,
     hrefForRow,
@@ -294,7 +239,6 @@ export function InboxKeyboard({
     locale,
     onFocusedIndexChange,
     onOpenPalette,
-    openSheet,
     refreshWithReloadFallback,
     router,
     rowIds,
@@ -321,32 +265,19 @@ export function InboxKeyboard({
           {toast}
         </div>
       ) : null}
-      {showSheet ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={labels.sheetTitle}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
-          onClick={closeSheet}
+      <Dialog open={showSheet} onOpenChange={setShowSheet}>
+        <DialogContent
+          size="md"
+          closeLabel={labels.close}
+          // The sheet body is a list of shortcuts; the title is sufficient
+          // labeling. Pass undefined explicitly so Radix doesn't log a
+          // missing-description warning at dev time.
+          aria-describedby={undefined}
         >
-          <div
-            ref={sheetRef}
-            className="w-full max-w-md rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[var(--ink)]">
-                {labels.sheetTitle}
-              </h2>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={closeSheet}
-                className="rounded-[var(--radius)] px-2 py-1 text-[12px] text-[var(--muted)] hover:bg-[var(--soft)]"
-              >
-                {labels.close}
-              </button>
-            </div>
+          <DialogHeader>
+            <DialogTitle>{labels.sheetTitle}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <ul className="flex flex-col gap-1.5">
               {shortcuts.map((s) => (
                 <li
@@ -360,9 +291,9 @@ export function InboxKeyboard({
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-      ) : null}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
