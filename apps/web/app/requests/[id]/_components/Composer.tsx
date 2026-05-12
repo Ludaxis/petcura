@@ -22,7 +22,15 @@ export type ComposerRef = {
 type ComposerProps = {
   requestId: string;
   locale: SupportedLocale;
-  initialText?: string;
+  initialText?: string | undefined;
+  /**
+   * Called synchronously inside the submit transition with the trimmed
+   * body, BEFORE awaiting `sendStaffReply`. The parent shell appends a
+   * pending sage bubble to the thread; React resets that optimistic
+   * state automatically when the server action's redirect settles
+   * (success or `?action_error=`).
+   */
+  onOptimisticAppend?: ((body: string) => void) | undefined;
   labels: {
     label: string;
     placeholder: string;
@@ -38,7 +46,7 @@ type ComposerProps = {
  */
 export const Composer = forwardRef<ComposerRef, ComposerProps>(
   function Composer(
-    { requestId, locale, initialText, labels }: ComposerProps,
+    { requestId, locale, initialText, onOptimisticAppend, labels }: ComposerProps,
     ref
   ) {
     const formRef = useRef<HTMLFormElement>(null);
@@ -48,8 +56,26 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
     // Wrap the server action so we can flip aria-busy + disabled on the
     // form during submission. The action itself redirects on completion, so
     // the transition resolves on the navigation that follows.
+    //
+    // Inside the transition we:
+    //   1. Append an optimistic bubble to the thread (parent shell). This
+    //      MUST run before the server action so the bubble is mounted
+    //      before the awaited promise yields.
+    //   2. Clear the textarea so staff can keep typing without seeing
+    //      stale text in a disabled field. If the server rejects, the
+    //      redirect re-renders the page; we don't restore the text
+    //      because the page-level error toast (driven by `?action_error=`)
+    //      is the rollback channel — restoring text would silently mask
+    //      the failure for keyboard users.
     const submitAction = (formData: FormData) => {
+      const body = (formData.get("body") ?? "").toString().trim();
       startTransition(async () => {
+        if (body.length > 0) {
+          onOptimisticAppend?.(body);
+          if (textareaRef.current) {
+            textareaRef.current.value = "";
+          }
+        }
         await sendStaffReply(formData);
       });
     };
