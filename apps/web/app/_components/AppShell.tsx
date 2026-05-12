@@ -2,6 +2,8 @@ import "server-only";
 import type { ReactNode } from "react";
 import {
   createTranslator,
+  type CopyKey,
+  type StaffRole,
   type SupportedLocale
 } from "@petcura/shared";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -46,6 +48,15 @@ export type AppShellProps = {
    * callers that don't pass it stay readable.
    */
   pageTitle?: string;
+};
+
+const roleCopyKeys: Record<StaffRole, CopyKey> = {
+  owner: "role.owner",
+  admin: "role.admin",
+  vet: "role.vet",
+  tech: "role.tech",
+  reception: "role.reception",
+  viewer: "role.viewer"
 };
 
 function clinicInitialsFrom(name: string) {
@@ -102,10 +113,8 @@ export async function AppShell({
     remindersTotal: openReminderCount
   };
 
-  // staff_role enum values render verbatim in the identity card subtitle.
-  // The nullish fallback keeps the row meaningful if a future role lands
-  // before this surface learns to translate it.
-  const roleLabel: string = staffContext.membership.role ?? "staff";
+  const role = staffContext.membership.role as StaffRole;
+  const roleLabel: string = roleCopyKeys[role] ? t(roleCopyKeys[role]) : role;
 
   return (
     <SidebarProvider defaultOpen>
@@ -153,7 +162,10 @@ export async function AppShell({
         matches the Claude/Linear UX and prevents the "dead space below
         content" bug when the page is scrolled.
       */}
-      <main className="flex h-svh w-full flex-1 flex-col overflow-hidden bg-[var(--paper)]">
+      <main
+        data-app-shell
+        className="flex h-dvh max-h-dvh min-h-0 w-full flex-1 flex-col overflow-hidden bg-[var(--paper)]"
+      >
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-[var(--paper)] focus:px-3 focus:py-2 focus:text-[var(--ink)] focus:shadow"

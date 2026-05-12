@@ -178,6 +178,25 @@ body {
   letter-spacing: -0.005em;
 }
 
+/*
+ * Authenticated clinic routes use AppShell and should behave like a desktop
+ * operations app: the document itself never scrolls; sidebar, list, thread,
+ * and right rail own their own scrollports. Public pages are left alone so
+ * intake/login can keep normal page scrolling on small screens.
+ */
+html:has([data-app-shell]),
+body:has([data-app-shell]) {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body:has([data-app-shell]) {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+
 a {
   color: inherit;
   text-decoration: none;

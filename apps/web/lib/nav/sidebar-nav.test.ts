@@ -16,6 +16,8 @@ describe("sidebar-nav", () => {
       "search",
       "inbox",
       "reminders",
+      "customers",
+      "pets",
       "reports",
       "settings",
       "admin"

@@ -104,7 +104,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
         onSubmit={onSubmit}
         data-composer-form
         aria-busy={pending}
-        className="sticky bottom-0 z-10 flex flex-col gap-2 border-t border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
+        className="z-10 flex shrink-0 flex-col gap-2 border-t border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
       >
         <input name="lang" type="hidden" value={locale} />
         <input name="requestId" type="hidden" value={requestId} />

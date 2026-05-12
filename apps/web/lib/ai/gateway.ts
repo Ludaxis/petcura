@@ -143,6 +143,19 @@ function parseJsonText(text: string) {
   }
 }
 
+function schemaFailureReason(error: z.ZodError) {
+  const issues = error.issues
+    .slice(0, 3)
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "root";
+      return `${path}:${issue.message}`;
+    })
+    .join("|");
+  return issues
+    ? `schema_validation_failed:${issues}`
+    : "schema_validation_failed";
+}
+
 export async function generateJsonWithGateway<T>({
   model,
   system,
@@ -213,7 +226,7 @@ export async function generateJsonWithGateway<T>({
       if (!parsed.success) {
         return {
           ok: false,
-          reason: "schema_validation_failed",
+          reason: schemaFailureReason(parsed.error),
           model: anthropicModel,
           latencyMs
         };
@@ -275,7 +288,7 @@ export async function generateJsonWithGateway<T>({
     if (!parsed.success) {
       return {
         ok: false,
-        reason: "schema_validation_failed",
+        reason: schemaFailureReason(parsed.error),
         model,
         latencyMs
       };

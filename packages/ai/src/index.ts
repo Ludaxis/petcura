@@ -16,16 +16,51 @@ export const aiSafetyRules = [
   "Every AI output must be logged with model and prompt version."
 ] as const;
 
-export const summaryOutputSchema = z.object({
-  summaryText: z.string().min(1).max(700).optional(),
-  petName: z.string().optional(),
-  issue: z.string().min(1).max(300),
-  duration: z.string().optional(),
-  symptoms: z.array(z.string()).default([]),
-  riskFlags: z.array(z.string()).default([]),
-  urgencySuggestion: z.enum(["low", "medium", "high"]).optional(),
-  confidence: z.number().min(0).max(1)
+function optionalText(max: number) {
+  return z.preprocess((value) => {
+    if (value == null) return undefined;
+    if (typeof value === "string") return value.trim();
+    return String(value).trim();
+  }, z.string().min(1).max(max).optional());
+}
+
+const stringArray = z.preprocess((value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}, z.array(z.string()).default([]));
+
+const confidenceScore = z.preprocess((value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0.5;
+  return numeric > 1 ? numeric / 100 : numeric;
+}, z.number().min(0).max(1).catch(0.5));
+
+const optionalUrgencySuggestion = z.preprocess((value) => {
+  if (value == null || value === "") return undefined;
+  if (typeof value === "string") return value.toLowerCase();
+  return value;
+}, z.enum(["low", "medium", "high"]).optional());
+
+const baseSummaryOutputSchema = z.object({
+  summaryText: optionalText(700),
+  petName: optionalText(120),
+  issue: optionalText(300),
+  duration: optionalText(120),
+  symptoms: stringArray,
+  riskFlags: stringArray,
+  urgencySuggestion: optionalUrgencySuggestion,
+  confidence: confidenceScore
 });
+
+export const summaryOutputSchema = baseSummaryOutputSchema.transform(
+  (summary) => ({
+    ...summary,
+    issue: summary.issue ?? summary.summaryText ?? "Owner request received."
+  })
+);
 
 export type SummaryOutput = z.infer<typeof summaryOutputSchema>;
 

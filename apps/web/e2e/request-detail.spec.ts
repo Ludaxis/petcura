@@ -429,6 +429,17 @@ test.describe("Request detail tri-pane", () => {
         .single();
       aiOutputId = aiOutput!.id;
 
+      await admin.from("request_events").insert(
+        Array.from({ length: 36 }, (_, index) => ({
+          clinic_id: clinicId!,
+          request_id: primaryRequestId!,
+          actor_type: "system",
+          event_type: index % 2 === 0 ? "message_received" : "message_sent",
+          payload_json: { fixture: "rail-scroll", index },
+          created_at: new Date(unique + index).toISOString()
+        }))
+      );
+
       // Authenticate.
       const { data: link } = await admin.auth.admin.generateLink({
         type: "magiclink",
@@ -464,6 +475,32 @@ test.describe("Request detail tri-pane", () => {
       } else {
         await expect(rowLocator).toHaveCount(1);
       }
+      await expect(
+        page.locator('[data-side-panel="rail"] [data-ai-summary]')
+      ).toContainText(`${petName} has not eaten since yesterday.`);
+      const scrollMetrics = await page.evaluate(() => {
+        window.scrollTo(0, 500);
+        const railScrollport = document.querySelector<HTMLElement>(
+          '[data-side-panel="rail"] [data-side-panel-scroll]'
+        );
+        return {
+          htmlOverflowY: getComputedStyle(document.documentElement).overflowY,
+          bodyOverflowY: getComputedStyle(document.body).overflowY,
+          windowScrollY: window.scrollY,
+          railClientHeight: railScrollport?.clientHeight ?? 0,
+          railScrollHeight: railScrollport?.scrollHeight ?? 0,
+          railOverflowY: railScrollport
+            ? getComputedStyle(railScrollport).overflowY
+            : ""
+        };
+      });
+      expect(scrollMetrics.htmlOverflowY).toBe("hidden");
+      expect(scrollMetrics.bodyOverflowY).toBe("hidden");
+      expect(scrollMetrics.windowScrollY).toBe(0);
+      expect(scrollMetrics.railOverflowY).toBe("auto");
+      expect(scrollMetrics.railScrollHeight).toBeGreaterThan(
+        scrollMetrics.railClientHeight
+      );
       const aiCard = page.getByRole("region", {
         name: /AI draft suggestion|AI mustandi soovitus|Подсказка AI-черновика/i
       });
@@ -611,6 +648,11 @@ test.describe("Request detail tri-pane", () => {
       await expect(
         page.locator('[data-realtime-channel^="petcura:request-detail:"]')
       ).toBeAttached();
+      await expect(
+        page.locator('[data-realtime-channel^="petcura:request-detail:"]')
+      ).toHaveAttribute("data-realtime-status", "SUBSCRIBED", {
+        timeout: 20_000
+      });
 
       const unique = Date.now();
       const realtimeReply = `Realtime staff reply ${unique}`;

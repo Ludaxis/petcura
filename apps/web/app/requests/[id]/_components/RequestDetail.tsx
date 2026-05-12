@@ -74,7 +74,7 @@ export function RequestDetail({
       {/* Detail header — pet identity + crumbs + actions row */}
       <header
         data-detail-head
-        className="flex flex-col gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
+        className="flex shrink-0 flex-col gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -290,14 +290,14 @@ export function RequestDetail({
         data-detail-body
         className="flex min-h-0 flex-1 overflow-hidden"
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {paneShell}
           {/* Tablet (md–xl): inline accordions below the thread so users
               don't lose the side blocks when the right column is hidden. */}
           <aside
             aria-label={t("request.detail.sidePanel")}
             data-side-panel="inline"
-            className="hidden border-t border-[var(--line)] bg-[var(--paper)] md:block xl:hidden"
+            className="hidden shrink-0 border-t border-[var(--line)] bg-[var(--paper)] md:block xl:hidden"
           >
             <SideBlocks
               request={request}
@@ -312,15 +312,20 @@ export function RequestDetail({
         <aside
           aria-label={t("request.detail.sidePanel")}
           data-side-panel="rail"
-          className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto overscroll-contain border-l border-[var(--line)] bg-[var(--paper)] xl:block"
+          className="hidden h-full min-h-0 w-[280px] shrink-0 overflow-hidden border-l border-[var(--line)] bg-[var(--paper)] xl:flex xl:flex-col"
         >
-          <SideBlocks
-            request={request}
-            locale={locale}
-            formatDateTime={formatDateTime}
-            t={t}
-            idSuffix="rail"
-          />
+          <div
+            data-side-panel-scroll
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          >
+            <SideBlocks
+              request={request}
+              locale={locale}
+              formatDateTime={formatDateTime}
+              t={t}
+              idSuffix="rail"
+            />
+          </div>
         </aside>
       </div>
 
@@ -361,6 +366,53 @@ function SideBlocks({
     "font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]";
   return (
     <>
+      {request.aiSummary ? (
+        <details
+          open
+          data-ai-summary
+          className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+        >
+          <summary className="flex cursor-pointer items-center justify-between">
+            <h2 className={headingClass}>{t("request.aiSummary")}</h2>
+            <ChevronDown aria-hidden="true" size={12} />
+          </summary>
+          <div className="mt-2.5 rounded-[var(--radius)] border border-[var(--line-2)] bg-[var(--soft)] p-3">
+            <p className="break-words text-[12.5px] leading-5 text-[var(--ink-2)]">
+              {request.aiSummary}
+            </p>
+            {request.riskFlags.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {request.riskFlags.map((flag) => (
+                  <span
+                    key={flag}
+                    className="rounded-full bg-[var(--red-soft)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--red)]"
+                  >
+                    {flag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {request.urgencySuggestion ? (
+              <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                {t("request.aiUrgencySuggestion")}:{" "}
+                {getUrgencyLabel(request.urgencySuggestion, locale)}
+              </p>
+            ) : null}
+            <p className="mt-2 text-[11.5px] leading-5 text-[var(--muted)]">
+              {t("request.aiNotice")}
+            </p>
+            {request.aiSummaryVersion ? (
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+                {t("request.aiVersion").replace(
+                  "{version}",
+                  request.aiSummaryVersion
+                )}
+              </p>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
+
       <details
         open
         className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"

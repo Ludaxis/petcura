@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Languages } from "lucide-react";
 import { cn } from "@petcura/ui";
 import {
@@ -60,6 +60,22 @@ function deliveryTone(status: MessageDeliveryStatus) {
   return "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]";
 }
 
+function readRevealedMessages(storageKey: string): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = window.sessionStorage.getItem(storageKey);
+    if (!stored) return {};
+    const parsed = JSON.parse(stored) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, true] => {
+        return entry[1] === true;
+      })
+    );
+  } catch {
+    return {};
+  }
+}
+
 export function Thread({
   requestId,
   messages,
@@ -69,7 +85,13 @@ export function Thread({
 }: ThreadProps) {
   const timeFormatter = new Intl.DateTimeFormat(locale, { timeStyle: "short" });
   const formatTime = (iso: string) => timeFormatter.format(new Date(iso));
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const revealedStorageKey = useMemo(
+    () => `petcura:translation-revealed:${requestId}:${locale}`,
+    [locale, requestId]
+  );
+  const [revealed, setRevealed] = useState<Record<string, boolean>>(() =>
+    readRevealedMessages(revealedStorageKey)
+  );
   const [errorId, setErrorId] = useState<string | null>(null);
   // Roving tabindex: only the focused (or first translatable owner) bubble is
   // tab-reachable. Defaults to the most recent translatable owner bubble, so
@@ -85,7 +107,20 @@ export function Thread({
     (msg: ThreadMessage) => {
       if (!msg.bodyTranslated) return;
       const next = !revealed[msg.id];
-      setRevealed((prev) => ({ ...prev, [msg.id]: next }));
+      const nextRevealed = { ...revealed, [msg.id]: next };
+      setRevealed(nextRevealed);
+      try {
+        window.sessionStorage.setItem(
+          revealedStorageKey,
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(nextRevealed).filter(([, value]) => value)
+            )
+          )
+        );
+      } catch {
+        // Non-critical: the visual toggle still works for this render.
+      }
       // Only log on the reveal edge (false → true). Hiding doesn't need an
       // audit row per docs/contracts/translation.md.
       if (next) {
@@ -99,7 +134,7 @@ export function Thread({
         });
       }
     },
-    [locale, requestId, revealed]
+    [locale, requestId, revealed, revealedStorageKey]
   );
 
   return (
@@ -107,7 +142,7 @@ export function Thread({
       role="region"
       aria-label={labels.region}
       data-thread
-      className="flex-1 overflow-y-auto px-4 py-4 sm:px-6"
+      className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6"
     >
       <ol className="flex flex-col gap-3" aria-live="polite">
         {messages.map((msg) => {

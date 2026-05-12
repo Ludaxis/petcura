@@ -8,6 +8,7 @@ import {
 import { Badge, Button, Panel } from "@petcura/ui";
 import {
   createTranslator,
+  staffRoles,
   supportedLocales,
   type CopyKey,
   withLocale
@@ -31,7 +32,7 @@ type AdminPageProps = {
   }>;
 };
 
-const roleOptions = ["owner", "admin", "vet", "tech", "reception"] as const;
+const roleOptions = staffRoles;
 
 function getSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

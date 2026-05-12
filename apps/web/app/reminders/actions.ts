@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { normalizeLocale, type ReminderStatus } from "@petcura/shared";
 import { reminderStatusActionSchema } from "@petcura/validation";
 import { requireStaffContext } from "@/lib/auth/staff";
+import { hasStaffPermission } from "@/lib/auth/permissions";
 import { isReminderFilter, type ReminderFilter } from "@/lib/reminders";
 
 function getString(formData: FormData, key: string) {
@@ -66,6 +67,9 @@ export async function updateReminderStatus(formData: FormData) {
 
   const { reminderId, status } = parsed.data;
   const staffContext = await requireStaffContext(locale, "/reminders");
+  if (!hasStaffPermission(staffContext, "reminders:manage")) {
+    redirectToReminders(locale, filter, { action_error: "reminder" });
+  }
   const { data: reminder, error: loadError } = await staffContext.supabase
     .from("reminders")
     .select("id, request_id, status")

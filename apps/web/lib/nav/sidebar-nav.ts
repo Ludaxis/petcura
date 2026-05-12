@@ -6,6 +6,7 @@ import {
   FileText,
   Inbox,
   ListChecks,
+  PawPrint,
   Search,
   Settings,
   ShieldCheck,
@@ -138,6 +139,18 @@ export const SIDEBAR_NAV: NavItem[] = [
     countSource: "remindersTotal"
   },
   {
+    id: "customers",
+    labelKey: "nav.customers",
+    href: "/customers",
+    icon: Users
+  },
+  {
+    id: "pets",
+    labelKey: "nav.pets",
+    href: "/pets",
+    icon: PawPrint
+  },
+  {
     id: "reports",
     labelKey: "nav.reports",
     href: "/reports",
@@ -193,6 +206,7 @@ export {
   Clock,
   Inbox,
   ListChecks,
+  PawPrint,
   Search,
   Settings,
   ShieldCheck,
