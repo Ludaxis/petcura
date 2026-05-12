@@ -2,11 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { normalizeLocale } from "@petcura/shared";
+import { boardMoveSchema } from "@petcura/validation";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { hasStaffPermission } from "@/lib/auth/permissions";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 type StaffContext = Awaited<ReturnType<typeof requireStaffContext>>;
+export type BoardColumn =
+  | "new"
+  | "urgent"
+  | "waiting_staff"
+  | "waiting_owner"
+  | "resolved";
+
+type BoardMoveError = "not_found" | "forbidden" | "validation" | "internal";
+export type BoardMoveResult =
+  | { ok: true }
+  | { ok: false; error: BoardMoveError };
 
 async function loadRequestForInboxAction(
   ctx: StaffContext,
@@ -298,6 +310,109 @@ export async function assignInboxRequestToMe(
   if (eventError) {
     return { ok: false, error: eventError.message };
   }
+
+  refreshInboxRequest(requestId);
+  return { ok: true };
+}
+
+/**
+ * Move a request between board columns by drag-and-drop.
+ *
+ * The board layout mixes two axes — most columns map to `RequestStatus`, but
+ * "Urgent" is an urgency=high lane that leaves status alone. The action picks
+ * the axis based on the dropped column and writes a `moved_to_column`
+ * request_event with the before/after snapshot so the audit trail records
+ * board-driven changes distinctly from keyboard/bulk transitions.
+ *
+ * Load-then-update mirrors the rest of the inbox actions: we re-read the row
+ * inside the clinic scope so RLS is the source of truth for "can this staff
+ * see this request" before we touch anything. Idempotent — moving a card to
+ * the column it's already in returns { ok: true } without writing events.
+ */
+export async function moveRequestToColumn(input: {
+  requestId: string;
+  targetColumn: BoardColumn;
+}): Promise<BoardMoveResult> {
+  const parsed = boardMoveSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "validation" };
+  }
+
+  const { requestId, targetColumn } = parsed.data;
+  const ctx = await requireStaffContext("en", "/inbox");
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  const { data: request, error: loadError } = await ctx.supabase
+    .from("requests")
+    .select("id, status, urgency")
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (loadError) return { ok: false, error: "internal" };
+  if (!request) return { ok: false, error: "not_found" };
+
+  // Decide which axis the column targets and compute the next row + before/
+  // after labels for the event payload. The "Urgent" lane is the only column
+  // that flips urgency; everything else moves status.
+  const fromColumn: BoardColumn =
+    request.status === "resolved"
+      ? "resolved"
+      : request.urgency === "high"
+        ? "urgent"
+        : (request.status as BoardColumn);
+
+  if (fromColumn === targetColumn) {
+    return { ok: true };
+  }
+
+  type RequestUpdate = {
+    status?: "new" | "waiting_staff" | "waiting_owner" | "resolved";
+    urgency?: "low" | "medium" | "high";
+    resolved_at?: string | null;
+  };
+  let update: RequestUpdate;
+  if (targetColumn === "urgent") {
+    update = { urgency: "high" };
+  } else if (targetColumn === "resolved") {
+    update = { status: "resolved", resolved_at: new Date().toISOString() };
+  } else {
+    // Moving back out of "Resolved" requires clearing resolved_at so the
+    // timeline doesn't carry a stale closure timestamp. We also clear it for
+    // any non-resolved status transition to stay symmetrical with the existing
+    // updateRequestStatus action.
+    update = { status: targetColumn, resolved_at: null };
+  }
+
+  const { error: updateError } = await ctx.supabase
+    .from("requests")
+    .update(update)
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", requestId);
+
+  if (updateError) return { ok: false, error: "internal" };
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      event_type: "moved_to_column",
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      payload_json: {
+        from: fromColumn,
+        to: targetColumn,
+        previous_status: request.status,
+        previous_urgency: request.urgency,
+        staff_id: ctx.membership.id,
+        source: "inbox_board_dnd"
+      }
+    });
+
+  if (eventError) return { ok: false, error: "internal" };
 
   refreshInboxRequest(requestId);
   return { ok: true };
