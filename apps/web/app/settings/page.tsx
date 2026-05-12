@@ -11,6 +11,7 @@ import {
 import { Badge, Button, cn } from "@petcura/ui";
 import { createTranslator } from "@petcura/shared";
 import { AppShell } from "@/app/_components/AppShell";
+import { PendingForm } from "@/app/_components/forms/PendingForm";
 import { PendingSubmitButton } from "@/app/_components/forms/PendingSubmitButton";
 import {
   ProfileAvatar,
@@ -193,7 +194,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                   <p>{t("settings.noTeamManage")}</p>
                 </div>
               ) : (
-                <form
+                <PendingForm
                   action={addClinicTeamMember}
                   className="mt-4 grid gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 sm:grid-cols-[minmax(0,1fr)_12rem_auto]"
                 >
@@ -235,7 +236,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                   >
                     {t("settings.addStaff")}
                   </PendingSubmitButton>
-                </form>
+                </PendingForm>
               )}
 
               <p className="mt-3 text-[12px] leading-5 text-[var(--muted)]">
@@ -306,7 +307,7 @@ export default async function SettingsPage({ searchParams }: Props) {
 
                       {manageable ? (
                         <div className="grid gap-2 sm:grid-cols-[minmax(10rem,1fr)_auto_auto]">
-                          <form
+                          <PendingForm
                             action={updateClinicTeamMemberRole}
                             className="contents"
                           >
@@ -332,9 +333,9 @@ export default async function SettingsPage({ searchParams }: Props) {
                             >
                               {t("settings.saveRole")}
                             </PendingSubmitButton>
-                          </form>
+                          </PendingForm>
                           {!member.isCurrentUser ? (
-                            <form action={updateClinicTeamMemberStatus}>
+                            <PendingForm action={updateClinicTeamMemberStatus}>
                               <input
                                 name="lang"
                                 type="hidden"
@@ -358,7 +359,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                                   ? t("settings.deactivate")
                                   : t("settings.activate")}
                               </PendingSubmitButton>
-                            </form>
+                            </PendingForm>
                           ) : (
                             <span
                               className={cn(
@@ -402,7 +403,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                         <summary className="cursor-pointer text-[12.5px] font-semibold text-[var(--ink)]">
                           {t("profile.editProfile")}
                         </summary>
-                        <form
+                        <PendingForm
                           action={updateClinicTeamMemberProfile}
                           className="mt-3 grid gap-3 sm:grid-cols-2"
                           encType="multipart/form-data"
@@ -494,7 +495,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                               {t("profile.save")}
                             </PendingSubmitButton>
                           </div>
-                        </form>
+                        </PendingForm>
                       </details>
                     ) : null}
                   </li>

@@ -8,6 +8,7 @@ import {
 } from "@petcura/ui";
 import {
   ActiveStateMatrix,
+  ConfidenceBuckets,
   MobileShellPair,
   NavConfigSnippet,
   ShellSkeleton,
@@ -312,7 +313,14 @@ export default function DesignCanvasPage() {
             </ShowcaseGroup>
 
             <ShowcaseGroup
-              title="E · Nav config"
+              title="E · AI confidence bucket"
+              note="Three buckets surface across AI reply drafts, urgency suggestions, and intake category guesses. The text label carries the meaning (WCAG 1.4.1); color is reinforcement only."
+            >
+              <ConfidenceBuckets />
+            </ShowcaseGroup>
+
+            <ShowcaseGroup
+              title="F · Nav config"
               note="The sidebar is data-driven. One typed entry per top-level feature, gated to roles when needed."
             >
               <NavConfigSnippet />

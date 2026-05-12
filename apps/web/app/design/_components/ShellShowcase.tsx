@@ -723,7 +723,111 @@ export function ActiveStateMatrix() {
 }
 
 // ---------------------------------------------------------------------------
-// E. Nav config snippet
+// E. AI confidence buckets
+// ---------------------------------------------------------------------------
+
+/**
+ * Three chips covering the AI-draft confidence buckets used throughout the
+ * clinic inbox (reply draft confidence, urgency suggestion confidence, intake
+ * category confidence). The text label is the WCAG 1.4.1 signal — the
+ * accompanying color is reinforcement only. Mapping:
+ *   - LOW    < 0.40 → red-soft fill, red ink ("review carefully")
+ *   - MEDIUM 0.40–0.75 → amber-soft fill, amber ink ("scan before sending")
+ *   - HIGH   ≥ 0.75 → primary-soft fill, primary-strong ink ("safe default")
+ *
+ * The thresholds match the live `bucketConfidence()` helper in
+ * `packages/ai/src/confidence.ts` (search for `CONFIDENCE_THRESHOLDS`). When
+ * the helper's thresholds move, this showcase moves with them.
+ */
+type ConfidenceBucket = "LOW" | "MEDIUM" | "HIGH";
+
+const CONFIDENCE_BUCKETS: Array<{
+  label: ConfidenceBucket;
+  score: number;
+  description: string;
+}> = [
+  {
+    label: "LOW",
+    score: 0.32,
+    description: "Below 0.40 — staff must review before sending"
+  },
+  {
+    label: "MEDIUM",
+    score: 0.6,
+    description: "0.40–0.75 — scan for tone and facts before send"
+  },
+  {
+    label: "HIGH",
+    score: 0.92,
+    description: "0.75 and above — safe default, staff confirms"
+  }
+];
+
+const CONFIDENCE_CHIP_CLASSES: Record<ConfidenceBucket, string> = {
+  LOW: "bg-[var(--red-soft)] text-[var(--red)]",
+  MEDIUM: "bg-[var(--amber-soft)] text-[var(--amber)]",
+  HIGH: "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
+};
+
+function ConfidenceChip({
+  label,
+  score
+}: {
+  label: ConfidenceBucket;
+  score: number;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] font-semibold tabular-nums",
+        CONFIDENCE_CHIP_CLASSES[label]
+      )}
+    >
+      <span className="uppercase tracking-[0.04em]">conf {score.toFixed(2)}</span>
+      <span aria-hidden="true" className="opacity-50">·</span>
+      <span className="uppercase tracking-[0.06em]">{label}</span>
+    </span>
+  );
+}
+
+export function ConfidenceBuckets() {
+  return (
+    <div className="flex flex-col gap-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-6">
+      <div className="flex flex-wrap items-center gap-3">
+        {CONFIDENCE_BUCKETS.map((bucket) => (
+          <ConfidenceChip
+            key={bucket.label}
+            label={bucket.label}
+            score={bucket.score}
+          />
+        ))}
+      </div>
+      <p className="max-w-prose text-[12.5px] leading-[1.5] text-[var(--ink-2)]">
+        AI confidence bucket — the text label is the WCAG 1.4.1 signal; color
+        is reinforcement. The same chip pattern surfaces on AI reply drafts,
+        urgency suggestions, and intake category guesses. Thresholds live in
+        the shared <code className="font-mono text-[11px]">bucketConfidence()</code>{" "}
+        helper so the showcase and production stay in sync.
+      </p>
+      <ul className="grid gap-2 text-[12px] leading-[1.5] text-[var(--muted)] sm:grid-cols-3">
+        {CONFIDENCE_BUCKETS.map((bucket) => (
+          <li
+            key={bucket.label}
+            className="rounded-md border border-[var(--line)] bg-[var(--surface-soft)] p-2"
+          >
+            <p className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--ink)]">
+              {bucket.label}
+            </p>
+            <p className="mt-0.5">{bucket.description}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// F. Nav config snippet
 // ---------------------------------------------------------------------------
 
 const NAV_SNIPPET = `// apps/web/lib/nav/sidebar-nav.ts
