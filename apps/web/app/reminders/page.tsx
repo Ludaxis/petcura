@@ -10,7 +10,7 @@ import {
 } from "@petcura/shared";
 import { Badge, Button, cn } from "@petcura/ui";
 import { AppShell } from "@/app/_components/AppShell";
-import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
+import { LazyRealtimeRefresh as RealtimeRefresh } from "@/app/_components/LazyRealtimeRefresh";
 import { getRequestLocale } from "@/lib/locale";
 import { requireStaffContext } from "@/lib/auth/staff";
 import {

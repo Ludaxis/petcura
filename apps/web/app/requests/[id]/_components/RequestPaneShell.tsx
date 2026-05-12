@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CommandPalette, type CommandPaletteRef } from "@/app/inbox/_components/CommandPalette";
-import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
+import { LazyRealtimeRefresh as RealtimeRefresh } from "@/app/_components/LazyRealtimeRefresh";
 import type { InboxStream } from "@/lib/inbox/queries";
 import { useOptimisticMessages } from "@/lib/optimistic";
 import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
