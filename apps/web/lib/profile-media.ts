@@ -1,6 +1,7 @@
 import "server-only";
 
 import { extname } from "node:path";
+import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const PROFILE_MEDIA_BUCKET = "profile-media";
@@ -48,6 +49,70 @@ function extensionFor(file: File) {
   return raw || "jpg";
 }
 
+type PreparedProfileImage = {
+  body: Buffer;
+  contentType: string;
+  extension: string;
+};
+
+export async function optimizeProfileImageBytes(
+  input: Buffer,
+  contentType: string
+): Promise<PreparedProfileImage | null> {
+  try {
+    const image = sharp(input, { failOn: "none" }).rotate();
+
+    if (contentType === "image/png") {
+      return {
+        body: await image
+          .png({ adaptiveFiltering: true, compressionLevel: 9 })
+          .toBuffer(),
+        contentType: "image/png",
+        extension: "png"
+      };
+    }
+
+    if (contentType === "image/webp") {
+      return {
+        body: await image.webp({ effort: 6, lossless: true }).toBuffer(),
+        contentType: "image/webp",
+        extension: "webp"
+      };
+    }
+
+    if (contentType === "image/jpeg" || contentType === "image/heic") {
+      return {
+        body: await image.jpeg({ mozjpeg: true, quality: 95 }).toBuffer(),
+        contentType: "image/jpeg",
+        extension: "jpg"
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+async function prepareProfileImageForUpload(file: File): Promise<PreparedProfileImage> {
+  const original = Buffer.from(await file.arrayBuffer());
+  const originalImage: PreparedProfileImage = {
+    body: original,
+    contentType: file.type,
+    extension: extensionFor(file)
+  };
+
+  const optimized = await optimizeProfileImageBytes(original, file.type);
+
+  // Preserve visual quality: we never resize or upscale, and we only keep
+  // the optimized encoding when it is strictly smaller than the original.
+  if (optimized && optimized.body.byteLength < original.byteLength) {
+    return optimized;
+  }
+
+  return originalImage;
+}
+
 export async function uploadProfileImage({
   clinicId,
   entity,
@@ -65,13 +130,12 @@ export async function uploadProfileImage({
   }
 
   const admin = createAdminClient();
-  const extension = extensionFor(file);
-  const path = `${clinicId}/${entity}/${entityId}/avatar-${Date.now()}.${extension}`;
-  const bytes = await file.arrayBuffer();
+  const prepared = await prepareProfileImageForUpload(file);
+  const path = `${clinicId}/${entity}/${entityId}/avatar-${Date.now()}.${prepared.extension}`;
   const { error } = await admin.storage
     .from(PROFILE_MEDIA_BUCKET)
-    .upload(path, bytes, {
-      contentType: file.type,
+    .upload(path, prepared.body, {
+      contentType: prepared.contentType,
       upsert: true
     });
 
