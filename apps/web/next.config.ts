@@ -19,7 +19,11 @@ const nextConfig: NextConfig = {
     // document.startViewTransition. Elements with matching
     // `view-transition-name` then cross-fade or morph between routes.
     // Disabled automatically under prefers-reduced-motion (see globals.css).
-    viewTransition: true
+    viewTransition: true,
+    // Tree-shake lucide-react barrel imports — without this, a
+    // `import { Search } from "lucide-react"` can pull the whole icon
+    // module index into a route's first-load JS.
+    optimizePackageImports: ["lucide-react"]
   }
 };
 

@@ -8,10 +8,8 @@ import { LazyCommandPalette } from "./LazyCommandPalette";
 import type { CommandPalette } from "./CommandPalette";
 import { InboxKeyboard } from "./InboxKeyboard";
 import { InboxBulkProvider } from "./InboxBulkContext";
-import {
-  InboxBulkLayer,
-  type InboxBulkLayerLabels
-} from "./InboxBulkLayer";
+import type { InboxBulkLayerLabels } from "./InboxBulkLayer";
+import { LazyInboxBulkLayer } from "./LazyInboxBulkLayer";
 import { useInboxRealtime } from "./useInboxRealtime";
 import type { InboxStream } from "@/lib/inbox/queries";
 
@@ -117,7 +115,7 @@ export function InboxClientShell({
       />
 
       <InboxBulkProvider rowIds={rowIds}>
-        <InboxBulkLayer
+        <LazyInboxBulkLayer
           locale={locale}
           rowIds={rowIds}
           labels={bulkLabels}

@@ -3,9 +3,9 @@
 /* eslint-disable @next/next/no-img-element -- Profile avatars use short-lived signed Supabase Storage URLs. */
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useMemo, useRef } from "react";
+import { Suspense, use, useMemo, useRef } from "react";
 import { ChevronRight } from "lucide-react";
-import { cn } from "@petcura/ui";
+import { cn, ShimmerPill } from "@petcura/ui";
 import {
   createTranslator,
   withLocale,
@@ -29,6 +29,7 @@ import type { ThemePreference } from "./ThemeToggle";
 import {
   SIDEBAR_NAV,
   type NavBadgeTone,
+  type NavCountSource,
   type NavCounts,
   type NavItem,
   activeStreamId
@@ -53,7 +54,13 @@ export type AppSidebarProps = {
   clinicInitials: string;
   currentPath: string;
   initialTheme: ThemePreference;
-  counts: NavCounts;
+  /**
+   * Promise that resolves with the typed `NavCounts` map. The sidebar
+   * unwraps it via `use()` inside a Suspense boundary so the shell can
+   * paint immediately (with shimmer pills) while the count queries
+   * settle. Caller (AppShell) creates the promise without awaiting it.
+   */
+  countsPromise: Promise<NavCounts>;
   inboxStream: InboxStream;
   /**
    * Whether the current viewer is a configured super-admin. Gates visibility
@@ -96,6 +103,45 @@ function CountBadge({
       {value > 99 ? "99+" : value}
     </span>
   );
+}
+
+/**
+ * Skeleton stand-in for a single nav badge while the counts promise is
+ * pending. Geometry mirrors the live badge (18px tall pill, ~22px min
+ * width) so the row height does not jitter when the real count lands.
+ */
+function NavCountSkeleton() {
+  return (
+    <ShimmerPill
+      aria-hidden="true"
+      width={22}
+      height={14}
+      className="ml-auto"
+    />
+  );
+}
+
+/**
+ * Client child that unwraps the counts promise via React 19 `use()` and
+ * delegates to <CountBadge>. Wrapped at the call site in <Suspense> so
+ * the parent row renders with a shimmer pill until the data arrives. We
+ * extract this into its own component so each Suspense boundary owns a
+ * single `use()` call — Suspense is scoped per-component.
+ */
+function SuspendedCountBadge({
+  countsPromise,
+  source,
+  tone,
+  active
+}: {
+  countsPromise: Promise<NavCounts>;
+  source: NavCountSource;
+  tone?: NavBadgeTone | undefined;
+  active?: boolean | undefined;
+}) {
+  const counts = use(countsPromise);
+  const value = counts[source] ?? 0;
+  return <CountBadge value={value} tone={tone} active={active} />;
 }
 
 /**
@@ -184,7 +230,7 @@ export function AppSidebar({
   clinicInitials,
   currentPath,
   initialTheme,
-  counts,
+  countsPromise,
   inboxStream,
   isSuperAdmin = false,
   signOutAction,
@@ -233,8 +279,16 @@ export function AppSidebar({
 
   const renderCount = (item: NavItem, active: boolean) => {
     if (!item.countSource) return null;
-    const value = counts[item.countSource] ?? 0;
-    return <CountBadge value={value} tone={item.badgeTone} active={active} />;
+    return (
+      <Suspense fallback={<NavCountSkeleton />}>
+        <SuspendedCountBadge
+          countsPromise={countsPromise}
+          source={item.countSource}
+          tone={item.badgeTone}
+          active={active}
+        />
+      </Suspense>
+    );
   };
 
   const renderTopLevel = (item: NavItem) => {
@@ -268,9 +322,6 @@ export function AppSidebar({
       <SidebarMenuSub>
         {item.children.map((child) => {
           const childActive = isActive(child, item);
-          const childCount = child.countSource
-            ? counts[child.countSource] ?? 0
-            : 0;
           return (
             <SidebarMenuSubItem key={child.id}>
               <SidebarMenuSubButton
@@ -292,11 +343,14 @@ export function AppSidebar({
                     {t(child.labelKey)}
                   </span>
                   {child.countSource ? (
-                    <CountBadge
-                      value={childCount}
-                      tone={child.badgeTone}
-                      active={childActive}
-                    />
+                    <Suspense fallback={<NavCountSkeleton />}>
+                      <SuspendedCountBadge
+                        countsPromise={countsPromise}
+                        source={child.countSource}
+                        tone={child.badgeTone}
+                        active={childActive}
+                      />
+                    </Suspense>
                   ) : null}
                 </Link>
               </SidebarMenuSubButton>
