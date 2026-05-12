@@ -4,7 +4,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Sparkles } from "lucide-react";
 import { Button, cn } from "@petcura/ui";
 import { acceptAiDraft, editAiDraft, rejectAiDraft } from "../actions";
-import { trapTabKey } from "@/app/_components/useFocusTrap";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 export type DraftPayload = {
   id: string;
@@ -64,16 +70,12 @@ export function AiDraftCard({
   const [draftText, setDraftText] = useState(draft.text);
   const [pending, startTransition] = useTransition();
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Focus management for the inline edit dialog.
+  // Focus the textarea (and place caret at end) once Radix has mounted the
+  // Dialog content. Radix already handles focus restoration to the trigger
+  // on close, so no lastFocused ref is needed.
   useEffect(() => {
     if (!editing) return;
-    lastFocusedRef.current =
-      typeof document !== "undefined"
-        ? (document.activeElement as HTMLElement | null)
-        : null;
     const id = window.setTimeout(() => {
       editTextareaRef.current?.focus();
       editTextareaRef.current?.setSelectionRange(
@@ -83,14 +85,6 @@ export function AiDraftCard({
     }, 0);
     return () => window.clearTimeout(id);
   }, [editing, draftText.length]);
-
-  const closeEdit = () => {
-    setEditing(false);
-    const target = lastFocusedRef.current;
-    if (target && typeof target.focus === "function") {
-      target.focus();
-    }
-  };
 
   if (hidden) return null;
 
@@ -226,49 +220,29 @@ export function AiDraftCard({
         </Button>
       </div>
 
-      {editing ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={labels.editLabel}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center"
-          onClick={closeEdit}
+      <Dialog open={editing} onOpenChange={setEditing}>
+        <DialogContent
+          size="md"
+          closeLabel={labels.cancel}
+          // The body is a single labeled textarea; the title is sufficient
+          // labeling. Pass undefined explicitly so Radix doesn't log a
+          // missing-description warning at dev time.
+          aria-describedby={undefined}
           onKeyDown={(e) => {
-            if (e.key === "Tab") {
-              trapTabKey(e, dialogRef.current);
-              return;
-            }
-            if (e.key === "Escape") {
-              e.preventDefault();
-              closeEdit();
-              return;
-            }
+            // Keep the ⌘↵ contract from the hand-rolled shell: save only by
+            // default, save-and-accept with Shift held. Radix owns Tab, Escape,
+            // and click-outside; we only intercept the save shortcut here so
+            // the textarea's own keystrokes are otherwise untouched.
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
               e.preventDefault();
-              // Default to the conservative path: save the edit and keep the
-              // card visible. Shift+⌘↵ commits + accepts.
               handleSaveEdit(e.shiftKey ? "saveAndAccept" : "saveOnly");
             }
           }}
         >
-          <div
-            ref={dialogRef}
-            className="w-full max-w-lg rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-[var(--ink)]">
-                {labels.editLabel}
-              </h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={closeEdit}
-                aria-label={labels.cancel}
-              >
-                {labels.cancel}
-              </Button>
-            </div>
+          <DialogHeader>
+            <DialogTitle>{labels.editLabel}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
             <textarea
               ref={editTextareaRef}
               aria-label={labels.editLabel}
@@ -283,7 +257,7 @@ export function AiDraftCard({
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={closeEdit}
+                onClick={() => setEditing(false)}
                 disabled={pending}
               >
                 {labels.cancel}
@@ -306,9 +280,9 @@ export function AiDraftCard({
                 {labels.saveAndAccept}
               </Button>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
