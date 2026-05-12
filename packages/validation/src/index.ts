@@ -176,6 +176,18 @@ export const aiDraftRejectSchema = z.object({
   reason: trimmedString.max(280).optional()
 });
 
+export const aiSummaryEditSchema = z.object({
+  requestId: uuidSchema,
+  targetLocale: supportedLocaleSchema,
+  summaryText: trimmedString.min(1).max(1200),
+  riskFlagsText: trimmedString.max(1200).default("")
+});
+
+export const aiSummaryTranslateSchema = z.object({
+  requestId: uuidSchema,
+  targetLocale: supportedLocaleSchema
+});
+
 export const translationRevealSchema = z.object({
   requestId: uuidSchema,
   messageId: uuidSchema,

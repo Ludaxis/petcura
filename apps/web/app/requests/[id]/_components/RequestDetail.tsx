@@ -21,6 +21,8 @@ import type { RequestDetail as RequestDetailModel } from "@/lib/requests";
 import {
   addInternalNote,
   assignRequest,
+  editAiSummary,
+  translateAiSummary,
   updateRequestStatus,
   updateRequestUrgency
 } from "../actions";
@@ -409,6 +411,63 @@ function SideBlocks({
                 )}
               </p>
             ) : null}
+            <div className="mt-3 border-t border-[var(--line-2)] pt-3">
+              {locale !== "en" && !request.aiSummaryHasTranslation ? (
+                <form action={translateAiSummary} className="mb-2">
+                  <input name="lang" type="hidden" value={locale} />
+                  <input name="requestId" type="hidden" value={request.id} />
+                  <input name="targetLocale" type="hidden" value={locale} />
+                  <Button size="sm" variant="secondary" type="submit">
+                    {t("request.aiTranslateTo").replace(
+                      "{locale}",
+                      locale.toUpperCase()
+                    )}
+                  </Button>
+                </form>
+              ) : locale !== "en" ? (
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--primary)]">
+                  {t("request.aiTranslated")}
+                </p>
+              ) : null}
+              <details className="[&[open]>summary>svg]:rotate-180">
+                <summary className="flex cursor-pointer items-center justify-between font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
+                  {t("request.aiEdit")}
+                  <ChevronDown aria-hidden="true" size={11} />
+                </summary>
+                <form action={editAiSummary} className="mt-2 grid gap-2">
+                  <input name="lang" type="hidden" value={locale} />
+                  <input name="requestId" type="hidden" value={request.id} />
+                  <input name="targetLocale" type="hidden" value={locale} />
+                  <label
+                    className="grid gap-1 text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]"
+                    htmlFor={`ai-summary-text-${idSuffix}`}
+                  >
+                    {t("request.aiSummaryText")}
+                    <textarea
+                      id={`ai-summary-text-${idSuffix}`}
+                      name="summaryText"
+                      defaultValue={request.aiSummary}
+                      className="min-h-24 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-2 py-1.5 text-[12px] normal-case leading-5 tracking-normal text-[var(--ink)]"
+                    />
+                  </label>
+                  <label
+                    className="grid gap-1 text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]"
+                    htmlFor={`ai-risk-flags-${idSuffix}`}
+                  >
+                    {t("request.aiRiskFlagsEdit")}
+                    <textarea
+                      id={`ai-risk-flags-${idSuffix}`}
+                      name="riskFlagsText"
+                      defaultValue={request.riskFlags.join("\n")}
+                      className="min-h-20 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-2 py-1.5 font-mono text-[11px] normal-case leading-5 tracking-normal text-[var(--ink)]"
+                    />
+                  </label>
+                  <Button size="sm" variant="secondary" type="submit">
+                    {t("request.aiSaveSummary")}
+                  </Button>
+                </form>
+              </details>
+            </div>
           </div>
         </details>
       ) : null}

@@ -11,6 +11,8 @@ import {
   aiDraftDecisionSchema,
   aiDraftEditSchema,
   aiDraftRejectSchema,
+  aiSummaryEditSchema,
+  aiSummaryTranslateSchema,
   createReminderSchema,
   internalNoteSchema,
   requestAssignmentSchema,
@@ -24,6 +26,12 @@ import {
   hasStaffPermission,
   requireStaffPermission
 } from "@/lib/auth/permissions";
+import {
+  buildEditedAiSummaryLocalization,
+  generateAiSummaryLocalization,
+  summaryTranslationPromptVersion,
+  writeAiSummaryLocalization
+} from "@/lib/ai/summary-localization";
 import { sendWhatsAppStaffMessage } from "@/lib/twilio/outbound";
 import { getTwilioDeliveryEventId } from "@/lib/twilio/whatsapp";
 
@@ -616,6 +624,268 @@ export async function assignRequest(formData: FormData) {
 }
 
 type AiDraftActionResult = { ok: true } | { ok: false; error: string };
+
+type AiSummaryRequestRow = Pick<
+  Database["public"]["Tables"]["requests"]["Row"],
+  | "id"
+  | "ai_summary"
+  | "ai_summary_translations_json"
+  | "risk_flags_json"
+>;
+
+type AiOutputJson =
+  Database["public"]["Tables"]["ai_outputs"]["Insert"]["input_json"];
+
+function toAiOutputJson(value: unknown): AiOutputJson {
+  return value as AiOutputJson;
+}
+
+function parseRiskFlagsText(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((flag) => flag.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function pickRiskFlags(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((flag): flag is string => typeof flag === "string");
+}
+
+async function loadAiSummaryRequestForAction(
+  supabase: Awaited<ReturnType<typeof requireStaffContext>>["supabase"],
+  clinicId: string,
+  requestId: string
+): Promise<AiSummaryRequestRow | null> {
+  const { data, error } = await supabase
+    .from("requests")
+    .select("id, ai_summary, ai_summary_translations_json, risk_flags_json")
+    .eq("clinic_id", clinicId)
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Could not load AI summary: ${error.message}`);
+  }
+
+  return data as AiSummaryRequestRow | null;
+}
+
+export async function translateAiSummary(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const parsed = aiSummaryTranslateSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    targetLocale: getString(formData, "targetLocale") || locale
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(getString(formData, "requestId"), locale, {
+      action_error: "summary_translate"
+    });
+  }
+
+  const { requestId, targetLocale } = parsed.data;
+  if (targetLocale === "en") {
+    redirectToRequest(requestId, locale, { action_status: "summary" });
+  }
+
+  const ctx = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
+
+  const request = await loadAiSummaryRequestForAction(
+    ctx.supabase,
+    ctx.clinic.id,
+    requestId
+  );
+  const summaryText = request?.ai_summary?.trim();
+  if (!request || !summaryText) {
+    redirectToRequest(requestId, locale, { action_error: "summary_translate" });
+  }
+
+  const sourceRiskFlags = pickRiskFlags(request.risk_flags_json);
+  const translation = await generateAiSummaryLocalization({
+    summaryText,
+    riskFlags: sourceRiskFlags,
+    targetLocale
+  });
+
+  if (!translation.ok) {
+    redirectToRequest(requestId, locale, { action_error: "summary_translate" });
+  }
+
+  const { data: aiOutput, error: aiOutputError } = await ctx.supabase
+    .from("ai_outputs")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      kind: "summary_translation",
+      model: translation.model,
+      prompt_version: summaryTranslationPromptVersion,
+      input_json: toAiOutputJson({
+        source_locale: "en",
+        target_locale: targetLocale,
+        summary_text: summaryText,
+        risk_flags: sourceRiskFlags,
+        staff_id: ctx.membership.id
+      }),
+      output_json: toAiOutputJson(translation.output),
+      tokens_in: translation.tokensIn,
+      tokens_out: translation.tokensOut,
+      latency_ms: translation.latencyMs,
+      confidence: translation.output.confidence,
+      accepted: null
+    })
+    .select("id")
+    .single();
+
+  if (aiOutputError) {
+    throw new Error(
+      `Could not store AI summary translation: ${aiOutputError.message}`
+    );
+  }
+
+  const nextTranslations = writeAiSummaryLocalization(
+    request.ai_summary_translations_json,
+    targetLocale,
+    {
+      summaryText: translation.output.summaryText,
+      riskFlags: translation.output.riskFlags,
+      sourceLocale: "en",
+      targetLocale,
+      promptVersion: summaryTranslationPromptVersion,
+      model: translation.model,
+      confidence: translation.output.confidence,
+      aiOutputId: aiOutput.id,
+      reviewedBy: null,
+      edited: false,
+      updatedAt: new Date().toISOString()
+    }
+  );
+
+  const { error: updateError } = await ctx.supabase
+    .from("requests")
+    .update({ ai_summary_translations_json: nextTranslations })
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", requestId);
+
+  if (updateError) {
+    throw new Error(
+      `Could not update AI summary translation: ${updateError.message}`
+    );
+  }
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      event_type: "ai_summary_translated",
+      payload_json: {
+        ai_output_id: aiOutput.id,
+        staff_id: ctx.membership.id,
+        target_locale: targetLocale
+      }
+    });
+
+  if (eventError) {
+    throw new Error(
+      `Could not write summary translation event: ${eventError.message}`
+    );
+  }
+
+  refreshRequestViews(requestId);
+  redirectToRequest(requestId, locale, { action_status: "summary" });
+}
+
+export async function editAiSummary(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const parsed = aiSummaryEditSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    targetLocale: getString(formData, "targetLocale") || locale,
+    summaryText: getString(formData, "summaryText"),
+    riskFlagsText: getString(formData, "riskFlagsText")
+  });
+
+  if (!parsed.success) {
+    redirectToRequest(getString(formData, "requestId"), locale, {
+      action_error: "summary_edit"
+    });
+  }
+
+  const { requestId, targetLocale, summaryText, riskFlagsText } = parsed.data;
+  const ctx = await requireStaffContext(locale, `/requests/${requestId}`);
+  if (!hasStaffPermission(ctx, "requests:manage")) {
+    redirectToRequest(requestId, locale, { action_error: "permission" });
+  }
+
+  const request = await loadAiSummaryRequestForAction(
+    ctx.supabase,
+    ctx.clinic.id,
+    requestId
+  );
+  if (!request) {
+    redirectToRequest(requestId, locale, { action_error: "not_found" });
+  }
+
+  const riskFlags = parseRiskFlagsText(riskFlagsText);
+  const updatePayload: Database["public"]["Tables"]["requests"]["Update"] =
+    targetLocale === "en"
+      ? {
+          ai_summary: summaryText,
+          risk_flags_json: riskFlags,
+          ai_summary_translations_json: {}
+        }
+      : {
+          ai_summary_translations_json: writeAiSummaryLocalization(
+            request.ai_summary_translations_json,
+            targetLocale,
+            buildEditedAiSummaryLocalization({
+              locale: targetLocale,
+              summaryText,
+              riskFlags,
+              reviewedBy: ctx.user.id
+            })
+          )
+        };
+
+  const { error: updateError } = await ctx.supabase
+    .from("requests")
+    .update(updatePayload)
+    .eq("clinic_id", ctx.clinic.id)
+    .eq("id", requestId);
+
+  if (updateError) {
+    throw new Error(`Could not edit AI summary: ${updateError.message}`);
+  }
+
+  const { error: eventError } = await ctx.supabase
+    .from("request_events")
+    .insert({
+      clinic_id: ctx.clinic.id,
+      request_id: requestId,
+      actor_type: "staff",
+      actor_id: ctx.user.id,
+      event_type: "ai_summary_edited",
+      payload_json: {
+        staff_id: ctx.membership.id,
+        target_locale: targetLocale,
+        summary_length: summaryText.length,
+        risk_flags_count: riskFlags.length
+      }
+    });
+
+  if (eventError) {
+    throw new Error(`Could not write summary edit event: ${eventError.message}`);
+  }
+
+  refreshRequestViews(requestId);
+  redirectToRequest(requestId, locale, { action_status: "summary" });
+}
 
 type AiDraftRow = Pick<
   Database["public"]["Tables"]["ai_outputs"]["Row"],

@@ -8,6 +8,7 @@ import type {
   RequestStatus,
   RequestUrgency
 } from "@petcura/shared";
+import { readAiSummaryLocalizationMap } from "@/lib/ai/summary-localization";
 import { createClient } from "@/lib/supabase/server";
 import {
   getLatestDeliveryEvent,
@@ -37,6 +38,7 @@ type RequestBaseRow = Pick<
   | "status"
   | "urgency"
   | "ai_summary"
+  | "ai_summary_translations_json"
   | "ai_summary_version"
   | "urgency_suggestion"
   | "risk_flags_json"
@@ -86,6 +88,7 @@ export type RequestDetail = InboxRequest & {
   ownerPhone: string;
   petBreed: string | null;
   aiSummary: string | null;
+  aiSummaryHasTranslation: boolean;
   aiSummaryVersion: string | null;
   urgencySuggestion: RequestUrgency | null;
   riskFlags: string[];
@@ -172,7 +175,7 @@ export async function listInboxRequests(
   const { data, error } = await supabase
     .from("requests")
     .select(
-      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
+      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, ai_summary_translations_json, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
     )
     .eq("clinic_id", clinicId)
     .order("updated_at", { ascending: false });
@@ -195,7 +198,7 @@ export async function getRequestDetail(
   const { data: requestData, error: requestError } = await supabase
     .from("requests")
     .select(
-      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
+      "id, assigned_staff_id, category, channel, status, urgency, ai_summary, ai_summary_translations_json, ai_summary_version, urgency_suggestion, risk_flags_json, created_at, updated_at, owners(id, name, phone, preferred_language), pets(id, name, species, breed, photo_url)"
     )
     .eq("clinic_id", clinicId)
     .eq("id", requestId)
@@ -351,15 +354,26 @@ export async function getRequestDetail(
     }
   }
 
+  const aiSummaryLocalizationMap = readAiSummaryLocalizationMap(
+    request.ai_summary_translations_json
+  );
+  const localizedSummary =
+    locale === "en" ? null : aiSummaryLocalizationMap[locale];
+  const localizedRiskFlags =
+    localizedSummary && localizedSummary.riskFlags.length > 0
+      ? localizedSummary.riskFlags
+      : null;
+
   return {
     ...toInboxRequest(request),
     assignedStaffId: request.assigned_staff_id,
     ownerPhone: request.owners?.phone ?? "",
     petBreed: request.pets?.breed ?? null,
-    aiSummary: request.ai_summary,
+    aiSummary: localizedSummary?.summaryText ?? request.ai_summary,
+    aiSummaryHasTranslation: Boolean(localizedSummary),
     aiSummaryVersion: request.ai_summary_version,
     urgencySuggestion: request.urgency_suggestion,
-    riskFlags: pickStringArray(request.risk_flags_json),
+    riskFlags: localizedRiskFlags ?? pickStringArray(request.risk_flags_json),
     createdAt: request.created_at,
     messages: (messagesResult.data ?? []).map((message) => {
       const latestDelivery = getLatestDeliveryEvent(

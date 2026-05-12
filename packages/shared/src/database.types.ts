@@ -824,6 +824,7 @@ export type Database = {
       requests: {
         Row: {
           ai_summary: string | null
+          ai_summary_translations_json: Json
           ai_summary_version: string | null
           assigned_staff_id: string | null
           category: Database["public"]["Enums"]["request_category"]
@@ -845,6 +846,7 @@ export type Database = {
         }
         Insert: {
           ai_summary?: string | null
+          ai_summary_translations_json?: Json
           ai_summary_version?: string | null
           assigned_staff_id?: string | null
           category: Database["public"]["Enums"]["request_category"]
@@ -866,6 +868,7 @@ export type Database = {
         }
         Update: {
           ai_summary?: string | null
+          ai_summary_translations_json?: Json
           ai_summary_version?: string | null
           assigned_staff_id?: string | null
           category?: Database["public"]["Enums"]["request_category"]

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatSummaryForStaff,
+  summaryLocalizationOutputSchema,
   summaryOutputSchema,
   translationOutputSchema
 } from "./index";
@@ -44,5 +45,18 @@ describe("AI output contracts", () => {
         confidence: 0.91
       })
     ).toMatchObject({ confidence: 0.91 });
+  });
+
+  it("validates localized summary output with translated risk flags", () => {
+    expect(
+      summaryLocalizationOutputSchema.parse({
+        summaryText: "Omanik teatab korduvast oksendamisest pärast söömist.",
+        riskFlags: ["korduv oksendamine", ""],
+        confidence: "82"
+      })
+    ).toMatchObject({
+      confidence: 0.82,
+      riskFlags: ["korduv oksendamine"]
+    });
   });
 });

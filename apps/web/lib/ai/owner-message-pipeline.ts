@@ -13,6 +13,11 @@ import {
 } from "@petcura/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateJsonWithGateway } from "./gateway";
+import {
+  generateAiSummaryLocalization,
+  summaryTranslationPromptVersion,
+  writeAiSummaryLocalization
+} from "./summary-localization";
 
 const supportedLocales = ["en", "et", "ru"] as const satisfies readonly SupportedLocale[];
 const summaryPromptVersion = "summary.v1.2026-05-11";
@@ -292,10 +297,67 @@ async function writeSummary({
     throw new Error(`Could not store AI summary: ${aiError.message}`);
   }
 
+  let aiSummaryTranslationsJson: Json = {};
+  for (const targetLocale of ["et", "ru"] as const) {
+    const localizationResult = await generateAiSummaryLocalization({
+      summaryText,
+      riskFlags: summary.riskFlags,
+      targetLocale
+    });
+
+    if (!localizationResult.ok) continue;
+
+    const { data: localizationOutput, error: localizationError } = await admin
+      .from("ai_outputs")
+      .insert({
+        clinic_id: request.clinic_id,
+        request_id: request.id,
+        kind: "summary_translation",
+        model: localizationResult.model,
+        prompt_version: summaryTranslationPromptVersion,
+        input_json: toJson({
+          source_ai_output_id: aiOutput.id,
+          source_locale: "en",
+          target_locale: targetLocale,
+          summary_text: summaryText,
+          risk_flags: summary.riskFlags
+        }),
+        output_json: toJson(localizationResult.output),
+        tokens_in: localizationResult.tokensIn,
+        tokens_out: localizationResult.tokensOut,
+        latency_ms: localizationResult.latencyMs,
+        confidence: localizationResult.output.confidence,
+        accepted: null
+      })
+      .select("id")
+      .single();
+
+    if (localizationError) continue;
+
+    aiSummaryTranslationsJson = writeAiSummaryLocalization(
+      aiSummaryTranslationsJson,
+      targetLocale,
+      {
+        summaryText: localizationResult.output.summaryText,
+        riskFlags: localizationResult.output.riskFlags,
+        sourceLocale: "en",
+        targetLocale,
+        promptVersion: summaryTranslationPromptVersion,
+        model: localizationResult.model,
+        confidence: localizationResult.output.confidence,
+        aiOutputId: localizationOutput.id,
+        reviewedBy: null,
+        edited: false,
+        updatedAt: new Date().toISOString()
+      }
+    ) as Json;
+  }
+
   const { error: requestError } = await admin
     .from("requests")
     .update({
       ai_summary: summaryText,
+      ai_summary_translations_json: aiSummaryTranslationsJson,
       ai_summary_version: summaryPromptVersion,
       urgency_suggestion: summary.urgencySuggestion ?? null,
       risk_flags_json: summary.riskFlags

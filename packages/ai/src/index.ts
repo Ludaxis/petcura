@@ -3,6 +3,7 @@ import { z } from "zod";
 export const aiOutputKindSchema = z.enum([
   "intake_question",
   "summary",
+  "summary_translation",
   "reply_draft",
   "translation",
   "category_suggestion",
@@ -70,6 +71,16 @@ export const translationOutputSchema = z.object({
 });
 
 export type TranslationOutput = z.infer<typeof translationOutputSchema>;
+
+export const summaryLocalizationOutputSchema = z.object({
+  summaryText: z.string().trim().min(1).max(900),
+  riskFlags: stringArray,
+  confidence: confidenceScore
+});
+
+export type SummaryLocalizationOutput = z.infer<
+  typeof summaryLocalizationOutputSchema
+>;
 
 export function formatSummaryForStaff(summary: SummaryOutput) {
   if (summary.summaryText?.trim()) {

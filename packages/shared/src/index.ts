@@ -174,6 +174,6 @@ export const demoRequests = [
   }>;
 }>;
 
-export type { Database } from "./database.types";
+export type { Database, Json } from "./database.types";
 export * from "./permissions";
 export * from "./i18n";

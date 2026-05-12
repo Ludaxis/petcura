@@ -137,6 +137,7 @@ create table if not exists public.requests (
   assigned_staff_id uuid references public.clinic_staff(id) on delete set null,
   channel public.owner_channel not null default 'web',
   ai_summary text,
+  ai_summary_translations_json jsonb not null default '{}'::jsonb,
   ai_summary_version text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
