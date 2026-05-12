@@ -1,5 +1,6 @@
 import "server-only";
 
+import { after } from "next/server";
 import {
   normalizeLocale,
   type Database,
@@ -195,6 +196,23 @@ async function insertAttachments({
   };
 }
 
+async function runOwnerMessageAiFallback({
+  clinicId,
+  requestId,
+  messageId
+}: {
+  clinicId: string;
+  requestId: string;
+  messageId: string;
+}) {
+  try {
+    await processOwnerMessageAi({ clinicId, requestId, messageId });
+  } catch {
+    // AI output is advisory. Intake and communication must never fail because
+    // summary/translation generation is unavailable.
+  }
+}
+
 async function runOwnerMessageAi({
   clinicId,
   requestId,
@@ -214,38 +232,36 @@ async function runOwnerMessageAi({
   sourceLocale: SupportedLocale;
   hasAttachments: boolean;
 }) {
-  try {
-    if (shouldUseInngestAiJobs()) {
-      const data: OwnerMessageCreatedEventData = {
-        clinicId,
-        requestId,
-        messageId,
-        ownerId,
-        channel,
-        sourceLocale,
-        hasAttachments,
-        createdAt: new Date().toISOString()
-      };
-      if (petId) {
-        data.petId = petId;
+  after(async () => {
+    try {
+      if (shouldUseInngestAiJobs()) {
+        const data: OwnerMessageCreatedEventData = {
+          clinicId,
+          requestId,
+          messageId,
+          ownerId,
+          channel,
+          sourceLocale,
+          hasAttachments,
+          createdAt: new Date().toISOString()
+        };
+        if (petId) {
+          data.petId = petId;
+        }
+        await sendPetCuraInngestEvent({
+          name: OWNER_MESSAGE_CREATED_EVENT,
+          data,
+          id: `${clinicId}:${requestId}:${messageId}:owner-message-ai`
+        });
+        return;
       }
-      await sendPetCuraInngestEvent({
-        name: OWNER_MESSAGE_CREATED_EVENT,
-        data,
-        id: `${clinicId}:${requestId}:${messageId}:owner-message-ai`
-      });
-      return;
+    } catch {
+      // If the queue is temporarily unavailable, keep the owner/staff path fast
+      // and run advisory AI after the response instead of blocking intake.
     }
 
-    await processOwnerMessageAi({ clinicId, requestId, messageId });
-  } catch {
-    try {
-      await processOwnerMessageAi({ clinicId, requestId, messageId });
-    } catch {
-      // AI output is advisory. Intake and communication must never fail because
-      // summary/translation generation is unavailable.
-    }
-  }
+    await runOwnerMessageAiFallback({ clinicId, requestId, messageId });
+  });
 }
 
 async function appendOwnerMessageToRequest({
