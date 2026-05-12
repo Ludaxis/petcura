@@ -8,14 +8,29 @@ import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
 import type { SupportedLocale } from "@petcura/shared";
 import { Thread, type ThreadMessage } from "./Thread";
 import { AiDraftCard, type DraftPayload } from "./AiDraftCard";
-import { AiMemoryPanel, type AiMemoryPanelProps } from "./AiMemoryPanel";
 import { Composer, type ComposerRef } from "./Composer";
 import { RequestKeyboard } from "./RequestKeyboard";
 
-export type RequestPaneAiMemoryProps = Omit<
-  AiMemoryPanelProps,
-  "requestId" | "locale" | "hasDraft" | "onAnnounce"
->;
+/**
+ * Window event the side-rail `AiMemoryPanel` dispatches when it has a
+ * status string the shared aria-live region should announce.
+ *
+ * The panel can be mounted in three places (xl rail, md–xl inline accordion,
+ * mobile Sheet) — all of them are outside `RequestPaneShell`'s React tree,
+ * so a Context provider would have to wrap the whole `/requests/[id]` page.
+ * A scoped CustomEvent matches the existing `petcura:open-cmdk` pattern
+ * and keeps the live region as the single source of truth for SR users.
+ *
+ * Payload: `{ requestId, message }`. The shell ignores messages whose
+ * `requestId` does not match the currently mounted request so that
+ * neighboring tabs/popups can't drive the wrong live region.
+ */
+export const REQUEST_ANNOUNCE_EVENT = "petcura:request-announce" as const;
+
+export type RequestAnnounceDetail = {
+  requestId: string;
+  message: string;
+};
 
 type RequestPaneShellProps = {
   requestId: string;
@@ -39,7 +54,6 @@ type RequestPaneShellProps = {
   threadLabels: React.ComponentProps<typeof Thread>["labels"];
   translateAnnounce: { shown: string; hidden: string };
   draftLabels: React.ComponentProps<typeof AiDraftCard>["labels"];
-  aiMemory?: RequestPaneAiMemoryProps | null;
   composerLabels: React.ComponentProps<typeof Composer>["labels"];
   keyboardLabels: React.ComponentProps<typeof RequestKeyboard>["labels"];
   shortcuts: React.ComponentProps<typeof RequestKeyboard>["shortcuts"];
@@ -65,7 +79,6 @@ export function RequestPaneShell({
   threadLabels,
   translateAnnounce,
   draftLabels,
-  aiMemory,
   composerLabels,
   keyboardLabels,
   shortcuts
@@ -100,6 +113,26 @@ export function RequestPaneShell({
     const msg = initialAnnouncement;
     queueMicrotask(() => announceMessage(msg));
   }, [initialAnnouncement, announceMessage]);
+
+  // The AiMemoryPanel now lives in the side rail (out of this component's
+  // React tree), so it can no longer call `announceMessage` directly. It
+  // dispatches `petcura:request-announce` with the requestId + message; the
+  // shell pipes the message through the same live region used by every other
+  // toast. Mirrors the `petcura:open-cmdk` pattern.
+  useEffect(() => {
+    const onAnnounce = (event: Event) => {
+      const detail = (event as CustomEvent<RequestAnnounceDetail>).detail;
+      if (!detail || detail.requestId !== requestId) return;
+      announceMessage(detail.message);
+    };
+    window.addEventListener(REQUEST_ANNOUNCE_EVENT, onAnnounce as EventListener);
+    return () => {
+      window.removeEventListener(
+        REQUEST_ANNOUNCE_EVENT,
+        onAnnounce as EventListener
+      );
+    };
+  }, [requestId, announceMessage]);
 
   const handleAccept = useCallback((text: string) => {
     composerRef.current?.setText(text);
@@ -190,9 +223,11 @@ export function RequestPaneShell({
         {announce}
       </div>
 
-      {/* gap-3 spaces the stacked panes — Thread / AiMemoryPanel / AiDraftCard
-          / Composer — so the composer doesn't sit flush against the draft
-          card. UX feedback: the seam reads as cramped without breathing room. */}
+      {/* gap-3 spaces the stacked panes — Thread / AiDraftCard / Composer —
+          so the composer doesn't sit flush against the draft card. UX
+          feedback: the seam reads as cramped without breathing room. The
+          AiMemoryPanel now lives in the side rail (above Events), so it is
+          no longer in this column. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
         <Thread
           key={requestId}
@@ -202,16 +237,6 @@ export function RequestPaneShell({
           onBubbleFocus={handleBubbleFocus}
           labels={threadLabels}
         />
-
-        {aiMemory ? (
-          <AiMemoryPanel
-            requestId={requestId}
-            locale={locale}
-            hasDraft={Boolean(draft)}
-            onAnnounce={announceMessage}
-            {...aiMemory}
-          />
-        ) : null}
 
         {draft ? (
           <AiDraftCard

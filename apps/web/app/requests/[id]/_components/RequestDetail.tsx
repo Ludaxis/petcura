@@ -26,8 +26,21 @@ import {
   updateRequestStatus,
   updateRequestUrgency
 } from "../actions";
+import type { AiMemoryPanelProps } from "./AiMemoryPanel";
 import { CreateReminderDialog } from "./CreateReminderDialog";
 import { DetailsSheet } from "./DetailsSheet";
+import { SideAiMemory } from "./SideAiMemory";
+
+/**
+ * Props the page hands down for the AI memory side block. Mirrors the
+ * shape previously consumed by `RequestPaneShell` minus the call-site
+ * concerns (`requestId`, `locale`, `hasDraft`, `onAnnounce`) — those are
+ * applied here so the page stays the single owner of the data shape.
+ */
+export type RequestDetailAiMemoryProps = Omit<
+  AiMemoryPanelProps,
+  "requestId" | "locale" | "hasDraft" | "onAnnounce"
+>;
 
 type RequestDetailProps = {
   request: RequestDetailModel;
@@ -41,6 +54,17 @@ type RequestDetailProps = {
    * card + composer + keyboard model.
    */
   paneShell: React.ReactNode;
+  /**
+   * AI memory block now lives in the side rail (above Events) instead of
+   * above the AI draft card in the main column. Passed through from
+   * `page.tsx` and forwarded into every mount of `SideBlocks` (xl rail,
+   * md–xl inline accordion, mobile sheet).
+   */
+  aiMemory?: RequestDetailAiMemoryProps | null;
+  /** Whether the request already has a pending AI draft. Drives the
+   *  panel's "Generate" vs "Regenerate" CTA when the page didn't pre-set
+   *  `draftControl.mode`. */
+  hasDraft: boolean;
   /**
    * Localized href used by the small top-right Close affordance ("X") to
    * walk back to /inbox. The sidebar's Inbox nav is the primary back
@@ -59,6 +83,8 @@ export function RequestDetail({
   formatDateTime,
   currentStaffUserId,
   paneShell,
+  aiMemory,
+  hasDraft,
   closeHref,
   closeLabel
 }: RequestDetailProps) {
@@ -291,6 +317,8 @@ export function RequestDetail({
                 formatDateTime={formatDateTime}
                 t={t}
                 idSuffix="sheet"
+                aiMemory={aiMemory}
+                hasDraft={hasDraft}
               />
             </DetailsSheet>
           </div>
@@ -319,6 +347,8 @@ export function RequestDetail({
               formatDateTime={formatDateTime}
               t={t}
               idSuffix="inline"
+              aiMemory={aiMemory}
+              hasDraft={hasDraft}
             />
           </aside>
         </div>
@@ -338,6 +368,8 @@ export function RequestDetail({
               formatDateTime={formatDateTime}
               t={t}
               idSuffix="rail"
+              aiMemory={aiMemory}
+              hasDraft={hasDraft}
             />
           </div>
         </aside>
@@ -360,6 +392,12 @@ type SideBlocksProps = {
   /** Disambiguates form/textarea IDs because the side panel renders twice
    *  (rail + inline tablet accordion) so both copies stay in the SSR DOM. */
   idSuffix: string;
+  /** AI memory panel data. When provided, an "AI memory" accordion is
+   *  rendered directly above the Events block. */
+  aiMemory?: RequestDetailAiMemoryProps | null | undefined;
+  /** Whether the request has a pending AI draft (drives generate vs.
+   *  regenerate CTA inside the panel). */
+  hasDraft?: boolean | undefined;
 };
 
 /**
@@ -374,7 +412,9 @@ function SideBlocks({
   locale,
   formatDateTime,
   t,
-  idSuffix
+  idSuffix,
+  aiMemory,
+  hasDraft = false
 }: SideBlocksProps) {
   const headingClass =
     "font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]";
@@ -557,6 +597,36 @@ function SideBlocks({
           </p>
         )}
       </details>
+
+      {aiMemory ? (
+        <details
+          open
+          data-ai-memory
+          className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+        >
+          <summary className="flex cursor-pointer items-center justify-between">
+            {/* Use the panel's own localized title — keeps EN/ET/RU in
+                lockstep with the panel header without adding parallel
+                translation keys. */}
+            <h2 className={headingClass}>{aiMemory.labels.title}</h2>
+            <ChevronDown aria-hidden="true" size={12} />
+          </summary>
+          <div className="mt-2.5">
+            {/* The panel ships with its own outer card chrome
+                (`mx-4 mt-3 rounded ... bg-[var(--paper)]`). Inside an
+                accordion that already pads `px-4 py-3`, those margins
+                double up — so we mount it through a client wrapper that
+                drops the outer wrapper styles while leaving the panel's
+                internals untouched. */}
+            <SideAiMemory
+              requestId={request.id}
+              locale={locale}
+              hasDraft={hasDraft}
+              {...aiMemory}
+            />
+          </div>
+        </details>
+      ) : null}
 
       <details
         open

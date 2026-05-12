@@ -381,7 +381,6 @@ export default async function RequestDetailPage({
         hidden: t("request.translate.announce.hidden")
       }}
       draftLabels={draftLabels}
-      aiMemory={aiMemory}
       composerLabels={composerLabels}
       keyboardLabels={keyboardLabels}
       shortcuts={shortcuts}
@@ -430,6 +429,8 @@ export default async function RequestDetailPage({
           formatDateTime={formatDateTime}
           currentStaffUserId={staffContext.user.id}
           paneShell={paneShell}
+          aiMemory={aiMemory}
+          hasDraft={Boolean(draft)}
           closeHref={withLocale("/inbox", locale)}
           closeLabel={t("request.detail.close")}
         />
