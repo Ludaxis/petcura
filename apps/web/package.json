@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
-    "test:visual": "playwright test --project=chromium"
+    "test:visual": "playwright test --project=chromium",
+    "check:bundle": "next build && node --experimental-strip-types scripts/check-bundle.ts"
   },
   "dependencies": {
     "@petcura/ai": "*",
