@@ -8,6 +8,7 @@ import {
   type SupportedLocale
 } from "@petcura/shared";
 import type { MessageDeliveryStatus } from "@/lib/delivery";
+import { isOptimisticMessage, type OptimisticMessage } from "@/lib/optimistic";
 import { logTranslationRevealed } from "../actions";
 
 export type ThreadMessage = {
@@ -24,8 +25,14 @@ export type ThreadMessage = {
 
 type ThreadProps = {
   requestId: string;
-  messages: ThreadMessage[];
+  messages: ReadonlyArray<ThreadMessage | OptimisticMessage>;
   locale: SupportedLocale;
+  /**
+   * Optional placeholder label rendered in place of the timestamp on
+   * optimistic ("pending") staff bubbles — typically the localized
+   * "Sending…" string supplied by RequestPaneShell.
+   */
+  pendingLabel?: string | undefined;
   /**
    * Notifies the parent shell when an article bubble receives focus, so the
    * keyboard model's `T` shortcut can target the right bubble. The shell
@@ -81,7 +88,8 @@ export function Thread({
   messages,
   locale,
   onBubbleFocus,
-  labels
+  labels,
+  pendingLabel
 }: ThreadProps) {
   const timeFormatter = new Intl.DateTimeFormat(locale, { timeStyle: "short" });
   const formatTime = (iso: string) => timeFormatter.format(new Date(iso));
@@ -149,6 +157,7 @@ export function Thread({
           const isStaff = msg.senderType === "staff";
           const isSystem = msg.senderType === "system" || msg.senderType === "ai";
           const isOwner = msg.senderType === "owner";
+          const isOptimistic = isOptimisticMessage(msg);
           const senderLabel = isSystem
             ? labels.system
             : getSenderLabel(msg.senderType, locale);
@@ -175,6 +184,7 @@ export function Thread({
               data-message-id={msg.id}
               data-sender={msg.senderType}
               data-translatable={showTranslate ? "true" : undefined}
+              data-optimistic={isOptimistic ? "true" : undefined}
               className={cn(
                 "flex max-w-[92%] gap-2",
                 isStaff ? "ml-auto flex-row-reverse" : "mr-auto"
@@ -182,19 +192,37 @@ export function Thread({
             >
               <article
                 role="article"
-                tabIndex={focusedBubbleId === msg.id ? 0 : -1}
-                onFocus={() => {
-                  setFocusedBubbleId(msg.id);
-                  onBubbleFocus?.(msg.id);
-                }}
-                aria-label={`${senderLabel} · ${formatTime(msg.createdAt)}${
+                // Optimistic bubbles are inert: not tab-reachable, can't
+                // receive roving focus (no real id for `T` to target).
+                tabIndex={isOptimistic ? -1 : focusedBubbleId === msg.id ? 0 : -1}
+                aria-busy={isOptimistic ? true : undefined}
+                onFocus={
+                  isOptimistic
+                    ? undefined
+                    : () => {
+                        setFocusedBubbleId(msg.id);
+                        onBubbleFocus?.(msg.id);
+                      }
+                }
+                aria-label={`${senderLabel} · ${
+                  isOptimistic && pendingLabel
+                    ? pendingLabel
+                    : formatTime(msg.createdAt)
+                }${
                   msg.sourceLocale ? ` · ${msg.sourceLocale.toUpperCase()}` : ""
                 }`}
                 className={cn(
-                  "max-w-[480px] rounded-[10px] border px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+                  "max-w-[480px] rounded-[10px] border px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] transition-opacity",
                   isStaff
                     ? "border-transparent bg-[var(--primary-soft)]"
-                    : "border-[var(--line-2)] bg-[var(--soft)]"
+                    : "border-[var(--line-2)] bg-[var(--soft)]",
+                  // Sage-tinted, 60% opacity pending state. The base staff
+                  // bubble already uses --primary-soft; the additional
+                  // border + ring softens the seam against neighboring
+                  // bubbles so the in-flight bubble reads as "sending"
+                  // rather than "delivered".
+                  isOptimistic &&
+                    "opacity-60 border-[var(--primary-soft)] ring-1 ring-inset ring-[var(--primary-soft)]"
                 )}
               >
                 <p className="break-words whitespace-pre-wrap">
@@ -208,7 +236,11 @@ export function Thread({
                     isStaff && "justify-end"
                   )}
                 >
-                  <span>{formatTime(msg.createdAt)}</span>
+                  <span>
+                    {isOptimistic && pendingLabel
+                      ? pendingLabel
+                      : formatTime(msg.createdAt)}
+                  </span>
                   {msg.sourceLocale ? (
                     <span aria-hidden="true">{msg.sourceLocale.toUpperCase()}</span>
                   ) : null}

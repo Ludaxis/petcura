@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CommandPalette, type CommandPaletteRef } from "@/app/inbox/_components/CommandPalette";
 import { RealtimeRefresh } from "@/app/_components/RealtimeRefresh";
 import type { InboxStream } from "@/lib/inbox/queries";
+import { useOptimisticMessages } from "@/lib/optimistic";
 import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
 import type { SupportedLocale } from "@petcura/shared";
 import { Thread, type ThreadMessage } from "./Thread";
@@ -90,6 +91,15 @@ export function RequestPaneShell({
   // Token guards a stale setTimeout from clearing a newer announcement.
   const announceTokenRef = useRef(0);
   const [announce, setAnnounce] = useState("");
+
+  // Optimistic merge: when the composer dispatches, the new staff bubble
+  // is appended synchronously inside the transition; React resets the
+  // optimistic state when the server action's redirect settles, so the
+  // real (server-streamed) message takes over without a flicker. On
+  // failure the action redirects with `?action_error=`, the page
+  // re-renders against the same seed, and the optimistic bubble vanishes
+  // — the rollback message rides the existing `initialAnnouncement` pipe.
+  const [mergedMessages, appendOptimistic] = useOptimisticMessages(messages);
 
   const announceMessage = useCallback((msg: string) => {
     const token = ++announceTokenRef.current;
@@ -232,9 +242,15 @@ export function RequestPaneShell({
         <Thread
           key={requestId}
           requestId={requestId}
-          messages={messages}
+          messages={mergedMessages}
           locale={locale}
           onBubbleFocus={handleBubbleFocus}
+          // While in-flight, the optimistic bubble shows "{Send}…" in place
+          // of the timestamp. Re-using the already-translated send label
+          // avoids adding a new translation key for a strictly transient
+          // affordance; the trailing ellipsis aligns with the composer
+          // button's pending state.
+          pendingLabel={`${composerLabels.send}…`}
           labels={threadLabels}
         />
 
@@ -255,6 +271,7 @@ export function RequestPaneShell({
           ref={composerRef}
           requestId={requestId}
           locale={locale}
+          onOptimisticAppend={appendOptimistic}
           labels={composerLabels}
         />
       </div>
