@@ -13,7 +13,8 @@ const ALLOWED_IMAGE_TYPES = new Map([
   ["image/heic", "heic"]
 ]);
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_PROFILE_IMAGE_INPUT_BYTES = 20 * 1024 * 1024;
+export const MAX_PROFILE_IMAGE_OUTPUT_BYTES = 5 * 1024 * 1024;
 
 export type ProfileEntity = "staff" | "owners" | "pets";
 
@@ -30,12 +31,12 @@ export function hasUsableProfileImage(file: File | null | undefined) {
 }
 
 export function validateProfileImage(file: File) {
-  if (file.size > MAX_IMAGE_BYTES) {
-    return "Profile images must be 5MB or smaller.";
-  }
-
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
     return "Use a JPG, PNG, WEBP, or HEIC image.";
+  }
+
+  if (file.size > MAX_PROFILE_IMAGE_INPUT_BYTES) {
+    return "Profile image originals must be 20MB or smaller.";
   }
 
   return null;
@@ -131,6 +132,10 @@ export async function uploadProfileImage({
 
   const admin = createAdminClient();
   const prepared = await prepareProfileImageForUpload(file);
+  if (prepared.body.byteLength > MAX_PROFILE_IMAGE_OUTPUT_BYTES) {
+    throw new Error("Profile images must optimize to 5MB or smaller.");
+  }
+
   const path = `${clinicId}/${entity}/${entityId}/avatar-${Date.now()}.${prepared.extension}`;
   const { error } = await admin.storage
     .from(PROFILE_MEDIA_BUCKET)

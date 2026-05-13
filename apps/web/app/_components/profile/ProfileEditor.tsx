@@ -11,6 +11,16 @@ import {
 import { Camera, Save } from "lucide-react";
 import { Button, Spinner, cn } from "@petcura/ui";
 
+const CLIENT_PROFILE_IMAGE_TARGET_BYTES = 4.5 * 1024 * 1024;
+const CLIENT_PROFILE_IMAGE_SAFE_BYTES = 20 * 1024 * 1024;
+const CLIENT_PROFILE_IMAGE_MAX_SIDE = 1920;
+const CLIENT_PROFILE_IMAGE_QUALITY = 0.92;
+const CLIENT_OPTIMIZABLE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp"
+]);
+
 export const profileInputClass = cn(
   "h-10 w-full rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm text-[var(--ink)]",
   "placeholder:text-[var(--muted-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
@@ -27,6 +37,152 @@ function initialsFromName(value: string) {
     .map((part) => Array.from(part)[0]?.toLocaleUpperCase("en-US") ?? "")
     .join("");
   return initials || "?";
+}
+
+function optimizedImageName(fileName: string) {
+  const base = fileName.replace(/\.[^.]+$/, "").trim() || "profile-photo";
+  return `${base}.jpg`;
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality: number
+) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("Could not optimize image"));
+        }
+      },
+      type,
+      quality
+    );
+  });
+}
+
+function loadImageElement(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read image"));
+    };
+    image.src = url;
+  });
+}
+
+async function decodeImageForCanvas(file: File) {
+  if ("createImageBitmap" in window) {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      cleanup: () => bitmap.close()
+    };
+  }
+
+  const image = await loadImageElement(file);
+  return {
+    source: image,
+    width: image.naturalWidth || image.width,
+    height: image.naturalHeight || image.height,
+    cleanup: () => {}
+  };
+}
+
+async function optimizeProfileImageForTransport(file: File) {
+  if (
+    file.size <= CLIENT_PROFILE_IMAGE_TARGET_BYTES ||
+    !CLIENT_OPTIMIZABLE_TYPES.has(file.type)
+  ) {
+    return file;
+  }
+
+  const decoded = await decodeImageForCanvas(file);
+  try {
+    const longestSide = Math.max(decoded.width, decoded.height);
+    const scale =
+      longestSide > CLIENT_PROFILE_IMAGE_MAX_SIDE
+        ? CLIENT_PROFILE_IMAGE_MAX_SIDE / longestSide
+        : 1;
+    const width = Math.max(1, Math.round(decoded.width * scale));
+    const height = Math.max(1, Math.round(decoded.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d", {
+      alpha: false,
+      desynchronized: true
+    });
+    if (!context) return file;
+
+    context.fillStyle =
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--paper")
+        .trim() || "Canvas";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(decoded.source, 0, 0, width, height);
+    const blob = await canvasToBlob(
+      canvas,
+      "image/jpeg",
+      CLIENT_PROFILE_IMAGE_QUALITY
+    );
+
+    if (blob.size >= file.size && file.size <= CLIENT_PROFILE_IMAGE_SAFE_BYTES) {
+      return file;
+    }
+
+    return new File([blob], optimizedImageName(file.name), {
+      type: "image/jpeg",
+      lastModified: Date.now()
+    });
+  } finally {
+    decoded.cleanup();
+  }
+}
+
+async function prepareProfileFormData(formData: FormData) {
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) {
+    return { formData, error: null as string | null };
+  }
+
+  try {
+    const optimized = await optimizeProfileImageForTransport(file);
+    if (optimized.size > CLIENT_PROFILE_IMAGE_SAFE_BYTES) {
+      return {
+        formData,
+        error: "Choose an image under 20MB, or use a JPG, PNG, or WEBP photo that PetCura can optimize."
+      };
+    }
+
+    if (optimized !== file) {
+      formData.set("photo", optimized);
+    }
+
+    return { formData, error: null as string | null };
+  } catch {
+    if (file.size > CLIENT_PROFILE_IMAGE_SAFE_BYTES) {
+      return {
+        formData,
+        error: "This image is too large to upload. Try a JPG, PNG, or WEBP photo under 20MB."
+      };
+    }
+
+    return { formData, error: null as string | null };
+  }
 }
 
 type ProfileAvatarProps = {
@@ -146,6 +302,7 @@ export function ProfileEditorCard({
   const [pending, startTransition] = useTransition();
   const [preview, setPreview] = useState<string | null>(null);
   const [pickedFileName, setPickedFileName] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   // Revoke the object URL when it changes or the form unmounts so the
   // browser can release the blob. Without this, picking three photos in a
@@ -160,6 +317,7 @@ export function ProfileEditorCard({
     if (!file) {
       setPreview(null);
       setPickedFileName(null);
+      setClientError(null);
       return;
     }
     const url = URL.createObjectURL(file);
@@ -168,6 +326,7 @@ export function ProfileEditorCard({
       return url;
     });
     setPickedFileName(file.name);
+    setClientError(null);
   };
 
   // Wrap the server action so React's useTransition pending fires across
@@ -175,7 +334,14 @@ export function ProfileEditorCard({
   // aria-busy + disabled state follows pending so SR users hear the work.
   const submitAction = (formData: FormData) => {
     startTransition(async () => {
-      await action(formData);
+      setClientError(null);
+      const prepared = await prepareProfileFormData(formData);
+      if (prepared.error) {
+        setClientError(prepared.error);
+        return;
+      }
+
+      await action(prepared.formData);
       // The action redirects on success; this resolves on the navigation
       // that follows. On error, the action redirects with ?action_error,
       // which the parent page maps into an aria-live announcement.
@@ -224,6 +390,11 @@ export function ProfileEditorCard({
                 <Camera aria-hidden="true" size={10} />
                 <span className="truncate">{pickedFileName}</span>
               </div>
+            ) : null}
+            {clientError ? (
+              <p className="mt-1.5 text-[12px] leading-5 text-[var(--red)]">
+                {clientError}
+              </p>
             ) : null}
           </div>
         </div>

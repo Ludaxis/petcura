@@ -3,9 +3,33 @@ import sharp from "sharp";
 
 vi.mock("server-only", () => ({}));
 
-import { optimizeProfileImageBytes } from "./profile-media";
+import {
+  MAX_PROFILE_IMAGE_INPUT_BYTES,
+  optimizeProfileImageBytes,
+  validateProfileImage
+} from "./profile-media";
 
 describe("profile media optimization", () => {
+  test("accepts phone-camera originals before server-side optimization", () => {
+    const file = new File(
+      [new Uint8Array(6 * 1024 * 1024)],
+      "clinic-avatar.jpg",
+      { type: "image/jpeg" }
+    );
+
+    expect(validateProfileImage(file)).toBeNull();
+  });
+
+  test("rejects originals above the transport ceiling", () => {
+    const file = new File(
+      [new Uint8Array(MAX_PROFILE_IMAGE_INPUT_BYTES + 1)],
+      "too-large.jpg",
+      { type: "image/jpeg" }
+    );
+
+    expect(validateProfileImage(file)).toContain("20MB");
+  });
+
   test("losslessly optimizes PNG uploads when the result is smaller", async () => {
     const input = await sharp({
       create: {
