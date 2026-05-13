@@ -9,12 +9,13 @@ import { Button, cn } from "@petcura/ui";
 import { getRequestLocale } from "@/lib/locale";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
 import {
-  mockAppointments,
-  mockOwner,
-  mockPets,
-  mockRequests,
-  mockVaccinations
-} from "@/lib/owner/mock";
+  listOwnerAppointments,
+  listOwnerPets,
+  listOwnerRequests,
+  listOwnerVaccinations,
+  toOwnerProfile
+} from "@/lib/owner/data";
+import { requireOwnerContext } from "@/lib/owner/auth";
 import {
   aggregateVaccineUrgency,
   formatDate,
@@ -25,12 +26,20 @@ import { PetCard } from "./_components/PetCard";
 
 export default async function OwnerHomePage() {
   const locale = await getRequestLocale();
+  const context = await requireOwnerContext(locale, "/o");
   const t = createOwnerTranslator(locale);
-  const firstName = mockOwner.name.split(" ")[0] ?? "";
+  const owner = toOwnerProfile(context);
+  const [pets, vaccinations, appointments, requests] = await Promise.all([
+    listOwnerPets(context),
+    listOwnerVaccinations(context),
+    listOwnerAppointments(context, locale),
+    listOwnerRequests(context)
+  ]);
+  const firstName = owner.name.split(" ")[0] ?? "";
 
   const petStatus = (petId: string) => {
     const urgency = aggregateVaccineUrgency(
-      mockVaccinations
+      vaccinations
         .filter((v) => v.petId === petId)
         .map((v) => vaccineUrgency(v.nextDueAt))
     );
@@ -42,22 +51,22 @@ export default async function OwnerHomePage() {
   };
 
   const latestRequest =
-    mockRequests
+    requests
       .slice()
       .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt))[0] ??
     null;
 
   const upcoming = [
-    ...mockAppointments.map((a) => ({
+    ...appointments.map((a) => ({
       id: a.id,
       title: `${a.serviceName} · ${a.petName}`,
       when: a.scheduledAt ?? a.proposedWindowStart
     })),
-    ...mockVaccinations
+    ...vaccinations
       .filter((v) => v.nextDueAt && vaccineUrgency(v.nextDueAt) !== "ok")
       .map((v) => ({
         id: v.id,
-        title: `${v.vaccineName} · ${mockPets.find((p) => p.id === v.petId)?.name ?? ""}`,
+        title: `${v.vaccineName} · ${pets.find((p) => p.id === v.petId)?.name ?? ""}`,
         when: v.nextDueAt!
       }))
   ].sort((a, b) => a.when.localeCompare(b.when));
@@ -91,7 +100,7 @@ export default async function OwnerHomePage() {
           </Button>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {mockPets.map((pet) => (
+          {pets.map((pet) => (
             <PetCard
               key={pet.id}
               pet={pet}

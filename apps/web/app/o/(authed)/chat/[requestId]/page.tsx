@@ -3,15 +3,16 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Checks } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@petcura/ui";
 import { getRequestLocale } from "@/lib/locale";
-import { createOwnerTranslator } from "@/lib/owner/i18n";
+import { requireOwnerContext } from "@/lib/owner/auth";
 import {
-  getMessagesForRequest,
-  getPet,
-  getRequest,
-  mockClinic
-} from "@/lib/owner/mock";
+  getOwnerRequest,
+  listMessagesForOwnerRequest
+} from "@/lib/owner/data";
+import { createOwnerTranslator } from "@/lib/owner/i18n";
 import { formatRelative } from "@/lib/owner/format";
 import { OwnerComposer } from "../../_components/OwnerComposer";
+import { OwnerRequestRealtime } from "../../_components/OwnerRequestRealtime";
+import { submitOwnerMessage } from "../../actions";
 
 type Props = {
   params: Promise<{ requestId: string }>;
@@ -20,14 +21,20 @@ type Props = {
 export default async function ChatThreadPage({ params }: Props) {
   const { requestId } = await params;
   const locale = await getRequestLocale();
+  const context = await requireOwnerContext(locale, `/o/chat/${requestId}`);
   const t = createOwnerTranslator(locale);
-  const req = getRequest(requestId);
+  const req = await getOwnerRequest(context, requestId);
   if (!req) notFound();
-  const pet = getPet(req.petId);
-  const messages = getMessagesForRequest(requestId);
+  const messages = await listMessagesForOwnerRequest(context, requestId);
+
+  async function sendMessage(text: string) {
+    "use server";
+    await submitOwnerMessage(requestId, text);
+  }
 
   return (
     <div className="flex min-h-dvh flex-1 flex-col lg:min-h-0">
+      <OwnerRequestRealtime requestId={requestId} />
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--line)] bg-[var(--paper)] px-4 py-3 sm:px-6 lg:px-10">
         <Link
           href="/o/chat"
@@ -41,8 +48,8 @@ export default async function ChatThreadPage({ params }: Props) {
           <ArrowLeft size={18} weight="bold" aria-hidden />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[var(--ink)]">{mockClinic.name}</p>
-          {pet ? <p className="truncate text-xs text-[var(--muted)]">{pet.name}</p> : null}
+          <p className="truncate text-sm font-semibold text-[var(--ink)]">{context.clinic.name}</p>
+          {req.petName ? <p className="truncate text-xs text-[var(--muted)]">{req.petName}</p> : null}
         </div>
       </header>
 
@@ -102,6 +109,7 @@ export default async function ChatThreadPage({ params }: Props) {
           placeholder={t("chat.composer.placeholder")}
           sendLabel={t("chat.composer.send")}
           attachLabel={t("chat.composer.attach")}
+          onSubmitText={sendMessage}
         />
       </div>
     </div>

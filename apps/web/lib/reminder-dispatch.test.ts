@@ -25,6 +25,7 @@ function makeDueReminder(): ReminderRow {
     channel: "whatsapp",
     status: "scheduled",
     sent_at: null,
+    source_key: null,
     acknowledged_at: null,
     completed_at: null,
     created_by: null,

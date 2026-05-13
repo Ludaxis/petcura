@@ -51,6 +51,7 @@ export type Appointment = {
   proposedWindowStart: string;
   proposedWindowEnd: string;
   scheduledAt: string | null;
+  requestId: string | null;
 };
 
 export type ChatMessageSender = "owner" | "staff" | "system" | "ai";
@@ -82,6 +83,7 @@ export type OwnerRequest = {
 };
 
 export type Service = {
+  id: string;
   slug: string;
   category:
     | "checkup"

@@ -90,7 +90,9 @@ const en = {
   "login.help": "Don't see your number working? Ask your clinic to invite you.",
   "login.error.notFound": "We could not find your number with any PetCura clinic. Please contact your clinic.",
   "login.error.invalidPhone": "Enter a valid phone number with country code.",
-  "login.error.invalidCode": "The code is incorrect or expired."
+  "login.error.invalidCode": "The code is incorrect or expired.",
+  "login.error.otpUnavailable": "We could not send a code right now. Please try again soon.",
+  "login.error.loginError": "We could not sign you in right now. Please try again."
 };
 
 type OwnerCopy = typeof en;
@@ -186,7 +188,9 @@ const et: OwnerCopy = {
   "login.help": "Number ei tööta? Palu kliinikul Sind kutsuda.",
   "login.error.notFound": "Me ei leidnud Sinu numbrit ühestki PetCura kliinikust. Palun võta kliinikuga ühendust.",
   "login.error.invalidPhone": "Sisesta kehtiv telefoninumber koos riigikoodiga.",
-  "login.error.invalidCode": "Kood on vale või aegunud."
+  "login.error.invalidCode": "Kood on vale või aegunud.",
+  "login.error.otpUnavailable": "Me ei saanud praegu koodi saata. Palun proovi varsti uuesti.",
+  "login.error.loginError": "Me ei saanud Sind praegu sisse logida. Palun proovi uuesti."
 };
 
 const ru: OwnerCopy = {
@@ -279,7 +283,9 @@ const ru: OwnerCopy = {
   "login.help": "Номер не работает? Попросите клинику пригласить вас.",
   "login.error.notFound": "Мы не нашли ваш номер ни в одной клинике PetCura. Свяжитесь с клиникой.",
   "login.error.invalidPhone": "Введите корректный номер телефона с кодом страны.",
-  "login.error.invalidCode": "Код неверный или истёк."
+  "login.error.invalidCode": "Код неверный или истёк.",
+  "login.error.otpUnavailable": "Не удалось отправить код. Попробуйте ещё раз чуть позже.",
+  "login.error.loginError": "Не удалось войти. Попробуйте ещё раз."
 };
 
 const dictionaries: Record<SupportedLocale, OwnerCopy> = { en, et, ru };

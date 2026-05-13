@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, PawPrint } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@petcura/ui";
 import { getRequestLocale } from "@/lib/locale";
+import { requireOwnerContext } from "@/lib/owner/auth";
 import {
-  getPet,
-  getVaccinationsForPet,
-  getWeightsForPet
-} from "@/lib/owner/mock";
+  listOwnerPets,
+  listOwnerVaccinations,
+  listOwnerWeightEntries
+} from "@/lib/owner/data";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
 import { formatDate, petAgeLabel } from "@/lib/owner/format";
 import { VaccinationTimeline } from "../../_components/VaccinationTimeline";
@@ -29,12 +30,22 @@ const speciesKey = (s: string) =>
 export default async function PetDetailPage({ params }: Props) {
   const { petId } = await params;
   const locale = await getRequestLocale();
+  const context = await requireOwnerContext(locale, `/o/pets/${petId}`);
   const t = createOwnerTranslator(locale);
-  const pet = getPet(petId);
+  const [pets, allVaccinations, allWeights] = await Promise.all([
+    listOwnerPets(context),
+    listOwnerVaccinations(context),
+    listOwnerWeightEntries(context)
+  ]);
+  const pet = pets.find((item) => item.id === petId);
   if (!pet) notFound();
 
-  const vaccinations = getVaccinationsForPet(petId);
-  const weights = getWeightsForPet(petId);
+  const vaccinations = allVaccinations
+    .filter((v) => v.petId === petId)
+    .sort((a, b) => b.administeredAt.localeCompare(a.administeredAt));
+  const weights = allWeights
+    .filter((w) => w.petId === petId)
+    .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
   const age = petAgeLabel(pet.birthDate, locale);
 
   const tabs = [

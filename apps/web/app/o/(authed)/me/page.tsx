@@ -9,14 +9,17 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { Button, cn } from "@petcura/ui";
 import { getRequestLocale } from "@/lib/locale";
+import { requireOwnerContext } from "@/lib/owner/auth";
+import { toOwnerProfile } from "@/lib/owner/data";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
-import { mockClinic, mockOwner } from "@/lib/owner/mock";
 import { localeOptions } from "@petcura/shared";
+import { signOutOwner } from "../../login/actions";
 
 export default async function MePage() {
   const locale = await getRequestLocale();
+  const context = await requireOwnerContext(locale, "/o/me");
   const t = createOwnerTranslator(locale);
-  const owner = mockOwner;
+  const owner = toOwnerProfile(context);
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pt-10">
@@ -76,9 +79,16 @@ export default async function MePage() {
         <h2 id="clinics-heading" className="mb-4 text-sm font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
           {t("me.clinics.title")}
         </h2>
-        <div className="flex items-center justify-between rounded-[var(--radius)] border border-[var(--line)] bg-[var(--soft)] px-4 py-3 text-sm">
-          <span className="font-medium text-[var(--ink)]">{mockClinic.name}</span>
-          <span className="text-xs text-[var(--muted)]">{mockClinic.timezone}</span>
+        <div className="flex flex-col gap-2">
+          {context.memberships.map((membership) => (
+            <div
+              key={membership.clinicId}
+              className="flex items-center justify-between rounded-[var(--radius)] border border-[var(--line)] bg-[var(--soft)] px-4 py-3 text-sm"
+            >
+              <span className="font-medium text-[var(--ink)]">{membership.clinic.name}</span>
+              <span className="text-xs text-[var(--muted)]">{membership.clinic.timezone}</span>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -96,10 +106,12 @@ export default async function MePage() {
         </ul>
       </section>
 
-      <Button variant="secondary" className="self-start">
-        <SignOut size={16} weight="regular" aria-hidden />
-        {t("me.signout")}
-      </Button>
+      <form action={signOutOwner}>
+        <Button variant="secondary" className="self-start">
+          <SignOut size={16} weight="regular" aria-hidden />
+          {t("me.signout")}
+        </Button>
+      </form>
     </div>
   );
 }

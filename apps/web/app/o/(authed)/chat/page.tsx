@@ -2,9 +2,10 @@ import Link from "next/link";
 import { ArrowRight, ChatCircle } from "@phosphor-icons/react/dist/ssr";
 import { cn, StatusPill } from "@petcura/ui";
 import { getRequestLocale } from "@/lib/locale";
+import { requireOwnerContext } from "@/lib/owner/auth";
+import { listOwnerRequests } from "@/lib/owner/data";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
 import { formatRelative } from "@/lib/owner/format";
-import { mockRequests } from "@/lib/owner/mock";
 
 const statusMap = {
   new: "new",
@@ -15,8 +16,9 @@ const statusMap = {
 
 export default async function ChatListPage() {
   const locale = await getRequestLocale();
+  const context = await requireOwnerContext(locale, "/o/chat");
   const t = createOwnerTranslator(locale);
-  const requests = mockRequests
+  const requests = (await listOwnerRequests(context))
     .slice()
     .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
 

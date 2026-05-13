@@ -203,6 +203,106 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          cancelled_reason: string | null
+          clinic_id: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          idempotency_key: string | null
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          proposed_window: string
+          request_id: string | null
+          scheduled_at: string | null
+          service_id: string | null
+          staff_id: string | null
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          cancelled_reason?: string | null
+          clinic_id: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          idempotency_key?: string | null
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          proposed_window: string
+          request_id?: string | null
+          scheduled_at?: string | null
+          service_id?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          cancelled_reason?: string | null
+          clinic_id?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          idempotency_key?: string | null
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          proposed_window?: string
+          request_id?: string | null
+          scheduled_at?: string | null
+          service_id?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_clinic_id_owner_id_fkey"
+            columns: ["clinic_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["clinic_id", "id"]
+          },
+          {
+            foreignKeyName: "appointments_clinic_id_pet_id_fkey"
+            columns: ["clinic_id", "pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["clinic_id", "id"]
+          },
+          {
+            foreignKeyName: "appointments_clinic_id_request_id_fkey"
+            columns: ["clinic_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["clinic_id", "id"]
+          },
+          {
+            foreignKeyName: "appointments_clinic_id_service_id_fkey"
+            columns: ["clinic_id", "service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["clinic_id", "id"]
+          },
+          {
+            foreignKeyName: "appointments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attachments: {
         Row: {
           clinic_id: string
@@ -718,6 +818,148 @@ export type Database = {
           },
         ]
       }
+      owner_invites: {
+        Row: {
+          clinic_id: string
+          consumed_at: string | null
+          created_at: string
+          created_by_staff_id: string | null
+          expires_at: string
+          id: string
+          phone: string
+          token_hash: string
+        }
+        Insert: {
+          clinic_id: string
+          consumed_at?: string | null
+          created_at?: string
+          created_by_staff_id?: string | null
+          expires_at: string
+          id?: string
+          phone: string
+          token_hash: string
+        }
+        Update: {
+          clinic_id?: string
+          consumed_at?: string | null
+          created_at?: string
+          created_by_staff_id?: string | null
+          expires_at?: string
+          id?: string
+          phone?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_invites_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_invites_created_by_staff_id_fkey"
+            columns: ["created_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_user_identities: {
+        Row: {
+          created_at: string
+          identity_type: string
+          identity_value: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          identity_type: string
+          identity_value: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          identity_type?: string
+          identity_value?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_user_identities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "owner_users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      owner_user_memberships: {
+        Row: {
+          clinic_id: string
+          joined_at: string
+          owner_id: string
+          user_id: string
+        }
+        Insert: {
+          clinic_id: string
+          joined_at?: string
+          owner_id: string
+          user_id: string
+        }
+        Update: {
+          clinic_id?: string
+          joined_at?: string
+          owner_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_user_memberships_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_user_memberships_clinic_id_owner_id_fkey"
+            columns: ["clinic_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["clinic_id", "id"]
+          },
+          {
+            foreignKeyName: "owner_user_memberships_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_user_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "owner_users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      owner_users: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       owners: {
         Row: {
           clinic_id: string
@@ -779,6 +1021,7 @@ export type Database = {
           id: string
           medical_notes: string | null
           name: string
+          owner_notes: string | null
           owner_id: string
           photo_url: string | null
           sex: string | null
@@ -795,6 +1038,7 @@ export type Database = {
           id?: string
           medical_notes?: string | null
           name: string
+          owner_notes?: string | null
           owner_id: string
           photo_url?: string | null
           sex?: string | null
@@ -811,6 +1055,7 @@ export type Database = {
           id?: string
           medical_notes?: string | null
           name?: string
+          owner_notes?: string | null
           owner_id?: string
           photo_url?: string | null
           sex?: string | null
@@ -852,6 +1097,7 @@ export type Database = {
           request_id: string | null
           send_attempts: number
           sent_at: string | null
+          source_key: string | null
           status: string
           title: string
           type: string
@@ -873,6 +1119,7 @@ export type Database = {
           request_id?: string | null
           send_attempts?: number
           sent_at?: string | null
+          source_key?: string | null
           status?: string
           title: string
           type: string
@@ -894,6 +1141,7 @@ export type Database = {
           request_id?: string | null
           send_attempts?: number
           sent_at?: string | null
+          source_key?: string | null
           status?: string
           title?: string
           type?: string
@@ -1075,14 +1323,211 @@ export type Database = {
           },
         ]
       }
+      services: {
+        Row: {
+          category: Database["public"]["Enums"]["service_category"]
+          clinic_id: string
+          created_at: string
+          currency: string
+          description_i18n: Json
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          name_i18n: Json
+          price_cents: number | null
+          requires_pet_species: string[]
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["service_category"]
+          clinic_id: string
+          created_at?: string
+          currency?: string
+          description_i18n?: Json
+          duration_minutes: number
+          id?: string
+          is_active?: boolean
+          name_i18n: Json
+          price_cents?: number | null
+          requires_pet_species?: string[]
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["service_category"]
+          clinic_id?: string
+          created_at?: string
+          currency?: string
+          description_i18n?: Json
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          name_i18n?: Json
+          price_cents?: number | null
+          requires_pet_species?: string[]
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_weight_entries: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          measured_at: string
+          pet_id: string
+          source: string
+          weight_kg: number
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          measured_at: string
+          pet_id: string
+          source: string
+          weight_kg: number
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          measured_at?: string
+          pet_id?: string
+          source?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_weight_entries_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_weight_entries_clinic_id_pet_id_fkey"
+            columns: ["clinic_id", "pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["clinic_id", "id"]
+          },
+        ]
+      }
+      vaccinations: {
+        Row: {
+          administered_at: string
+          administered_by_staff_id: string | null
+          clinic_id: string
+          created_at: string
+          id: string
+          lot_number: string | null
+          manufacturer: string | null
+          next_due_at: string | null
+          notes: string | null
+          pet_id: string
+          source: string
+          updated_at: string
+          vaccine_code: string
+          vaccine_name: string
+        }
+        Insert: {
+          administered_at: string
+          administered_by_staff_id?: string | null
+          clinic_id: string
+          created_at?: string
+          id?: string
+          lot_number?: string | null
+          manufacturer?: string | null
+          next_due_at?: string | null
+          notes?: string | null
+          pet_id: string
+          source?: string
+          updated_at?: string
+          vaccine_code: string
+          vaccine_name: string
+        }
+        Update: {
+          administered_at?: string
+          administered_by_staff_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          lot_number?: string | null
+          manufacturer?: string | null
+          next_due_at?: string | null
+          notes?: string | null
+          pet_id?: string
+          source?: string
+          updated_at?: string
+          vaccine_code?: string
+          vaccine_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccinations_administered_by_staff_id_fkey"
+            columns: ["administered_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vaccinations_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vaccinations_clinic_id_pet_id_fkey"
+            columns: ["clinic_id", "pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["clinic_id", "id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      current_clinic_id: { Args: never; Returns: string }
+      current_clinic_id: { Args: never; Returns: string | null }
+      request_appointment: {
+        Args: {
+          p_pet_id: string
+          p_service_id: string
+          p_proposed_window: string
+          p_notes: string | null
+          p_idempotency_key: string | null
+        }
+        Returns: string
+      }
     }
     Enums: {
+      appointment_status:
+        | "requested"
+        | "confirmed"
+        | "rescheduled"
+        | "completed"
+        | "cancelled"
+        | "no_show"
       message_sender_type: "owner" | "staff" | "system" | "ai"
       owner_channel: "whatsapp" | "sms" | "web"
       request_category:
@@ -1093,6 +1538,14 @@ export type Database = {
         | "admin"
       request_status: "new" | "waiting_staff" | "waiting_owner" | "resolved"
       request_urgency: "low" | "medium" | "high"
+      service_category:
+        | "checkup"
+        | "vaccination"
+        | "refill"
+        | "grooming"
+        | "consultation"
+        | "surgery"
+        | "other"
       staff_role: "owner" | "admin" | "vet" | "tech" | "reception" | "viewer"
     }
     CompositeTypes: {
@@ -1221,6 +1674,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      appointment_status: [
+        "requested",
+        "confirmed",
+        "rescheduled",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
       message_sender_type: ["owner", "staff", "system", "ai"],
       owner_channel: ["whatsapp", "sms", "web"],
       request_category: [
@@ -1232,6 +1693,15 @@ export const Constants = {
       ],
       request_status: ["new", "waiting_staff", "waiting_owner", "resolved"],
       request_urgency: ["low", "medium", "high"],
+      service_category: [
+        "checkup",
+        "vaccination",
+        "refill",
+        "grooming",
+        "consultation",
+        "surgery",
+        "other",
+      ],
       staff_role: ["owner", "admin", "vet", "tech", "reception", "viewer"],
     },
   },

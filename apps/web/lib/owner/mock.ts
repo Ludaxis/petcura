@@ -75,7 +75,8 @@ export const mockAppointments: Appointment[] = [
     status: "confirmed",
     proposedWindowStart: "2026-05-20T10:00:00.000Z",
     proposedWindowEnd: "2026-05-20T11:00:00.000Z",
-    scheduledAt: "2026-05-20T10:30:00.000Z"
+    scheduledAt: "2026-05-20T10:30:00.000Z",
+    requestId: null
   }
 ];
 
@@ -159,12 +160,12 @@ export const mockMessages: Record<string, ChatMessage[]> = {
 };
 
 export const mockServices: Service[] = [
-  { slug: "annual-checkup", category: "checkup", name: "Annual checkup", description: "A general wellness visit covering weight, teeth, coat, behavior, and questions.", durationMinutes: 30, priceCents: 4500, currency: "EUR", requiresPetSpecies: [] },
-  { slug: "vaccination", category: "vaccination", name: "Vaccination visit", description: "Routine vaccination plus quick wellness check.", durationMinutes: 20, priceCents: 3500, currency: "EUR", requiresPetSpecies: [] },
-  { slug: "prescription-refill", category: "refill", name: "Prescription refill", description: "Renew an ongoing prescription. Subject to staff review.", durationMinutes: 10, priceCents: null, currency: "EUR", requiresPetSpecies: [] },
-  { slug: "dental-cleaning", category: "surgery", name: "Dental cleaning", description: "Scale and polish under anesthesia. Includes pre-anesthetic check.", durationMinutes: 60, priceCents: 18000, currency: "EUR", requiresPetSpecies: ["dog", "cat"] },
-  { slug: "wellness-consultation", category: "consultation", name: "Wellness consultation", description: "Nutrition, behavior, or general health concerns.", durationMinutes: 30, priceCents: 4000, currency: "EUR", requiresPetSpecies: [] },
-  { slug: "grooming", category: "grooming", name: "Grooming", description: "Bath, trim, and nail clipping.", durationMinutes: 60, priceCents: 5000, currency: "EUR", requiresPetSpecies: ["dog", "cat"] }
+  { id: "svc-annual-checkup", slug: "annual-checkup", category: "checkup", name: "Annual checkup", description: "A general wellness visit covering weight, teeth, coat, behavior, and questions.", durationMinutes: 30, priceCents: 4500, currency: "EUR", requiresPetSpecies: [] },
+  { id: "svc-vaccination", slug: "vaccination", category: "vaccination", name: "Vaccination visit", description: "Routine vaccination plus quick wellness check.", durationMinutes: 20, priceCents: 3500, currency: "EUR", requiresPetSpecies: [] },
+  { id: "svc-prescription-refill", slug: "prescription-refill", category: "refill", name: "Prescription refill", description: "Renew an ongoing prescription. Subject to staff review.", durationMinutes: 10, priceCents: null, currency: "EUR", requiresPetSpecies: [] },
+  { id: "svc-dental-cleaning", slug: "dental-cleaning", category: "surgery", name: "Dental cleaning", description: "Scale and polish under anesthesia. Includes pre-anesthetic check.", durationMinutes: 60, priceCents: 18000, currency: "EUR", requiresPetSpecies: ["dog", "cat"] },
+  { id: "svc-wellness-consultation", slug: "wellness-consultation", category: "consultation", name: "Wellness consultation", description: "Nutrition, behavior, or general health concerns.", durationMinutes: 30, priceCents: 4000, currency: "EUR", requiresPetSpecies: [] },
+  { id: "svc-grooming", slug: "grooming", category: "grooming", name: "Grooming", description: "Bath, trim, and nail clipping.", durationMinutes: 60, priceCents: 5000, currency: "EUR", requiresPetSpecies: ["dog", "cat"] }
 ];
 
 export function getPet(id: string): Pet | undefined {

@@ -1,6 +1,7 @@
 import { getRequestLocale } from "@/lib/locale";
+import { requireOwnerContext } from "@/lib/owner/auth";
+import { listOwnerPets, listOwnerServices } from "@/lib/owner/data";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
-import { mockServices } from "@/lib/owner/mock";
 import { ServiceCard } from "../_components/ServiceCard";
 
 const groupOrder: ReadonlyArray<
@@ -9,8 +10,10 @@ const groupOrder: ReadonlyArray<
 
 export default async function ServicesPage() {
   const locale = await getRequestLocale();
+  const context = await requireOwnerContext(locale, "/o/services");
   const t = createOwnerTranslator(locale);
-  const services = mockServices;
+  const pets = await listOwnerPets(context);
+  const services = await listOwnerServices(context, locale, pets);
 
   if (services.length === 0) {
     return (

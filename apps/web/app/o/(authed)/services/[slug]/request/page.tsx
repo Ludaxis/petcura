@@ -1,11 +1,18 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { Button, cn } from "@petcura/ui";
 import { getRequestLocale } from "@/lib/locale";
+import { requireOwnerContext } from "@/lib/owner/auth";
+import {
+  getEligiblePetsForService,
+  getOwnerService,
+  listOwnerPets
+} from "@/lib/owner/data";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
-import { getService, mockPets } from "@/lib/owner/mock";
 import { formatPrice } from "@/lib/owner/format";
+import { requestOwnerAppointment } from "../../../actions";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -14,15 +21,18 @@ type Props = {
 export default async function ServiceRequestPage({ params }: Props) {
   const { slug } = await params;
   const locale = await getRequestLocale();
+  const context = await requireOwnerContext(locale, `/o/services/${slug}/request`);
   const t = createOwnerTranslator(locale);
-  const service = getService(slug);
+  const [service, pets] = await Promise.all([
+    getOwnerService(context, slug, locale),
+    listOwnerPets(context)
+  ]);
   if (!service) notFound();
 
-  const eligiblePets =
-    service.requiresPetSpecies.length === 0
-      ? mockPets
-      : mockPets.filter((p) => (service.requiresPetSpecies as string[]).includes(p.species));
+  const eligiblePets = getEligiblePetsForService(service, pets);
+  if (eligiblePets.length === 0) notFound();
   const price = formatPrice(service.priceCents, service.currency, locale);
+  const idempotencyKey = randomUUID();
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pt-10">
@@ -49,11 +59,10 @@ export default async function ServiceRequestPage({ params }: Props) {
 
       <form
         className="flex flex-col gap-5 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--paper)] p-5"
-        action={async () => {
-          "use server";
-          // TODO: call public.request_appointment(...) per appointments.md
-        }}
+        action={requestOwnerAppointment}
       >
+        <input type="hidden" name="serviceId" value={service.id} />
+        <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
         <fieldset className="flex flex-col gap-2">
           <legend className="text-sm font-medium text-[var(--ink)]">
             {t("services.request.petPicker")}
@@ -85,6 +94,7 @@ export default async function ServiceRequestPage({ params }: Props) {
           <input
             type="datetime-local"
             name="proposedAt"
+            required
             className={cn(
               "h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm text-[var(--ink)]",
               "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
