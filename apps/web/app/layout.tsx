@@ -24,7 +24,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "PetCura",
-  description: "WhatsApp-native ClientOps inbox for veterinary clinics"
+  description: "WhatsApp-native ClientOps inbox for veterinary clinics",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg"
+  }
 };
 
 export default async function RootLayout({
