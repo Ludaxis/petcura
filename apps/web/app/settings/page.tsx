@@ -8,13 +8,14 @@ import {
   type CopyKey,
   type StaffRole
 } from "@petcura/shared";
-import { Badge, Button, cn } from "@petcura/ui";
+import { Badge, cn } from "@petcura/ui";
 import { createTranslator } from "@petcura/shared";
 import { AppShell } from "@/app/_components/AppShell";
 import { PendingForm } from "@/app/_components/forms/PendingForm";
 import { PendingSubmitButton } from "@/app/_components/forms/PendingSubmitButton";
 import {
   ProfileAvatar,
+  ProfileEditorCard,
   ProfileField,
   profileInputClass
 } from "@/app/_components/profile/ProfileEditor";
@@ -403,17 +404,26 @@ export default async function SettingsPage({ searchParams }: Props) {
                         <summary className="cursor-pointer text-[12.5px] font-semibold text-[var(--ink)]">
                           {t("profile.editProfile")}
                         </summary>
-                        <PendingForm
+                        <ProfileEditorCard
                           action={updateClinicTeamMemberProfile}
-                          className="mt-3 grid gap-3 sm:grid-cols-2"
-                          encType="multipart/form-data"
+                          className="mt-3 !border-0 !bg-transparent !p-0 !shadow-none"
+                          description={<span>{member.email}</span>}
+                          hiddenFields={
+                            <>
+                              <input name="lang" type="hidden" value={locale} />
+                              <input
+                                name="membershipId"
+                                type="hidden"
+                                value={member.id}
+                              />
+                            </>
+                          }
+                          imageLabel={t("profile.photo")}
+                          imageUrl={member.profile.avatarUrl}
+                          name={profileName}
+                          submitLabel={t("profile.save")}
+                          title={profileName}
                         >
-                          <input name="lang" type="hidden" value={locale} />
-                          <input
-                            name="membershipId"
-                            type="hidden"
-                            value={member.id}
-                          />
                           <ProfileField
                             htmlFor={`member-full-name-${member.id}`}
                             label={t("profile.fullName")}
@@ -478,24 +488,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                               ))}
                             </select>
                           </ProfileField>
-                          <ProfileField
-                            htmlFor={`member-photo-${member.id}`}
-                            label={t("profile.photo")}
-                          >
-                            <input
-                              accept="image/jpeg,image/png,image/webp,image/heic"
-                              className={profileInputClass}
-                              id={`member-photo-${member.id}`}
-                              name="photo"
-                              type="file"
-                            />
-                          </ProfileField>
-                          <div className="flex justify-end sm:col-span-2">
-                            <PendingSubmitButton variant="secondary">
-                              {t("profile.save")}
-                            </PendingSubmitButton>
-                          </div>
-                        </PendingForm>
+                        </ProfileEditorCard>
                       </details>
                     ) : null}
                   </li>
