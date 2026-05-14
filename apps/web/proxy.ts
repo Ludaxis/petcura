@@ -22,6 +22,10 @@ function isClinicHost(host: string | null) {
   return clinicHosts.has(host.split(":")[0]?.toLowerCase() ?? "");
 }
 
+function isOwnerAppPath(pathname: string) {
+  return pathname === "/o" || pathname.startsWith("/o/");
+}
+
 export function proxy(request: NextRequest) {
   const explicitLocale = request.nextUrl.searchParams.get("lang");
   const cookieLocale = request.cookies.get(localeCookie)?.value;
@@ -32,7 +36,7 @@ export function proxy(request: NextRequest) {
     request.headers.get("host") ??
     request.nextUrl.host;
 
-  if (isClinicHost(host) && request.nextUrl.pathname.startsWith("/o")) {
+  if (isClinicHost(host) && isOwnerAppPath(request.nextUrl.pathname)) {
     const redirectUrl = request.nextUrl.clone();
 
     redirectUrl.hostname = ownerHost;

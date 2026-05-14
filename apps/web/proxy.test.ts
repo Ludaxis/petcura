@@ -30,6 +30,14 @@ describe("proxy", () => {
     );
   });
 
+  it("does not treat clinic owner directory routes as owner app routes", () => {
+    const response = proxy(new NextRequest("https://app.petcura.app/owners?lang=en"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
   it("keeps the main app root on the marketing shell", () => {
     const response = proxy(new NextRequest("https://app.petcura.app/"));
 
