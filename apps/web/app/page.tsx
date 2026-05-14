@@ -618,16 +618,15 @@ function TopNav({
             label={t("language.label")}
             locale={locale}
           />
+          <Link
+            className="hidden rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)] lg:inline-flex"
+            href="/login"
+          >
+            {t("landing.nav.signIn")}
+          </Link>
           <Button asChild size="sm">
             <Link href="#pricing">{t("landing.nav.bookDemo")}</Link>
           </Button>
-          <Link
-            aria-label={t("nav.ownerIntake")}
-            className="hidden text-xs text-[var(--muted)] hover:text-[var(--foreground)] sm:inline-flex"
-            href={intakeHref}
-          >
-            {t("nav.ownerIntake")} <ArrowRight aria-hidden="true" size={12} />
-          </Link>
         </div>
       </div>
     </header>
@@ -840,7 +839,8 @@ function Footer({
         { href: "#how-it-works", label: t("landing.footer.howItWorks") },
         { href: "#safety", label: t("landing.footer.safety") },
         { href: "#security", label: t("landing.footer.compliance") },
-        { href: "#pricing", label: t("landing.footer.pricing") }
+        { href: "#pricing", label: t("landing.footer.pricing") },
+        { href: "/login", label: t("landing.nav.signIn") }
       ]
     },
     {
@@ -860,6 +860,7 @@ function Footer({
       heading: t("landing.footer.owners"),
       links: [
         { href: ownersHref, label: t("landing.footer.owners") },
+        { href: "/o", label: t("owners.cta.primary") },
         { href: intakeHref, label: t("intake.title") }
       ]
     }

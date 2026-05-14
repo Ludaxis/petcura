@@ -291,6 +291,7 @@ export const uiCopy = {
     "landing.nav.security": "Security",
     "landing.nav.pricing": "Pricing",
     "landing.nav.bookDemo": "Book demo",
+    "landing.nav.signIn": "Sign in",
     "landing.hero.eyebrow": "EU-hosted · GDPR-aligned · Built for veterinary clinics",
     "landing.hero.title": "The WhatsApp inbox built for veterinary clinics.",
     "landing.hero.body":
@@ -458,7 +459,8 @@ export const uiCopy = {
     "owners.cta.title": "Reach your clinic",
     "owners.cta.body":
       "Use the link your clinic sent you, or open the web form if WhatsApp isn't an option right now.",
-    "owners.cta.primary": "Open the intake form",
+    "owners.cta.primary": "Open the app",
+    "owners.cta.secondary": "Or open the web intake form",
     "owners.cta.back": "Back to PetCura for clinics",
     "intake.badge": "Owner web fallback",
     "intake.title": "Create a request",
@@ -1036,6 +1038,7 @@ export const uiCopy = {
     "landing.nav.security": "Turve",
     "landing.nav.pricing": "Hinnad",
     "landing.nav.bookDemo": "Broneeri demo",
+    "landing.nav.signIn": "Logi sisse",
     "landing.hero.eyebrow": "EU-s majutatud · GDPR-iga kooskõlas · Loodud loomakliinikutele",
     "landing.hero.title": "WhatsApp postkast loomakliinikutele.",
     "landing.hero.body":
@@ -1203,7 +1206,8 @@ export const uiCopy = {
     "owners.cta.title": "Võta kliinikuga ühendust",
     "owners.cta.body":
       "Kasuta linki, mille kliinik sulle saatis, või ava veebivorm, kui WhatsApp ei sobi.",
-    "owners.cta.primary": "Ava vorm",
+    "owners.cta.primary": "Ava rakendus",
+    "owners.cta.secondary": "Või ava veebivorm",
     "owners.cta.back": "Tagasi PetCura kliinikutele",
     "intake.badge": "Omaniku veebivorm",
     "intake.title": "Loo pöördumine",
@@ -1782,6 +1786,7 @@ export const uiCopy = {
     "landing.nav.security": "Защита",
     "landing.nav.pricing": "Цены",
     "landing.nav.bookDemo": "Запланировать демо",
+    "landing.nav.signIn": "Войти",
     "landing.hero.eyebrow":
       "Хостинг в ЕС · Соответствует GDPR · Сделано для ветеринарных клиник",
     "landing.hero.title": "Входящие WhatsApp для ветеринарных клиник.",
@@ -1953,7 +1958,8 @@ export const uiCopy = {
     "owners.cta.title": "Связаться с клиникой",
     "owners.cta.body":
       "Используйте ссылку от клиники или откройте веб-форму, если WhatsApp сейчас не подходит.",
-    "owners.cta.primary": "Открыть форму",
+    "owners.cta.primary": "Открыть приложение",
+    "owners.cta.secondary": "Или открыть веб-форму",
     "owners.cta.back": "Назад к PetCura для клиник",
     "intake.badge": "Веб-форма владельца",
     "intake.title": "Создать запрос",
