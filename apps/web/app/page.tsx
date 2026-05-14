@@ -538,7 +538,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           className="border-b border-[var(--line)] bg-[var(--surface-soft)]"
         >
           <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-6 px-4 py-20 text-center sm:px-6 lg:px-8">
-            <SectionKicker>{t("landing.cta.title")}</SectionKicker>
             <h2
               id="final-cta-heading"
               className="max-w-2xl text-3xl font-semibold leading-tight text-[var(--foreground)] sm:text-4xl"
