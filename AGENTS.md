@@ -81,6 +81,16 @@ If a command does not exist yet, add or update the appropriate package script as
 - Verify important views at mobile and desktop widths.
 - UI must support keyboard navigation, visible focus states, EN/ET/RU text expansion, and accessible contrast.
 
+## Motion Discipline
+
+Motion policy is split by surface. See `docs/design/motion-system-2026-05.md` for the full spec.
+
+- **Marketing (`apps/web/app/(marketing)/**`)** may use `motion/react` (Framer Motion v12) for component-level reveals and kinetic typography, and `gsap/ScrollTrigger` for scroll storytelling. GSAP must be dynamic-imported (no static import outside `useEffect`). No GSAP plugins beyond ScrollTrigger.
+- **Clinic app + owner app (everything else)** stays View-Transitions + CSS only. No new JS animation libraries. Reuse `--motion-*` and `--ease-*` tokens defined in `apps/web/app/globals.css` and exported from `packages/ui/src/motion-tokens.ts`.
+- **Animated properties:** `transform` + `opacity` only. The narrow exceptions (sidebar width collapse, stepper progress width) are documented inline in `globals.css` and must not be expanded.
+- **`prefers-reduced-motion: reduce`** must zero every animation. The static fallback is the *first-class* presentation, not a degradation. Same goes for mobile (<768px) for scroll-scrubbed sections.
+- **Banned everywhere:** Lottie, three.js / 3D, autoplay video, audio, parallax for parallax's sake, auto-scrolling marquees, letter-by-letter kinetic typography (Cyrillic kerning breaks).
+
 ## Testing Rules
 
 - Add tests for behavior changed by the task.
