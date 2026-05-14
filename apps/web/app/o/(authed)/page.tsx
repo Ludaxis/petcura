@@ -23,19 +23,50 @@ import {
   vaccineUrgency
 } from "@/lib/owner/format";
 import { PetCard } from "./_components/PetCard";
+import { OwnerWelcomeStrip } from "./_components/OwnerWelcomeStrip";
+import { NextStepCard, type NextStepKind } from "./_components/NextStepCard";
+import { WhatHappensNextTile } from "./_components/WhatHappensNextTile";
+import {
+  loadOnboardingProgress,
+  OWNER_REQUIRED_STEPS
+} from "@/lib/auth/onboarding-progress";
 
-export default async function OwnerHomePage() {
+type OwnerHomePageProps = {
+  searchParams?: Promise<{
+    welcome?: string | string[];
+    lang?: string | string[];
+  }>;
+};
+
+function getSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function OwnerHomePage({
+  searchParams
+}: OwnerHomePageProps) {
+  const params = await searchParams;
   const locale = await getRequestLocale();
   const context = await requireOwnerContext(locale, "/o");
   const t = createOwnerTranslator(locale);
   const owner = toOwnerProfile(context);
-  const [pets, vaccinations, appointments, requests] = await Promise.all([
-    listOwnerPets(context),
-    listOwnerVaccinations(context),
-    listOwnerAppointments(context, locale),
-    listOwnerRequests(context)
-  ]);
+  const [pets, vaccinations, appointments, requests, progressRows] =
+    await Promise.all([
+      listOwnerPets(context),
+      listOwnerVaccinations(context),
+      listOwnerAppointments(context, locale),
+      listOwnerRequests(context),
+      loadOnboardingProgress({
+        actorKind: "owner",
+        actorId: context.user.id
+      })
+    ]);
   const firstName = owner.name.split(" ")[0] ?? "";
+  const welcomeParam = getSearchParam(params?.welcome) === "1";
+  const ownerCompletedRequired = OWNER_REQUIRED_STEPS.every((step) =>
+    progressRows.some((r) => r.step === step && r.status === "done")
+  );
+  const showWelcomeStrip = welcomeParam || !ownerCompletedRequired;
 
   const petStatus = (petId: string) => {
     const urgency = aggregateVaccineUrgency(
@@ -71,18 +102,82 @@ export default async function OwnerHomePage() {
       }))
   ].sort((a, b) => a.when.localeCompare(b.when));
 
+  let nextStep: NextStepKind;
+  if (latestRequest) {
+    nextStep = {
+      kind: "active_request",
+      requestId: latestRequest.id,
+      relativeTime: formatRelative(latestRequest.lastMessageAt, locale),
+      clinicName: context.clinic.name
+    };
+  } else if (pets.length === 0) {
+    nextStep = { kind: "no_pets" };
+  } else {
+    nextStep = {
+      kind: "send_first_message",
+      clinicName: context.clinic.name
+    };
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pt-6 sm:px-6 lg:px-10 lg:pt-10">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-          {t("app.name")}
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-3xl">
-          {firstName
-            ? t("home.greeting", { name: firstName })
-            : t("home.greetingFallback")}
-        </h1>
-      </header>
+      {showWelcomeStrip ? (
+        <OwnerWelcomeStrip
+          heading={
+            firstName
+              ? t("home.welcome.headingFresh", { name: firstName })
+              : t("home.greetingFallback")
+          }
+        >
+          <NextStepCard
+            next={nextStep}
+            eyebrow={t("home.nextStep.eyebrow")}
+            copy={{
+              activeTitle: t("home.nextStep.active_request.title"),
+              activeSubtitle:
+                nextStep.kind === "active_request"
+                  ? t("home.nextStep.active_request.subtitle", {
+                      clinicName: nextStep.clinicName,
+                      relativeTime: nextStep.relativeTime
+                    })
+                  : "",
+              activeCta: t("home.nextStep.active_request.cta"),
+              noPetsTitle: t("home.nextStep.no_pets.title"),
+              noPetsSubtitle: t("home.nextStep.no_pets.subtitle"),
+              noPetsCta: t("home.nextStep.no_pets.cta"),
+              sendFirstTitle:
+                nextStep.kind === "send_first_message"
+                  ? t("home.nextStep.send_first.title", {
+                      clinicName: nextStep.clinicName
+                    })
+                  : t("home.nextStep.send_first.title", {
+                      clinicName: context.clinic.name
+                    }),
+              sendFirstSubtitle: t("home.nextStep.send_first.subtitle"),
+              sendFirstCta: t("home.nextStep.send_first.cta")
+            }}
+          />
+          <WhatHappensNextTile
+            heading={t("home.journey.heading")}
+            steps={[
+              t("home.journey.step1"),
+              t("home.journey.step2"),
+              t("home.journey.step3")
+            ]}
+          />
+        </OwnerWelcomeStrip>
+      ) : (
+        <header>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+            {t("app.name")}
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-3xl">
+            {firstName
+              ? t("home.greeting", { name: firstName })
+              : t("home.greetingFallback")}
+          </h1>
+        </header>
+      )}
 
       <section aria-labelledby="pets-heading">
         <div className="mb-3 flex items-center justify-between">
