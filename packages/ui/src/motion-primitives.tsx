@@ -93,9 +93,9 @@ type RevealProps = {
 };
 
 const RISE_PX: Record<MotionRiseKey, number> = {
-  sm: 8,
-  md: 16,
-  lg: 24
+  sm: 24,
+  md: 48,
+  lg: 72
 };
 
 /**
@@ -144,7 +144,7 @@ export function Reveal({
   }
 
   const transition: Transition = {
-    duration: durationSeconds.slow,
+    duration: durationSeconds.extraSlow,
     ease: easeArray.enter,
     delay: totalDelaySeconds
   };
@@ -156,7 +156,7 @@ export function Reveal({
       initial={{ opacity: 0, y: RISE_PX[rise] }}
       style={style as never}
       transition={transition}
-      viewport={{ once, margin: "0px 0px -10% 0px" }}
+      viewport={{ once, margin: "0px 0px -20% 0px" }}
       whileInView={{ opacity: 1, y: 0 }}
     >
       {children}
@@ -227,15 +227,15 @@ export function KineticHeadline({
           aria-hidden="true"
           className="block"
           data-kinetic-line=""
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 40 }}
           key={`${lineIndex}-${line}`}
           transition={{
-            duration: durationSeconds.slow,
+            duration: durationSeconds.extraSlow,
             ease: easeArray.leitmotif,
-            delay: delay / 1000 + lineIndex * staggerSeconds.base
+            delay: delay / 1000 + lineIndex * staggerSeconds.loose
           }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px -5% 0px" }}
+          viewport={{ once: true, margin: "0px 0px -15% 0px" }}
         >
           {line}
         </motion.span>

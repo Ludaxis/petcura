@@ -127,15 +127,17 @@ function BeatFrame({
   };
   return (
     <div
-      className={`flex h-full min-h-[220px] flex-col gap-3 rounded-[12px] border p-5 ${accentClasses[accent]}`}
+      className={`flex h-full min-h-[400px] flex-col justify-between gap-4 rounded-[16px] border p-6 shadow-[0_24px_48px_-32px_rgba(74,107,63,0.25)] ${accentClasses[accent]}`}
     >
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--primary-strong)]">
+      <span className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--primary-strong)]">
         {icon}
         {title}
       </span>
-      <p className="text-sm leading-6 text-[var(--foreground)]">
-        {subtitle}
-      </p>
+      <p className="text-base leading-7 text-[var(--foreground)]">{subtitle}</p>
+      <span
+        aria-hidden="true"
+        className="mt-auto h-[2px] w-12 rounded-full bg-[var(--primary)] opacity-60"
+      />
     </div>
   );
 }

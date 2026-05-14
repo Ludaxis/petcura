@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   Sparkles
 } from "lucide-react";
-import { Button, KineticHeadline, Reveal } from "@petcura/ui";
+import { Button, KineticHeadline } from "@petcura/ui";
+import { motion, useReducedMotion } from "motion/react";
 
 type HeroProps = {
   copy: {
@@ -47,11 +48,29 @@ type HeroProps = {
  * #walkthrough fallback per landing-narrative §1.2.
  */
 export function Hero({ copy }: HeroProps) {
+  const reduce = useReducedMotion();
   // Line-grouped split for the H1. We choose two breaks so each verb in
   // the subhead (structure / draft / export) lines up with one rendered
   // line at desktop widths. The exact wrap point is content-driven —
   // we never letter-split.
   const titleLines = splitHeadlineIntoLines(copy.title);
+
+  // Hero is above-the-fold: animate on mount instead of viewport-entry.
+  // Reveal's whileInView would skip elements below the IntersectionObserver
+  // trigger line on shorter viewports (e.g. CTAs at y=662 in a 757-px screen
+  // never fire because the `-20%` bottom margin shrinks the trigger to y=606).
+  const heroEntrance = (delay: number, distance = 48) =>
+    reduce
+      ? { initial: false as const, animate: { opacity: 1, y: 0 } }
+      : {
+          initial: { opacity: 0, y: distance },
+          animate: { opacity: 1, y: 0 },
+          transition: {
+            duration: 0.64,
+            ease: [0, 0, 0, 1] as [number, number, number, number],
+            delay: delay / 1000
+          }
+        };
 
   return (
     <section
@@ -60,66 +79,68 @@ export function Hero({ copy }: HeroProps) {
     >
       <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:px-8 lg:py-24">
         <div className="flex flex-col items-start gap-6">
-          <Reveal as="span" rise="sm" delay={0}>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
-              <ShieldCheck aria-hidden="true" size={13} />
-              <span>{copy.eyebrow}</span>
-            </span>
-          </Reveal>
+          <motion.span
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]"
+            {...heroEntrance(150, 24)}
+          >
+            <ShieldCheck aria-hidden="true" size={13} />
+            <span>{copy.eyebrow}</span>
+          </motion.span>
 
           <KineticHeadline
             as="h1"
             className="max-w-2xl text-[40px] font-semibold leading-[1.05] tracking-[-0.01em] text-[var(--foreground)] sm:text-[52px] lg:text-[60px]"
-            delay={120}
+            delay={450}
             id="hero-heading"
             lines={titleLines}
           />
 
-          <Reveal as="p" rise="sm" delay={320}>
-            <span className="block max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
-              {copy.body}
-            </span>
-          </Reveal>
+          <motion.p
+            className="block max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8"
+            {...heroEntrance(1100)}
+          >
+            {copy.body}
+          </motion.p>
 
-          <Reveal as="div" rise="sm" delay={420}>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <Button asChild>
-                <Link href="#pricing">
-                  {copy.ctaPrimary}
-                  <ArrowRight aria-hidden="true" size={16} />
-                </Link>
-              </Button>
-              <Button asChild variant="secondary">
-                {/*
-                  /sandbox does not yet exist (Codex contract).
-                  Fallback to #walkthrough until the route ships.
-                */}
-                <Link href="/sandbox#walkthrough">{copy.ctaSecondary}</Link>
-              </Button>
-            </div>
-          </Reveal>
+          <motion.div
+            className="mt-2 flex flex-wrap items-center gap-3"
+            {...heroEntrance(1350)}
+          >
+            <Button asChild>
+              <Link href="#pricing">
+                {copy.ctaPrimary}
+                <ArrowRight aria-hidden="true" size={16} />
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              {/*
+                /sandbox does not yet exist (Codex contract).
+                Fallback to #walkthrough until the route ships.
+              */}
+              <Link href="/sandbox#walkthrough">{copy.ctaSecondary}</Link>
+            </Button>
+          </motion.div>
 
-          <Reveal as="div" rise="sm" delay={520}>
-            <ul
-              aria-label="Trust signals"
-              className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[var(--muted)]"
-              role="list"
-            >
-              {copy.trust
-                .split(" · ")
-                .map((chip) => chip.trim())
-                .filter(Boolean)
-                .map((chip) => (
-                  <li className="inline-flex items-center gap-1.5" key={chip}>
-                    <span
-                      aria-hidden="true"
-                      className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]"
-                    />
-                    {chip}
-                  </li>
-                ))}
-            </ul>
-          </Reveal>
+          <motion.ul
+            aria-label="Trust signals"
+            className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[var(--muted)]"
+            role="list"
+            {...heroEntrance(1600, 24)}
+          >
+            {copy.trust
+              .split(" · ")
+              .map((chip) => chip.trim())
+              .filter(Boolean)
+              .map((chip) => (
+                <li className="inline-flex items-center gap-1.5" key={chip}>
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]"
+                  />
+                  {chip}
+                </li>
+              ))}
+          </motion.ul>
         </div>
 
         <ProductLoopVisual copy={copy.loop} />

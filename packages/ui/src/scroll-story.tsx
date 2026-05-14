@@ -50,7 +50,7 @@ export type ScrollStoryBeat = {
 export type ScrollStoryProps = {
   beats: ScrollStoryBeat[];
   /**
-   * Total pinned scroll distance on desktop. Default "140vh".
+   * Total pinned scroll distance on desktop. Default "260vh".
    * Mobile / reduced-motion ignores this entirely.
    */
   desktopHeight?: string;
@@ -68,7 +68,7 @@ export type ScrollStoryProps = {
 
 export function ScrollStory({
   beats,
-  desktopHeight = "140vh",
+  desktopHeight = "260vh",
   title,
   className
 }: ScrollStoryProps) {
@@ -76,6 +76,7 @@ export function ScrollStory({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pinRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [scrubEnabled, setScrubEnabled] = useState(false);
   const liveRegionId = useId();
   const captionBaseId = useId();
@@ -118,10 +119,11 @@ export function ScrollStory({
         pinSpacing: false,
         scrub: 0.6,
         onUpdate: (self) => {
-          const progress = self.progress;
+          const p = self.progress;
+          setProgress(p);
           const next = Math.min(
             beats.length - 1,
-            Math.max(0, Math.floor(progress * beats.length))
+            Math.max(0, Math.floor(p * beats.length))
           );
           setActiveIndex(next);
         }
@@ -210,47 +212,92 @@ export function ScrollStory({
           ref={pinRef}
         >
           <div className="grid w-full max-w-5xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:gap-12">
-            <div className="relative min-h-[280px]">
+            <div className="relative min-h-[420px] overflow-hidden rounded-[16px]">
               {beats.map((beat, index) => {
                 const captionId = `${captionBaseId}-${beat.id}`;
                 const active = index === activeIndex;
+                const past = index < activeIndex;
+                const future = index > activeIndex;
+                // Slide direction: future beats wait off to the right, past beats
+                // exit to the left, active beat sits center. Combined with a
+                // 0.94 → 1 scale, the eye reads the scroll as forward motion.
+                const translateX = active ? 0 : past ? -56 : 56;
+                const scale = active ? 1 : 0.94;
                 return (
                   <div
                     aria-hidden={!active}
                     aria-labelledby={captionId}
-                    className="absolute inset-0 transition-opacity duration-300 ease-out"
+                    className="absolute inset-0"
                     data-active={active ? "true" : "false"}
                     data-beat={beat.id}
                     key={beat.id}
                     role="group"
-                    style={{ opacity: active ? 1 : 0 }}
+                    style={{
+                      opacity: active ? 1 : 0,
+                      transform: `translateX(${translateX}px) scale(${scale})`,
+                      transformOrigin: "center center",
+                      transition:
+                        "opacity 360ms cubic-bezier(0.16, 1, 0.3, 1), transform 360ms cubic-bezier(0.16, 1, 0.3, 1)",
+                      pointerEvents: active ? "auto" : "none",
+                      // Defensive: ensure non-active beats never bleed visually
+                      willChange: "opacity, transform"
+                    }}
                   >
                     {beat.frame}
                   </div>
                 );
               })}
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <div
+                aria-hidden="true"
+                className="relative mb-4 h-[3px] w-full overflow-hidden rounded-full bg-[var(--line)]"
+              >
+                <span
+                  className="absolute left-0 top-0 h-full rounded-full bg-[var(--primary)]"
+                  style={{
+                    transform: `scaleX(${Math.max(0.08, Math.min(1, progress))})`,
+                    transformOrigin: "left center",
+                    transition: "transform 220ms cubic-bezier(0.4, 0, 0.2, 1)",
+                    width: "100%"
+                  }}
+                />
+              </div>
               {beats.map((beat, index) => {
                 const captionId = `${captionBaseId}-${beat.id}`;
                 const active = index === activeIndex;
                 return (
                   <p
                     aria-current={active ? "step" : undefined}
-                    className="flex items-baseline gap-3 text-base leading-7 transition-colors"
+                    className="relative flex items-baseline gap-3 rounded-md py-2 pl-3 text-base leading-7"
                     id={captionId}
                     key={beat.id}
                     style={{
                       color: active
                         ? "var(--foreground)"
                         : "var(--muted-2, var(--muted))",
-                      fontWeight: active ? 600 : 500
+                      fontWeight: active ? 600 : 500,
+                      borderLeft: active
+                        ? "3px solid var(--primary)"
+                        : "3px solid transparent",
+                      transform: active ? "translateX(0)" : "translateX(-4px)",
+                      opacity: active ? 1 : 0.55,
+                      transition:
+                        "transform 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease-out"
                     }}
                   >
                     <span
                       aria-hidden="true"
-                      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[11px] font-semibold text-[var(--primary-strong)]"
-                      style={{ fontFamily: "var(--font-mono)" }}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                      style={{
+                        backgroundColor: active
+                          ? "var(--primary)"
+                          : "var(--primary-soft)",
+                        color: active
+                          ? "var(--paper)"
+                          : "var(--primary-strong)",
+                        fontFamily: "var(--font-mono)"
+                      }}
                     >
                       {index + 1}
                     </span>
