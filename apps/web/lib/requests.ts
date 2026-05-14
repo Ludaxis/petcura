@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  intakeQuestionOutputSchema,
+  type IntakeQuestionOutput
+} from "@petcura/ai";
 import { normalizeLocale, type SupportedLocale } from "@petcura/shared";
 import type {
   Database,
@@ -113,6 +117,11 @@ export type AiMemoryCandidateItem = {
   sourceCount: number;
 };
 
+export type AiIntakeHandoff = IntakeQuestionOutput & {
+  id: string;
+  createdAt: string;
+};
+
 export type RequestDetail = InboxRequest & {
   assignedStaffId: string | null;
   ownerPhone: string;
@@ -148,6 +157,7 @@ export type RequestDetail = InboxRequest & {
   }>;
   staffOptions: ClinicStaffOption[];
   pendingDraft: PendingAiDraft | null;
+  aiIntake: AiIntakeHandoff | null;
   aiMemoryContext: AiMemoryContextItem[];
   aiMemoryCandidates: AiMemoryCandidateItem[];
 };
@@ -260,6 +270,7 @@ export async function getRequestDetail(
     eventsResult,
     staffResult,
     draftResult,
+    intakeResult,
     contextResult,
     reminders
   ] = await Promise.all([
@@ -298,6 +309,15 @@ export async function getRequestDetail(
         .eq("request_id", requestId)
         .eq("kind", "reply_draft")
         .is("accepted", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("ai_outputs")
+        .select("id, output_json, created_at")
+        .eq("clinic_id", clinicId)
+        .eq("request_id", requestId)
+        .eq("kind", "intake_question")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -549,6 +569,7 @@ export async function getRequestDetail(
     })),
     staffOptions: await enrichStaffOptions(staffResult.data ?? []),
     pendingDraft,
+    aiIntake: pickAiIntakeHandoff(intakeResult.data),
     aiMemoryContext: pickContextItems(contextResult.data?.output_json),
     aiMemoryCandidates: candidateRows.map((row) => ({
       id: row.id,
@@ -560,6 +581,26 @@ export async function getRequestDetail(
       createdAt: row.created_at,
       sourceCount: candidateSourceCounts.get(row.id) ?? 0
     }))
+  };
+}
+
+function pickAiIntakeHandoff(
+  row:
+    | {
+        id: string;
+        output_json: unknown;
+        created_at: string;
+      }
+    | null
+    | undefined
+): AiIntakeHandoff | null {
+  if (!row) return null;
+  const parsed = intakeQuestionOutputSchema.safeParse(row.output_json);
+  if (!parsed.success) return null;
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    ...parsed.data
   };
 }
 

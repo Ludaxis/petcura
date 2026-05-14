@@ -68,6 +68,37 @@ export const intakeRequestSchema = z.object({
 
 export type IntakeRequestInput = z.infer<typeof intakeRequestSchema>;
 
+const optionalIdempotencyKeySchema = z
+  .union([trimmedString.min(8).max(140), z.literal("")])
+  .optional()
+  .transform((value) => value || undefined);
+
+const booleanConsentSchema = z.union([
+  z.boolean(),
+  z
+    .string()
+    .trim()
+    .toLowerCase()
+    .transform((value) => value === "true" || value === "on")
+]);
+
+export const webIntakeStartSchema = intakeRequestSchema.extend({
+  consent: booleanConsentSchema.pipe(z.literal(true)),
+  idempotencyKey: optionalIdempotencyKeySchema
+});
+
+export type WebIntakeStartInput = z.infer<typeof webIntakeStartSchema>;
+
+export const webIntakeMessageSchema = z.object({
+  sessionToken: trimmedString.min(32).max(256),
+  requestId: uuidSchema,
+  message: trimmedString.min(1).max(4000),
+  preferredLanguage: supportedLocaleSchema.default("en"),
+  idempotencyKey: optionalIdempotencyKeySchema
+});
+
+export type WebIntakeMessageInput = z.infer<typeof webIntakeMessageSchema>;
+
 export const createClinicSchema = z.object({
   name: trimmedString.min(2).max(160),
   slug: clinicSlugSchema,

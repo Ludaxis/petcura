@@ -382,8 +382,78 @@ function SideBlocks({
 }: SideBlocksProps) {
   const headingClass =
     "font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--muted-2)]";
+  const formatToken = (value: string) => value.replaceAll("_", " ");
   return (
     <>
+      {request.aiIntake ? (
+        <details
+          open
+          data-ai-intake
+          className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+        >
+          <summary className="flex cursor-pointer items-center justify-between">
+            <h2 className={headingClass}>{t("request.intakeHandoff")}</h2>
+            <ChevronDown aria-hidden="true" size={12} />
+          </summary>
+          <div className="mt-2.5 rounded-[var(--radius)] border border-[var(--line-2)] bg-[var(--soft)] p-3">
+            <p className="break-words text-[12.5px] leading-5 text-[var(--ink-2)]">
+              {request.aiIntake.handoffSummary}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-[var(--primary-soft)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--primary-strong)]">
+                {t("request.intakeRoute")}:{" "}
+                {formatToken(request.aiIntake.routingSuggestion)}
+              </span>
+              <span className="rounded-full bg-[var(--paper)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                {t("request.intakeService")}:{" "}
+                {formatToken(request.aiIntake.serviceIntent)}
+              </span>
+              <span className="rounded-full bg-[var(--paper)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                {t("request.intakeCategorySuggestion")}:{" "}
+                {getRequestCategoryLabel(
+                  request.aiIntake.categorySuggestion,
+                  locale
+                )}
+              </span>
+              {request.aiIntake.urgencySuggestion ? (
+                <span className="rounded-full bg-[var(--amber-soft)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--amber)]">
+                  {t("request.aiUrgencySuggestion")}:{" "}
+                  {getUrgencyLabel(request.aiIntake.urgencySuggestion, locale)}
+                </span>
+              ) : null}
+              {request.aiIntake.emergencySignal ? (
+                <span className="rounded-full bg-[var(--red-soft)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--red)]">
+                  {t("request.intakeEmergencySignal")}
+                </span>
+              ) : null}
+            </div>
+            {request.aiIntake.clarifyingQuestions.length > 0 ? (
+              <div className="mt-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
+                  {t("request.intakeQuestions")}
+                </p>
+                <ul className="mt-1.5 grid gap-1 text-[12px] leading-5 text-[var(--ink-2)]">
+                  {request.aiIntake.clarifyingQuestions.map((question) => (
+                    <li key={question}>• {question}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {request.aiIntake.missingFields.length > 0 ? (
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                {t("request.intakeMissing")}:{" "}
+                {request.aiIntake.missingFields.map(formatToken).join(", ")}
+              </p>
+            ) : null}
+            <p className="mt-2 text-[11.5px] leading-5 text-[var(--muted)]">
+              {t("request.intakeAdvisoryNotice")}{" "}
+              {t("request.intakeConfidence")}:{" "}
+              {Math.round(request.aiIntake.confidence * 100)}%
+            </p>
+          </div>
+        </details>
+      ) : null}
+
       {request.aiSummary ? (
         <details
           open

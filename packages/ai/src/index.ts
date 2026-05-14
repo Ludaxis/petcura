@@ -15,7 +15,7 @@ export const aiOutputKindSchema = z.enum([
 export const aiSafetyRules = [
   "AI assists staff and never replaces veterinary professionals.",
   "AI must not diagnose, prescribe, or set final urgency.",
-  "Owner-facing medical content requires staff approval.",
+  "Owner-facing medical content requires staff approval, except non-medical intake collection and translation.",
   "Every AI output must be logged with model and prompt version."
 ] as const;
 
@@ -46,6 +46,56 @@ const optionalUrgencySuggestion = z.preprocess((value) => {
   if (typeof value === "string") return value.toLowerCase();
   return value;
 }, z.enum(["low", "medium", "high"]).optional());
+
+const requestCategorySuggestionSchema = z.preprocess((value) => {
+  if (typeof value === "string") return value.toLowerCase();
+  return value;
+}, z.enum(["medical_question", "refill", "appointment", "follow_up", "admin"]));
+
+export const intakeServiceIntentSchema = z.preprocess((value) => {
+  if (typeof value === "string") return value.toLowerCase();
+  return value;
+}, z.enum([
+  "medical",
+  "appointment",
+  "refill",
+  "follow_up",
+  "admin",
+  "grooming",
+  "delivery",
+  "walking",
+  "boarding",
+  "other",
+  "unknown"
+]));
+
+export const intakeRoutingSuggestionSchema = z.preprocess((value) => {
+  if (typeof value === "string") return value.toLowerCase();
+  return value;
+}, z.enum(["reception", "vet", "tech", "grooming", "on_call", "general"]));
+
+export const intakeQuestionOutputSchema = z.object({
+  categorySuggestion: requestCategorySuggestionSchema,
+  serviceIntent: intakeServiceIntentSchema.default("unknown"),
+  routingSuggestion: intakeRoutingSuggestionSchema.default("general"),
+  urgencySuggestion: optionalUrgencySuggestion,
+  emergencySignal: z.coerce.boolean().default(false),
+  riskFlags: stringArray,
+  missingFields: stringArray,
+  clarifyingQuestions: z
+    .array(z.string().trim().min(1).max(180))
+    .max(5)
+    .default([]),
+  handoffSummary: z.string().trim().min(1).max(900),
+  confidence: confidenceScore,
+  safetyNotes: stringArray
+});
+
+export type IntakeQuestionOutput = z.infer<typeof intakeQuestionOutputSchema>;
+export type IntakeRoutingSuggestion = z.infer<
+  typeof intakeRoutingSuggestionSchema
+>;
+export type IntakeServiceIntent = z.infer<typeof intakeServiceIntentSchema>;
 
 const baseSummaryOutputSchema = z.object({
   summaryText: optionalText(700),

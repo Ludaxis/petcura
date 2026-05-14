@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contextRetrievalOutputSchema,
   formatSummaryForStaff,
+  intakeQuestionOutputSchema,
   memoryExtractionOutputSchema,
   replyDraftOutputSchema,
   summaryLocalizationOutputSchema,
@@ -10,6 +11,32 @@ import {
 } from "./index";
 
 describe("AI output contracts", () => {
+  it("validates advisory web intake output without final medical decisions", () => {
+    const output = intakeQuestionOutputSchema.parse({
+      categorySuggestion: "medical_question",
+      serviceIntent: "grooming",
+      routingSuggestion: "GROOMING",
+      urgencySuggestion: "Medium",
+      emergencySignal: false,
+      riskFlags: ["itching", ""],
+      missingFields: ["duration"],
+      clarifyingQuestions: [
+        "How long has this been happening?",
+        "Is Luna eating and drinking normally?"
+      ],
+      handoffSummary:
+        "Owner asks about grooming but mentions itching, so staff should review before scheduling.",
+      confidence: "82",
+      safetyNotes: ["advisory_only", "staff_review_required"]
+    });
+
+    expect(output.routingSuggestion).toBe("grooming");
+    expect(output.urgencySuggestion).toBe("medium");
+    expect(output.confidence).toBe(0.82);
+    expect(output.riskFlags).toEqual(["itching"]);
+    expect(output.safetyNotes).toContain("staff_review_required");
+  });
+
   it("validates staff summary output and formats a fallback summary", () => {
     const output = summaryOutputSchema.parse({
       issue: "Reduced appetite",

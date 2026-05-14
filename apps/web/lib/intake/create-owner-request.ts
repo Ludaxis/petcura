@@ -213,7 +213,7 @@ async function runOwnerMessageAiFallback({
   }
 }
 
-async function runOwnerMessageAi({
+export async function runOwnerMessageAi({
   clinicId,
   requestId,
   messageId,
