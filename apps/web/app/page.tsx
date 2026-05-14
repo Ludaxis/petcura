@@ -618,16 +618,15 @@ function TopNav({
             label={t("language.label")}
             locale={locale}
           />
+          <Link
+            className="hidden rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)] lg:inline-flex"
+            href="/login"
+          >
+            {t("landing.nav.signIn")}
+          </Link>
           <Button asChild size="sm">
             <Link href="#pricing">{t("landing.nav.bookDemo")}</Link>
           </Button>
-          <Link
-            aria-label={t("nav.ownerIntake")}
-            className="hidden text-xs text-[var(--muted)] hover:text-[var(--foreground)] sm:inline-flex"
-            href={intakeHref}
-          >
-            {t("nav.ownerIntake")} <ArrowRight aria-hidden="true" size={12} />
-          </Link>
         </div>
       </div>
     </header>
@@ -649,10 +648,18 @@ function ProductLoopMock({ t }: { t: Translator }) {
   return (
     <figure
       aria-label="Product preview: WhatsApp message becomes a typed request, AI drafts a reply, staff approves, record exports to PMS"
-      className="relative flex w-full flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-4 shadow-[0_24px_48px_-32px_rgba(74,107,63,0.35)] sm:p-5"
+      className="relative flex w-full flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-4 pl-6 shadow-[0_24px_48px_-32px_rgba(74,107,63,0.35)] sm:p-5 sm:pl-7"
     >
+      {/* Sage trail running top-to-bottom on the cycle */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-5 left-2.5 top-5 w-px overflow-hidden rounded-full bg-[var(--line)]"
+      >
+        <span className="pc-loop-trail block h-full w-full origin-top bg-[var(--primary)]" />
+      </span>
+
       {/* WhatsApp bubble */}
-      <div className="rounded-[10px] border border-[var(--line)] bg-[var(--surface-soft)] p-3">
+      <div className="pc-loop-step pc-loop-step-1 rounded-[10px] border border-[var(--line)] bg-[var(--surface-soft)] p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--primary-strong)]">
             <MessageCircle aria-hidden="true" size={12} />
@@ -674,10 +681,20 @@ function ProductLoopMock({ t }: { t: Translator }) {
       </div>
 
       {/* AI suggestion */}
-      <div className="rounded-[10px] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--primary-strong)]">
-          <Sparkles aria-hidden="true" size={12} />
-          {t("landing.loop.ai.label")}
+      <div className="pc-loop-step pc-loop-step-2 rounded-[10px] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--primary-strong)]">
+            <Sparkles aria-hidden="true" size={12} />
+            {t("landing.loop.ai.label")}
+          </span>
+          <span
+            aria-hidden="true"
+            className="inline-flex items-center gap-1 text-[var(--primary-strong)]"
+          >
+            <span className="pc-typing-dot pc-typing-dot-1 inline-block h-1 w-1 rounded-full bg-current" />
+            <span className="pc-typing-dot pc-typing-dot-2 inline-block h-1 w-1 rounded-full bg-current" />
+            <span className="pc-typing-dot pc-typing-dot-3 inline-block h-1 w-1 rounded-full bg-current" />
+          </span>
         </div>
         <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--primary-strong)]">
           {t("landing.loop.ai.category")}
@@ -691,7 +708,7 @@ function ProductLoopMock({ t }: { t: Translator }) {
       </div>
 
       {/* Staff reply */}
-      <div className="rounded-[10px] border border-[var(--line)] bg-[var(--paper)] p-3">
+      <div className="pc-loop-step pc-loop-step-3 rounded-[10px] border border-[var(--line)] bg-[var(--paper)] p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
             <CheckCircle2 aria-hidden="true" size={12} />
@@ -708,7 +725,7 @@ function ProductLoopMock({ t }: { t: Translator }) {
 
       {/* Export */}
       <div
-        className="flex items-center justify-between gap-3 rounded-[10px] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-3"
+        className="pc-loop-step pc-loop-step-4 flex items-center justify-between gap-3 rounded-[10px] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-3"
         style={{ fontFamily: "var(--font-mono)" }}
       >
         <span className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
@@ -735,7 +752,9 @@ function WalkthroughCard({
   body: string;
 }) {
   return (
-    <article className="flex flex-col gap-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-6">
+    <article
+      className={`pc-walk-step pc-walk-step-${index} flex flex-col gap-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-6`}
+    >
       <div className="flex items-center gap-3">
         <span
           aria-hidden="true"
@@ -840,7 +859,8 @@ function Footer({
         { href: "#how-it-works", label: t("landing.footer.howItWorks") },
         { href: "#safety", label: t("landing.footer.safety") },
         { href: "#security", label: t("landing.footer.compliance") },
-        { href: "#pricing", label: t("landing.footer.pricing") }
+        { href: "#pricing", label: t("landing.footer.pricing") },
+        { href: "/login", label: t("landing.nav.signIn") }
       ]
     },
     {
@@ -860,6 +880,7 @@ function Footer({
       heading: t("landing.footer.owners"),
       links: [
         { href: ownersHref, label: t("landing.footer.owners") },
+        { href: "/o", label: t("owners.cta.primary") },
         { href: intakeHref, label: t("intake.title") }
       ]
     }

@@ -8,7 +8,7 @@ import {
   Stethoscope
 } from "lucide-react";
 import { Button } from "@petcura/ui";
-import { createTranslator, withLocale } from "@petcura/shared";
+import { createTranslator, withLocale, type SupportedLocale } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
@@ -115,10 +115,13 @@ export default async function OwnersPage({ searchParams }: OwnersPageProps) {
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild>
-              <Link href={intakeHref}>
+              <Link href={ownerAppHref(locale)}>
                 {t("owners.cta.primary")}
                 <ArrowRight aria-hidden="true" size={16} />
               </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href={intakeHref}>{t("owners.cta.secondary")}</Link>
             </Button>
             <Button asChild variant="ghost">
               <Link href={homeHref}>
@@ -131,4 +134,11 @@ export default async function OwnersPage({ searchParams }: OwnersPageProps) {
       </main>
     </div>
   );
+}
+
+function ownerAppHref(locale: SupportedLocale) {
+  // Owner app lives at my.petcura.app in production. On the apex marketing
+  // domain, /o serves the same routes, so a relative path works in dev and on
+  // any preview deployment without hardcoding the production host.
+  return withLocale("/o", locale);
 }

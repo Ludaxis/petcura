@@ -365,6 +365,121 @@ textarea {
 }
 
 /*
+ * Landing product-loop animation. The hero mock has four stacked cards
+ * (WhatsApp → AI draft → staff reply → PMS export) and the walkthrough
+ * has three numbered steps. Both use the same sequential-pulse pattern
+ * via animation-delay so the eye is pulled through the sequence on a
+ * single calm 14s cycle. Each card spends ~3.5s "active" (full opacity
+ * + faint sage ring + tiny scale), then dims back. The pulse is purely
+ * cosmetic — content is fully readable in the dim state.
+ */
+@keyframes pc-loop-pulse {
+  0%,
+  5% {
+    opacity: 0.7;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  10%,
+  22% {
+    opacity: 1;
+    transform: translateY(0) scale(1.005);
+    box-shadow: 0 0 0 2px var(--primary-soft);
+  }
+  27%,
+  100% {
+    opacity: 0.85;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.pc-loop-step {
+  animation: pc-loop-pulse 14s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transition: opacity 200ms ease;
+  will-change: opacity, transform;
+}
+
+.pc-loop-step-1 {
+  animation-delay: 0s;
+}
+.pc-loop-step-2 {
+  animation-delay: 3.5s;
+}
+.pc-loop-step-3 {
+  animation-delay: 7s;
+}
+.pc-loop-step-4 {
+  animation-delay: 10.5s;
+}
+
+/*
+ * Walkthrough cards use a three-beat variant of the same pulse.
+ * Cycle is shorter (10.5s) and each card is "active" for ~3.5s. The
+ * .pc-walk-step class lives on the card; .pc-walk-icon picks up an
+ * extra rotation hint on its turn so the icon feels alive.
+ */
+.pc-walk-step {
+  animation: pc-loop-pulse 10.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transition: opacity 200ms ease;
+  will-change: opacity, transform;
+}
+
+.pc-walk-step-1 {
+  animation-delay: 0s;
+}
+.pc-walk-step-2 {
+  animation-delay: 3.5s;
+}
+.pc-walk-step-3 {
+  animation-delay: 7s;
+}
+
+/*
+ * AI "typing dots" — three dots that fade in/out in sequence under the AI
+ * draft card so the active card feels live. Pure decorative; AI label
+ * already carries the meaning for screen readers.
+ */
+@keyframes pc-typing-dot {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-1px); }
+}
+
+.pc-typing-dot {
+  animation: pc-typing-dot 1.4s ease-in-out infinite;
+}
+.pc-typing-dot-1 { animation-delay: 0s; }
+.pc-typing-dot-2 { animation-delay: 0.18s; }
+.pc-typing-dot-3 { animation-delay: 0.36s; }
+
+/*
+ * Vertical progress trail rendered to the left of the hero loop. A 2px
+ * sage line travels top-to-bottom over the same 14s window, signalling
+ * the cycle to anyone who can't tell from the card pulses alone. Pure
+ * decorative — no aria, no content.
+ */
+@keyframes pc-loop-trail {
+  0% { transform: scaleY(0); transform-origin: top; }
+  90%, 100% { transform: scaleY(1); transform-origin: top; }
+}
+
+.pc-loop-trail {
+  animation: pc-loop-trail 14s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-loop-step,
+  .pc-walk-step,
+  .pc-typing-dot,
+  .pc-loop-trail {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/*
  * View Transitions — sage-tinted root crossfade plus shared-element morphing
  * from inbox row to request detail header. Activated only when the browser
  * supports the View Transitions API and the user hasn't asked for reduced
