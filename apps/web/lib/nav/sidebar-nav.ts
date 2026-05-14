@@ -4,15 +4,14 @@ import {
   CalendarClock,
   Clock,
   FileText,
+  FolderOpen,
   Inbox,
   ListChecks,
-  PawPrint,
   Search,
   Settings,
   ShieldCheck,
   Sparkles,
   User,
-  Users,
   AlertTriangle,
   CheckCircle2
 } from "lucide-react";
@@ -131,22 +130,14 @@ export const SIDEBAR_NAV: NavItem[] = [
     countSource: "inboxTotal",
     children: INBOX_CHILDREN
   },
-  // Customers + Pets are clinic-mental-model entry points to the unified
-  // /directory view. Each href points to the friendly /customers or /pets
-  // route which redirects to /directory with the appropriate tab preset.
-  // Active-state matching in AppSidebar's useActiveResolver special-cases
-  // these so the right row stays lit after the redirect lands on /directory.
+  // Directory owns owner and pet records. The Customers/Pets friendly routes
+  // remain as deep-link redirects, but the sidebar keeps one stable surface so
+  // switching between directory tabs happens inside the right pane.
   {
-    id: "customers",
-    labelKey: "nav.customers",
-    href: "/customers",
-    icon: Users
-  },
-  {
-    id: "pets",
-    labelKey: "nav.pets",
-    href: "/pets",
-    icon: PawPrint
+    id: "directory",
+    labelKey: "nav.directory",
+    href: "/directory",
+    icon: FolderOpen
   },
   {
     id: "reminders",
@@ -215,13 +206,11 @@ export {
   Clock,
   Inbox,
   ListChecks,
-  PawPrint,
   Search,
   Settings,
   ShieldCheck,
   Sparkles,
   User,
-  Users,
   AlertTriangle,
   CheckCircle2
 };

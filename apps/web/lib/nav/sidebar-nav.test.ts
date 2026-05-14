@@ -15,14 +15,10 @@ describe("sidebar-nav", () => {
     // Profile is intentionally absent from the main nav — it lives on the
     // identity card (UserMenu + MobileMeSheet) to avoid duplicating an
     // entry the user is already standing on at the bottom of the rail.
-    // Directory was replaced by separate Customers + Pets entries — they
-    // both deep-link into the same /directory page via a tab preset, but
-    // the clinic mental model is "customers" or "pets", not "directory".
     expect(ids).toEqual([
       "search",
       "inbox",
-      "customers",
-      "pets",
+      "directory",
       "reminders",
       "reports",
       "settings",
@@ -43,6 +39,12 @@ describe("sidebar-nav", () => {
       "stream-all",
       "stream-resolved"
     ]);
+  });
+
+  it("links Directory to the unified directory surface", () => {
+    const directory = SIDEBAR_NAV.find((item) => item.id === "directory");
+    expect(directory?.href).toBe("/directory");
+    expect(directory?.labelKey).toBe("nav.directory");
   });
 
   it("activeStreamId maps every InboxStream value to a child id", () => {

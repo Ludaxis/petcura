@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Profile avatars use short-lived signed Supabase Storage URLs. */
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Suspense, use, useMemo, useRef } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn, ShimmerPill } from "@petcura/ui";
@@ -162,14 +162,7 @@ function localizedHref(href: string, locale: SupportedLocale) {
  */
 function useActiveResolver(inboxStream: InboxStream) {
   const pathname = usePathname() ?? "/";
-  const searchParams = useSearchParams();
   const activeChildId = activeStreamId(inboxStream);
-  // /customers and /pets are friendly redirect endpoints that resolve to
-  // /directory with a tab preset. After the redirect the pathname is
-  // /directory, so a plain pathname.startsWith match would lose the active
-  // state. We read the tab param and route the active highlight to the
-  // matching nav row instead.
-  const directoryTab = searchParams?.get("tab");
 
   return (item: NavItem, parent?: NavItem) => {
     if (item.id === "search") return false;
@@ -183,26 +176,14 @@ function useActiveResolver(inboxStream: InboxStream) {
       // muted children below it, no fill of its own.
       return false;
     }
-    // Customers / Pets active matching:
-    //   - Direct hit on /customers or /pets (the brief moment before the
-    //     server redirect lands).
-    //   - /directory?tab=owners ⇒ customers row.
-    //   - /directory?tab=pets   ⇒ pets row.
-    //   - /directory with no tab defaults to the owners tab (matches the
-    //     directory page's parseTab()), so customers reads as active.
-    if (item.id === "customers") {
-      if (pathname.startsWith("/customers")) return true;
-      if (pathname.startsWith("/directory")) {
-        return directoryTab !== "pets";
-      }
-      return false;
-    }
-    if (item.id === "pets") {
-      if (pathname.startsWith("/pets")) return true;
-      if (pathname.startsWith("/directory")) {
-        return directoryTab === "pets";
-      }
-      return false;
+    // Directory is one sidebar surface. /customers and /pets are friendly
+    // redirect endpoints, so keep the row active during that brief hop too.
+    if (item.id === "directory") {
+      return (
+        pathname.startsWith("/directory") ||
+        pathname.startsWith("/customers") ||
+        pathname.startsWith("/pets")
+      );
     }
     // Coming-soon stub routes and future top-level pages.
     if (item.href === "/") return pathname === "/";

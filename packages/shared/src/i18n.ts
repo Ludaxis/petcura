@@ -863,6 +863,7 @@ export const uiCopy = {
     "pets.notes": "Notes",
     "pets.requests": "Requests",
     "directory.title": "Directory",
+    "directory.loading.label": "Loading directory…",
     "directory.description":
       "Owners, pets, and their full history — searchable, editable, and one click from the inbox.",
     "directory.tabs.owners": "Owners",
@@ -1788,6 +1789,7 @@ export const uiCopy = {
     "pets.notes": "Märkmed",
     "pets.requests": "Pöördumised",
     "directory.title": "Kataloog",
+    "directory.loading.label": "Laadin kataloogi…",
     "directory.description":
       "Omanikud, lemmikud ja kogu ajalugu — otsitav, muudetav, ühe klõpsuga postkastist kättesaadav.",
     "directory.tabs.owners": "Omanikud",
@@ -2721,6 +2723,7 @@ export const uiCopy = {
     "pets.notes": "Заметки",
     "pets.requests": "Запросы",
     "directory.title": "Картотека",
+    "directory.loading.label": "Загрузка картотеки…",
     "directory.description":
       "Владельцы, питомцы и вся история — поиск, редактирование и переход в запросы в один клик.",
     "directory.tabs.owners": "Владельцы",

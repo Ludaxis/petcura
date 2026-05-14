@@ -135,14 +135,14 @@ test.describe("Clinic operating layer", () => {
 
       await page.goto(`${baseURL}/customers?lang=en`);
       await expect(
-        page.getByRole("heading", { name: "Customer center" })
+        page.getByRole("heading", { name: "Directory" })
       ).toBeVisible();
       await expect(page.getByText(ownerName)).toBeVisible();
       await expect(page.getByText(ownerPhone)).toBeVisible();
 
       await page.goto(`${baseURL}/pets?lang=en`);
       await expect(
-        page.getByRole("heading", { name: "Pet center" })
+        page.getByRole("heading", { name: "Directory" })
       ).toBeVisible();
       await expect(page.getByText(petName)).toBeVisible();
       await expect(page.getByText(ownerName, { exact: false })).toBeVisible();
@@ -150,12 +150,11 @@ test.describe("Clinic operating layer", () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`${baseURL}/customers?lang=en`);
       await expect(
-        page.locator("[data-mobile-shell-header]").getByText("Customers")
+        page.locator("[data-mobile-shell-header]").getByText("Directory")
       ).toBeVisible();
       await page.getByRole("button", { name: /open menu/i }).click();
       const drawer = page.locator('[data-mobile="true"]');
-      await expect(drawer.getByRole("link", { name: /^Customers$/ })).toBeVisible();
-      await expect(drawer.getByRole("link", { name: /^Pets$/ })).toBeVisible();
+      await expect(drawer.getByRole("link", { name: /^Directory$/ })).toBeVisible();
     } finally {
       if (requestId) await admin.from("requests").delete().eq("id", requestId);
       if (petId) await admin.from("pets").delete().eq("id", petId);

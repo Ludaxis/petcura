@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { FolderOpen, PawPrint, Search, UserRound } from "lucide-react";
+import { FolderOpen, Search } from "lucide-react";
 import {
   createTranslator,
   hasClinicPermission,
@@ -23,6 +23,7 @@ import {
 import { getRequestLocale } from "@/lib/locale";
 import { DirectoryListSection } from "./_components/DirectoryListSection";
 import { DirectoryListSkeleton } from "./_components/DirectoryListSkeleton";
+import { DirectoryTabs } from "./_components/DirectoryTabs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -205,39 +206,28 @@ export default async function DirectoryPage({ searchParams }: Props) {
                 tab's count badge is rendered inside DirectoryListSection
                 (which awaits the per-tab list) so it can't block this header.
               */}
-              <div className="flex rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-1">
-                {(["owners", "pets"] as const).map((item) => (
-                  <Button
-                    asChild
-                    key={item}
-                    variant={tab === item ? "primary" : "ghost"}
-                  >
-                    <a
-                      href={directoryUrl({
-                        locale,
-                        tab: item,
-                        q,
-                        language: selectedLanguage,
-                        species: selectedSpecies,
-                        sort,
-                        recent: recentDays,
-                        open: hasOpenRequest
-                      })}
-                    >
-                      {item === "owners" ? (
-                        <UserRound aria-hidden="true" size={15} />
-                      ) : (
-                        <PawPrint aria-hidden="true" size={15} />
-                      )}
-                      {t(
-                        item === "owners"
-                          ? "directory.tabs.owners"
-                          : "directory.tabs.pets"
-                      )}
-                    </a>
-                  </Button>
-                ))}
-              </div>
+              <DirectoryTabs
+                activeTab={tab}
+                loadingLabel={t("directory.loading.label")}
+                tabs={(["owners", "pets"] as const).map((item) => ({
+                  id: item,
+                  href: directoryUrl({
+                    locale,
+                    tab: item,
+                    q,
+                    language: selectedLanguage,
+                    species: selectedSpecies,
+                    sort,
+                    recent: recentDays,
+                    open: hasOpenRequest
+                  }),
+                  label: t(
+                    item === "owners"
+                      ? "directory.tabs.owners"
+                      : "directory.tabs.pets"
+                  )
+                }))}
+              />
             </div>
 
             <form
