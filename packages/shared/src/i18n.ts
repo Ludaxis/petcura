@@ -292,6 +292,13 @@ export const uiCopy = {
     "landing.nav.pricing": "Pricing",
     "landing.nav.bookDemo": "Book demo",
     "landing.nav.signIn": "Sign in",
+    "landing.nav.forOwners": "For pet owners",
+    "landing.owners.kicker": "For pet owners",
+    "landing.owners.title": "You don't need an account here",
+    "landing.owners.body":
+      "Your clinic will send you a WhatsApp link to start chatting. Already a PetCura owner?",
+    "landing.owners.ctaPrimary": "Sign in",
+    "landing.owners.ctaSecondary": "How it works for owners",
     "landing.hero.eyebrow": "EU-hosted · GDPR-aligned · Built for veterinary clinics",
     "landing.hero.title": "The WhatsApp inbox built for veterinary clinics.",
     "landing.hero.body":
@@ -1217,6 +1224,13 @@ export const uiCopy = {
     "landing.nav.pricing": "Hinnad",
     "landing.nav.bookDemo": "Broneeri demo",
     "landing.nav.signIn": "Logi sisse",
+    "landing.nav.forOwners": "Omanikele",
+    "landing.owners.kicker": "Lemmikloomade omanikele",
+    "landing.owners.title": "Siin pole sul kontot vaja",
+    "landing.owners.body":
+      "Sinu kliinik saadab sulle WhatsApp'i lingi vestluse alustamiseks. Oled juba PetCura omanik?",
+    "landing.owners.ctaPrimary": "Logi sisse",
+    "landing.owners.ctaSecondary": "Kuidas see omanikele toimib",
     "landing.hero.eyebrow": "EU-s majutatud · GDPR-iga kooskõlas · Loodud loomakliinikutele",
     "landing.hero.title": "WhatsApp postkast loomakliinikutele.",
     "landing.hero.body":
@@ -2146,6 +2160,13 @@ export const uiCopy = {
     "landing.nav.pricing": "Цены",
     "landing.nav.bookDemo": "Запланировать демо",
     "landing.nav.signIn": "Войти",
+    "landing.nav.forOwners": "Для владельцев",
+    "landing.owners.kicker": "Для владельцев питомцев",
+    "landing.owners.title": "Здесь аккаунт не нужен",
+    "landing.owners.body":
+      "Ваша клиника отправит вам ссылку в WhatsApp для начала чата. Уже владелец PetCura?",
+    "landing.owners.ctaPrimary": "Войти",
+    "landing.owners.ctaSecondary": "Как это работает для владельцев",
     "landing.hero.eyebrow":
       "Хостинг в ЕС · Соответствует GDPR · Сделано для ветеринарных клиник",
     "landing.hero.title": "Входящие WhatsApp для ветеринарных клиник.",

@@ -13,6 +13,7 @@ import { FinalCTA } from "./_sections/FinalCTA";
 import { Hero } from "./_sections/Hero";
 import { Integrations } from "./_sections/Integrations";
 import { LogoStrip } from "./_sections/LogoStrip";
+import { OwnersBand } from "./_sections/OwnersBand";
 import { Pricing } from "./_sections/Pricing";
 import { Problem } from "./_sections/Problem";
 import { Testimonial } from "./_sections/Testimonial";
@@ -29,8 +30,10 @@ export default async function MarketingPage({
 }: MarketingPageProps) {
   const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
+  const ownersNavHref = withLocale("/owners", locale);
   const intakeHref = withLocale("/intake", locale);
   const ownersHref = withLocale("/owners", locale);
+  const ownerSignInHref = withLocale("/o/login", locale);
 
   return (
     <div className="bg-[var(--background)] text-[var(--foreground)]">
@@ -40,7 +43,7 @@ export default async function MarketingPage({
       >
         Skip to content
       </a>
-      <TopNav locale={locale} t={t} />
+      <TopNav locale={locale} t={t} ownersHref={ownersNavHref} />
 
       <main id="main-content">
         <Hero
@@ -126,6 +129,16 @@ export default async function MarketingPage({
           ]}
           kicker={t("landing.usecases.kicker")}
           title={t("landing.usecases.title")}
+        />
+
+        <OwnersBand
+          kicker={t("landing.owners.kicker")}
+          title={t("landing.owners.title")}
+          body={t("landing.owners.body")}
+          ctaPrimary={t("landing.owners.ctaPrimary")}
+          ctaSecondary={t("landing.owners.ctaSecondary")}
+          signInHref={ownerSignInHref}
+          ownersHref={ownersHref}
         />
 
         <Integrations
@@ -246,7 +259,15 @@ export default async function MarketingPage({
 type Translator = ReturnType<typeof createTranslator>;
 type Locale = Awaited<ReturnType<typeof getRequestLocale>>;
 
-function TopNav({ locale, t }: { locale: Locale; t: Translator }) {
+function TopNav({
+  locale,
+  t,
+  ownersHref
+}: {
+  locale: Locale;
+  t: Translator;
+  ownersHref: string;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[color-mix(in_oklch,var(--paper)_88%,transparent)] backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklch,var(--paper)_72%,transparent)]">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -279,6 +300,12 @@ function TopNav({ locale, t }: { locale: Locale; t: Translator }) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            className="hidden rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)] lg:inline-flex"
+            href={ownersHref}
+          >
+            {t("landing.nav.forOwners")}
+          </Link>
           <LanguageSwitcher
             currentPath="/"
             label={t("language.label")}
