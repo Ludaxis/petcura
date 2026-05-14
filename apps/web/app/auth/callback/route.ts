@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { normalizeLocale } from "@petcura/shared";
 import { requirePublicEnv } from "@/lib/env";
 import { resolveStaffActor } from "@/lib/auth/resolve-staff-actor";
@@ -70,19 +70,22 @@ export async function GET(request: NextRequest) {
     }
   );
 
+  let user: User | null = null;
+
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error || !data.user) {
       loginUrl.searchParams.set("error", "login_error");
       return redirectWithCookies(loginUrl, cookiesToSet);
     }
+    user = data.user;
   } else if (tokenHash) {
     const { data, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: tokenType as EmailOtpType
     });
 
-    if (error || !data.session) {
+    if (error || !data.session || !data.user) {
       loginUrl.searchParams.set("error", "login_error");
       return redirectWithCookies(loginUrl, cookiesToSet);
     }
@@ -91,11 +94,11 @@ export async function GET(request: NextRequest) {
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token
     });
+    user = data.user;
+  } else {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
   }
-
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
 
   if (!user) {
     loginUrl.searchParams.set("error", "login_error");
