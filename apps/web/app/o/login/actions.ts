@@ -10,6 +10,11 @@ import { requirePublicEnv } from "@/lib/env";
 import { createOwnerClient } from "@/lib/supabase/owner-server";
 import { normalizePhone } from "@/lib/intake/create-owner-request";
 import {
+  authUserMatchesEmail,
+  authUserMatchesPhone,
+  ownerAuthEmailForPhone
+} from "@/lib/owner/auth-user-match";
+import {
   getOwnerOAuthScopes,
   ownerOAuthLoginErrorPath,
   parseOwnerOAuthProvider,
@@ -21,7 +26,7 @@ import {
 } from "@/lib/owner/otp";
 
 type OwnerOtpActionResult =
-  | { ok: true }
+  | { ok: true; redirectTo?: string }
   | {
       ok: false;
       error:
@@ -35,10 +40,43 @@ type OwnerOtpActionResult =
 const phoneRegex = /^\+?[0-9 ()-]{6,}$/;
 const codeRegex = /^[0-9]{6}$/;
 
+type OwnerLoginCredentials = { phone: string } | { email: string };
+
 async function getActionOrigin() {
   const requestHeaders = await headers();
   const env = requirePublicEnv();
   return requestHeaders.get("origin") ?? env.NEXT_PUBLIC_APP_URL;
+}
+
+async function findAuthUserById(userId: string) {
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+
+  if (error) {
+    console.warn("[petcura] owner auth user lookup by id failed", {
+      userId,
+      message: error.message
+    });
+    return null;
+  }
+
+  return data.user;
+}
+
+async function findLinkedAuthUserByPhone(phone: string) {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("owner_user_identities")
+    .select("user_id")
+    .eq("identity_type", "phone")
+    .eq("identity_value", phone)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Could not load owner phone identity: ${error.message}`);
+  }
+
+  return data?.user_id ? findAuthUserById(data.user_id) : null;
 }
 
 async function findAuthUserByPhone(phone: string) {
@@ -54,7 +92,7 @@ async function findAuthUserByPhone(phone: string) {
       throw new Error(`Could not list auth users: ${error.message}`);
     }
 
-    const match = data.users.find((user) => user.phone === phone);
+    const match = data.users.find((user) => authUserMatchesPhone(user, phone));
     if (match) return match;
     if (data.users.length < 1000) return null;
   }
@@ -62,45 +100,115 @@ async function findAuthUserByPhone(phone: string) {
   return null;
 }
 
-async function ensureOwnerAuthUser(phone: string): Promise<User> {
+async function findAuthUserByEmail(email: string) {
   const admin = createAdminClient();
-  const existing = await findAuthUserByPhone(phone);
 
-  if (existing) {
-    const { data, error } = await admin.auth.admin.updateUserById(existing.id, {
-      phone,
-      phone_confirm: true,
-      app_metadata: {
-        ...existing.app_metadata,
-        petcura_actor: "owner"
-      }
+  for (let page = 1; page <= 10; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 1000
     });
 
     if (error) {
-      throw new Error(`Could not update owner auth user: ${error.message}`);
+      throw new Error(`Could not list auth users: ${error.message}`);
     }
 
-    return data.user;
+    const match = data.users.find((user) => authUserMatchesEmail(user, email));
+    if (match) return match;
+    if (data.users.length < 1000) return null;
+  }
+
+  return null;
+}
+
+async function markOwnerAuthUser(user: User, phone: string) {
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.updateUserById(user.id, {
+    app_metadata: {
+      ...user.app_metadata,
+      petcura_actor: "owner"
+    },
+    user_metadata: {
+      ...user.user_metadata,
+      petcura_owner_phone: phone
+    }
+  });
+
+  if (error) {
+    throw new Error(`Could not update owner auth user: ${error.message}`);
+  }
+
+  return data.user;
+}
+
+function loginCredentialsForUser(
+  user: User,
+  phone: string,
+  fallbackEmail: string
+): OwnerLoginCredentials | null {
+  if (authUserMatchesPhone(user, phone)) {
+    return { phone };
+  }
+
+  if (user.email) {
+    return { email: user.email };
+  }
+
+  return fallbackEmail ? { email: fallbackEmail } : null;
+}
+
+async function ensureOwnerAuthUser(phone: string): Promise<{
+  user: User;
+  login: OwnerLoginCredentials;
+}> {
+  const admin = createAdminClient();
+  const internalEmail = ownerAuthEmailForPhone(phone);
+  const existing =
+    (await findLinkedAuthUserByPhone(phone)) ??
+    (await findAuthUserByPhone(phone)) ??
+    (await findAuthUserByEmail(internalEmail));
+
+  if (existing) {
+    const user = await markOwnerAuthUser(existing, phone);
+    const login = loginCredentialsForUser(user, phone, internalEmail);
+
+    if (!login) {
+      throw new Error("Owner auth user has no usable login identifier.");
+    }
+
+    return { user, login };
   }
 
   const { data, error } = await admin.auth.admin.createUser({
-    phone,
-    phone_confirm: true,
+    email: internalEmail,
+    email_confirm: true,
     app_metadata: {
       petcura_actor: "owner"
     },
     user_metadata: {
+      petcura_owner_phone: phone,
       petcura_source: "owner_otp"
     }
   });
 
   if (error) {
-    const duplicate = await findAuthUserByPhone(phone);
-    if (duplicate) return duplicate;
+    const duplicate =
+      (await findAuthUserByPhone(phone)) ??
+      (await findAuthUserByEmail(internalEmail));
+    if (duplicate) {
+      const user = await markOwnerAuthUser(duplicate, phone);
+      const login = loginCredentialsForUser(user, phone, internalEmail);
+
+      if (!login) {
+        throw new Error("Duplicate owner auth user has no usable login identifier.");
+      }
+
+      return { user, login };
+    }
     throw new Error(`Could not create owner auth user: ${error.message}`);
   }
 
-  return data.user;
+  return { user: data.user, login: { email: internalEmail } };
 }
 
 async function linkOwnerUser(phone: string, userId: string) {
@@ -181,7 +289,8 @@ export async function requestOwnerOtp(
 
 export async function verifyOwnerOtp(
   phoneInput: string,
-  code: string
+  code: string,
+  nextPathInput?: string
 ): Promise<OwnerOtpActionResult> {
   if (!phoneRegex.test(phoneInput)) {
     return { ok: false, error: "invalid_phone" };
@@ -198,41 +307,51 @@ export async function verifyOwnerOtp(
     return { ok: false, error: verification.error };
   }
 
-  const ownerUser = await ensureOwnerAuthUser(phone);
-  const linked = await linkOwnerUser(phone, ownerUser.id);
+  try {
+    const { user: ownerUser, login } = await ensureOwnerAuthUser(phone);
+    const linked = await linkOwnerUser(phone, ownerUser.id);
 
-  if (!linked.ok) {
-    return linked;
-  }
-
-  const password = randomBytes(32).toString("base64url");
-  const admin = createAdminClient();
-  const { error: passwordError } = await admin.auth.admin.updateUserById(
-    ownerUser.id,
-    {
-      password,
-      app_metadata: {
-        ...ownerUser.app_metadata,
-        petcura_actor: "owner"
-      }
+    if (!linked.ok) {
+      return linked;
     }
-  );
 
-  if (passwordError) {
+    const password = randomBytes(32).toString("base64url");
+    const admin = createAdminClient();
+    const { error: passwordError } = await admin.auth.admin.updateUserById(
+      ownerUser.id,
+      {
+        password,
+        app_metadata: {
+          ...ownerUser.app_metadata,
+          petcura_actor: "owner"
+        }
+      }
+    );
+
+    if (passwordError) {
+      return { ok: false, error: "login_error" };
+    }
+
+    const supabase = await createOwnerClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      ...login,
+      password
+    });
+
+    if (error) {
+      console.warn("[petcura] owner OTP password login failed", {
+        message: error.message
+      });
+      return { ok: false, error: "login_error" };
+    }
+
+    return { ok: true, redirectTo: sanitizeOwnerNextPath(nextPathInput) };
+  } catch (error) {
+    console.error("[petcura] owner OTP login failed", {
+      message: error instanceof Error ? error.message : "Unknown owner OTP error"
+    });
     return { ok: false, error: "login_error" };
   }
-
-  const supabase = await createOwnerClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    phone,
-    password
-  });
-
-  if (error) {
-    return { ok: false, error: "login_error" };
-  }
-
-  redirect("/o");
 }
 
 export async function startOwnerOAuth(formData: FormData) {

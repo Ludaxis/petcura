@@ -84,13 +84,18 @@ export function OtpForm({ initialError, locale, nextPath }: Props) {
       return;
     }
     setPending(true);
-    const result = await requestOwnerOtp(phone);
-    setPending(false);
-    if (!result.ok) {
-      setError(getErrorMessage(t, result.error));
-      return;
+    try {
+      const result = await requestOwnerOtp(phone);
+      if (!result.ok) {
+        setError(getErrorMessage(t, result.error));
+        return;
+      }
+      setStep("otp");
+    } catch {
+      setError(t("login.error.loginError"));
+    } finally {
+      setPending(false);
     }
-    setStep("otp");
   }
 
   async function onSubmitOtp(e: FormEvent) {
@@ -101,20 +106,32 @@ export function OtpForm({ initialError, locale, nextPath }: Props) {
       return;
     }
     setPending(true);
-    const result = await verifyOwnerOtp(phone, code);
-    setPending(false);
-    if (!result.ok) {
-      setError(getErrorMessage(t, result.error));
+    try {
+      const result = await verifyOwnerOtp(phone, code, nextPath);
+      if (!result.ok) {
+        setError(getErrorMessage(t, result.error));
+        return;
+      }
+      window.location.assign(result.redirectTo ?? nextPath);
+    } catch {
+      setError(t("login.error.loginError"));
+    } finally {
+      setPending(false);
     }
   }
 
   async function onResend() {
     setError(null);
     setPending(true);
-    const result = await requestOwnerOtp(phone);
-    setPending(false);
-    if (!result.ok) {
-      setError(getErrorMessage(t, result.error));
+    try {
+      const result = await requestOwnerOtp(phone);
+      if (!result.ok) {
+        setError(getErrorMessage(t, result.error));
+      }
+    } catch {
+      setError(t("login.error.loginError"));
+    } finally {
+      setPending(false);
     }
   }
 
