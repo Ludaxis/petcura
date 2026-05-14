@@ -68,7 +68,7 @@ export type ScrollStoryProps = {
 
 export function ScrollStory({
   beats,
-  desktopHeight = "260vh",
+  desktopHeight = "500vh",
   title,
   className
 }: ScrollStoryProps) {
@@ -117,7 +117,7 @@ export function ScrollStory({
         end: "bottom bottom",
         pin: pinEl,
         pinSpacing: false,
-        scrub: 0.6,
+        scrub: 1.2,
         onUpdate: (self) => {
           const p = self.progress;
           setProgress(p);
@@ -212,7 +212,7 @@ export function ScrollStory({
           ref={pinRef}
         >
           <div className="grid w-full max-w-5xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:gap-12">
-            <div className="relative min-h-[420px] overflow-hidden rounded-[16px]">
+            <div className="relative min-h-[240px] overflow-hidden rounded-[16px]">
               {beats.map((beat, index) => {
                 const captionId = `${captionBaseId}-${beat.id}`;
                 const active = index === activeIndex;

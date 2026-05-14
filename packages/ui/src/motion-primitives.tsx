@@ -144,7 +144,7 @@ export function Reveal({
   }
 
   const transition: Transition = {
-    duration: durationSeconds.extraSlow,
+    duration: durationSeconds.storytell,
     ease: easeArray.enter,
     delay: totalDelaySeconds
   };
@@ -156,7 +156,7 @@ export function Reveal({
       initial={{ opacity: 0, y: RISE_PX[rise] }}
       style={style as never}
       transition={transition}
-      viewport={{ once, margin: "0px 0px -20% 0px" }}
+      viewport={{ once, amount: 0.45 }}
       whileInView={{ opacity: 1, y: 0 }}
     >
       {children}
@@ -230,12 +230,12 @@ export function KineticHeadline({
           initial={{ opacity: 0, y: 40 }}
           key={`${lineIndex}-${line}`}
           transition={{
-            duration: durationSeconds.extraSlow,
+            duration: durationSeconds.storytell,
             ease: easeArray.leitmotif,
             delay: delay / 1000 + lineIndex * staggerSeconds.loose
           }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px -15% 0px" }}
+          viewport={{ once: true, amount: 0.4 }}
         >
           {line}
         </motion.span>
