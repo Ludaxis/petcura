@@ -19,6 +19,14 @@ import {
   requestOwnerOtpDelivery,
   verifyOwnerOtpCode
 } from "@/lib/owner/otp";
+import { resolveOwnerActor } from "@/lib/auth/resolve-owner-actor";
+import { resolvePostLoginDestination } from "@/lib/auth/post-login-router";
+import {
+  OWNER_LAST_ROUTE_COOKIE,
+  readOwnerLastRoute
+} from "@/lib/auth/last-route-cookie";
+import { cookies } from "next/headers";
+import { writeAuthEvent } from "@/lib/auth/audit-events";
 
 type OwnerOtpActionResult =
   | { ok: true }
@@ -181,7 +189,8 @@ export async function requestOwnerOtp(
 
 export async function verifyOwnerOtp(
   phoneInput: string,
-  code: string
+  code: string,
+  nextPath?: string
 ): Promise<OwnerOtpActionResult> {
   if (!phoneRegex.test(phoneInput)) {
     return { ok: false, error: "invalid_phone" };
@@ -232,7 +241,37 @@ export async function verifyOwnerOtp(
     return { ok: false, error: "login_error" };
   }
 
-  redirect("/o");
+  // Resolve post-login destination via the shared router. Falls back to /o on
+  // any failure to keep verifyOwnerOtp behaviorally backward-compatible.
+  let destination = "/o";
+  try {
+    const actor = await resolveOwnerActor(supabase, ownerUser.id);
+    if (actor) {
+      const cookieStore = await cookies();
+      const lastVisited = readOwnerLastRoute(
+        cookieStore.get(OWNER_LAST_ROUTE_COOKIE)?.value
+      );
+      const result = resolvePostLoginDestination({
+        actor: { kind: "owner", ...actor },
+        nextParam: nextPath ?? null,
+        lastVisitedCookie: lastVisited
+      });
+      destination = result.destination;
+      await writeAuthEvent({
+        eventType: "otp_verified",
+        actorKind: "owner",
+        actorId: ownerUser.id,
+        metadata: {
+          post_login_reason: result.reason,
+          destination: result.destination
+        }
+      });
+    }
+  } catch {
+    // swallow: routing fallback is /o, audit best-effort
+  }
+
+  redirect(destination);
 }
 
 export async function startOwnerOAuth(formData: FormData) {

@@ -10,6 +10,13 @@ import {
   sanitizeOwnerNextPath
 } from "@/lib/owner/oauth-shared";
 import { ownerSessionCookieOptions } from "@/lib/supabase/owner-session";
+import { resolveOwnerActor } from "@/lib/auth/resolve-owner-actor";
+import { resolvePostLoginDestination } from "@/lib/auth/post-login-router";
+import {
+  OWNER_LAST_ROUTE_COOKIE,
+  readOwnerLastRoute
+} from "@/lib/auth/last-route-cookie";
+import { writeAuthEvent } from "@/lib/auth/audit-events";
 
 type CookieToSet = {
   name: string;
@@ -46,7 +53,8 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const requestOrigin = getRequestOrigin(request, requestUrl);
   const locale = normalizeLocale(requestUrl.searchParams.get("lang"));
-  const nextPath = sanitizeOwnerNextPath(requestUrl.searchParams.get("next"));
+  const rawNext = requestUrl.searchParams.get("next");
+  const sanitizedNext = sanitizeOwnerNextPath(rawNext);
   const provider = parseOwnerOAuthProvider(
     requestUrl.searchParams.get("provider")
   );
@@ -54,7 +62,7 @@ export async function GET(request: NextRequest) {
   const cookiesToSet: CookieToSet[] = [];
 
   const loginUrl = new URL(
-    ownerOAuthLoginErrorPath(locale, nextPath, "login_error"),
+    ownerOAuthLoginErrorPath(locale, sanitizedNext, "login_error"),
     requestOrigin
   );
 
@@ -100,14 +108,44 @@ export async function GET(request: NextRequest) {
   if (!linked.ok) {
     await supabase.auth.signOut();
     const linkedErrorUrl = new URL(
-      ownerOAuthLoginErrorPath(locale, nextPath, linked.error),
+      ownerOAuthLoginErrorPath(locale, sanitizedNext, linked.error),
       requestOrigin
     );
     return redirectWithCookies(linkedErrorUrl, cookiesToSet);
   }
 
-  const redirectUrl = new URL(nextPath, requestOrigin);
-  redirectUrl.searchParams.set("lang", locale);
+  const actor = await resolveOwnerActor(supabase, user.id);
+
+  if (!actor) {
+    await supabase.auth.signOut();
+    const noMembershipUrl = new URL(
+      ownerOAuthLoginErrorPath(locale, sanitizedNext, "no_membership"),
+      requestOrigin
+    );
+    return redirectWithCookies(noMembershipUrl, cookiesToSet);
+  }
+
+  const lastVisited = readOwnerLastRoute(
+    request.cookies.get(OWNER_LAST_ROUTE_COOKIE)?.value
+  );
+
+  const { destination, reason } = resolvePostLoginDestination({
+    actor: { kind: "owner", ...actor },
+    nextParam: rawNext,
+    lastVisitedCookie: lastVisited
+  });
+
+  await writeAuthEvent({
+    eventType: "oauth_callback",
+    actorKind: "owner",
+    actorId: user.id,
+    metadata: { provider, post_login_reason: reason, destination }
+  });
+
+  const redirectUrl = new URL(destination, requestOrigin);
+  if (!redirectUrl.searchParams.has("lang")) {
+    redirectUrl.searchParams.set("lang", locale);
+  }
 
   return redirectWithCookies(redirectUrl, cookiesToSet);
 }
