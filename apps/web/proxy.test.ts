@@ -17,6 +17,19 @@ describe("proxy", () => {
     expect(response.headers.get("x-middleware-rewrite")).toBeNull();
   });
 
+  it("canonicalizes owner app routes to the owner subdomain", () => {
+    const response = proxy(
+      new NextRequest(
+        "https://app.petcura.app/o/auth/callback?code=abc&next=%2Fo&lang=en"
+      )
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://my.petcura.app/o/auth/callback?code=abc&next=%2Fo&lang=en"
+    );
+  });
+
   it("keeps the main app root on the marketing shell", () => {
     const response = proxy(new NextRequest("https://app.petcura.app/"));
 

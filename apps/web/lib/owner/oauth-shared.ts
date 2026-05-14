@@ -1,9 +1,9 @@
 import type { Provider, User } from "@supabase/supabase-js";
 import type { SupportedLocale } from "@petcura/shared";
 
-export const ownerOAuthProviders = ["google", "apple"] as const;
+export const ownerOAuthProviders = ["google"] as const;
 
-export type OwnerOAuthProvider = Extract<Provider, "google" | "apple">;
+export type OwnerOAuthProvider = Extract<Provider, "google">;
 
 type OAuthIdentity = NonNullable<User["identities"]>[number] & {
   identity_id?: string;
@@ -12,17 +12,17 @@ type OAuthIdentity = NonNullable<User["identities"]>[number] & {
 export function parseOwnerOAuthProvider(
   value: FormDataEntryValue | string | null | undefined
 ): OwnerOAuthProvider | null {
-  return ownerOAuthProviders.includes(value as OwnerOAuthProvider)
+  return value === "google"
     ? (value as OwnerOAuthProvider)
     : null;
 }
 
-export function getOwnerOAuthIdentityType(provider: OwnerOAuthProvider) {
-  return provider === "google" ? "oauth_google" : "oauth_apple";
+export function getOwnerOAuthIdentityType(_provider: OwnerOAuthProvider) {
+  return "oauth_google";
 }
 
-export function getOwnerOAuthScopes(provider: OwnerOAuthProvider) {
-  return provider === "google" ? "openid email profile" : "name email";
+export function getOwnerOAuthScopes(_provider: OwnerOAuthProvider) {
+  return "openid email profile";
 }
 
 export function sanitizeOwnerNextPath(

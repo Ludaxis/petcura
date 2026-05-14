@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { normalizeLocale } from "@petcura/shared";
 
 const localeCookie = "petcura_locale";
-const ownerHosts = new Set(["my.petcura.app"]);
+const clinicHosts = new Set(["app.petcura.app"]);
+const ownerHost = "my.petcura.app";
+const ownerHosts = new Set([ownerHost]);
 
 function isOwnerHost(host: string | null) {
   if (!host) {
@@ -10,6 +12,14 @@ function isOwnerHost(host: string | null) {
   }
 
   return ownerHosts.has(host.split(":")[0]?.toLowerCase() ?? "");
+}
+
+function isClinicHost(host: string | null) {
+  if (!host) {
+    return false;
+  }
+
+  return clinicHosts.has(host.split(":")[0]?.toLowerCase() ?? "");
 }
 
 export function proxy(request: NextRequest) {
@@ -21,6 +31,15 @@ export function proxy(request: NextRequest) {
     request.headers.get("x-forwarded-host") ??
     request.headers.get("host") ??
     request.nextUrl.host;
+
+  if (isClinicHost(host) && request.nextUrl.pathname.startsWith("/o")) {
+    const redirectUrl = request.nextUrl.clone();
+
+    redirectUrl.hostname = ownerHost;
+    redirectUrl.port = "";
+
+    return NextResponse.redirect(redirectUrl);
+  }
 
   if (isOwnerHost(host) && request.nextUrl.pathname === "/") {
     const redirectUrl = request.nextUrl.clone();

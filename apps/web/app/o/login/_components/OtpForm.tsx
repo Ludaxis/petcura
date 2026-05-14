@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 import {
-  AppleLogo,
   ArrowLeft,
   ArrowRight,
   GoogleLogo
@@ -50,7 +49,7 @@ function OAuthButton({
   icon: React.ReactNode;
   locale: SupportedLocale;
   nextPath: string;
-  provider: "google" | "apple";
+  provider: "google";
 }) {
   return (
     <form action={startOwnerOAuth}>
@@ -218,14 +217,6 @@ export function OtpForm({ initialError, locale, nextPath }: Props) {
           provider="google"
         >
           {t("login.oauth.google")}
-        </OAuthButton>
-        <OAuthButton
-          icon={<AppleLogo size={18} weight="fill" aria-hidden />}
-          locale={locale}
-          nextPath={nextPath}
-          provider="apple"
-        >
-          {t("login.oauth.apple")}
         </OAuthButton>
       </div>
       <p className="text-center text-xs text-[var(--muted)]">{t("login.help")}</p>

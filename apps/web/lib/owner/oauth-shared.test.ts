@@ -9,16 +9,15 @@ import {
 } from "./oauth-shared";
 
 describe("owner OAuth helpers", () => {
-  it("accepts only Google and Apple providers", () => {
+  it("accepts only currently enabled owner OAuth providers", () => {
     expect(parseOwnerOAuthProvider("google")).toBe("google");
-    expect(parseOwnerOAuthProvider("apple")).toBe("apple");
+    expect(parseOwnerOAuthProvider("apple")).toBeNull();
     expect(parseOwnerOAuthProvider("github")).toBeNull();
     expect(parseOwnerOAuthProvider(null)).toBeNull();
   });
 
   it("maps providers to identity types allowed by the database", () => {
     expect(getOwnerOAuthIdentityType("google")).toBe("oauth_google");
-    expect(getOwnerOAuthIdentityType("apple")).toBe("oauth_apple");
   });
 
   it("keeps owner redirects inside the owner app", () => {
