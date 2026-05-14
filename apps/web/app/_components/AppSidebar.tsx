@@ -338,6 +338,16 @@ export function AppSidebar({
                   data-nav-button="true"
                   href={localizedHref(child.href, locale)}
                   aria-current={childActive ? "page" : undefined}
+                  // Shared View Transition name: whichever child reads as
+                  // active carries `pc-nav-active`. When the user navigates
+                  // to a sibling, the browser morphs the highlight pill
+                  // from the old position to the new one — Linear-style
+                  // sliding indicator, no JS, no animation library.
+                  style={
+                    childActive
+                      ? ({ viewTransitionName: "pc-nav-active" } as React.CSSProperties)
+                      : undefined
+                  }
                 >
                   <span className="truncate">
                     {t(child.labelKey)}
@@ -378,6 +388,18 @@ export function AppSidebar({
             href={localizedHref(item.href, locale)}
             aria-current={
               active && !item.children?.length ? "page" : undefined
+            }
+            // Shared View Transition name on the active top-level row so
+            // route changes between siblings morph a single highlight
+            // pill from old position to new (Linear-style indicator).
+            // Only one element in the document carries `pc-nav-active`
+            // at a time — sub-items above guard the same name with their
+            // own `childActive` check, and a parent row reads as active
+            // only when it has no active child (see `useActiveResolver`).
+            style={
+              active
+                ? ({ viewTransitionName: "pc-nav-active" } as React.CSSProperties)
+                : undefined
             }
           >
             {Icon ? <Icon aria-hidden="true" /> : null}

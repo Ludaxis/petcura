@@ -127,6 +127,13 @@ export function StatusPill({
 }: StatusPillProps) {
   return (
     <span
+      // `data-status-pill` is the hook for the app-side motion rule in
+      // apps/web/app/globals.css that cross-fades the pill background-color
+      // when a row's optimistic status flips (e.g. urgent → resolved). The
+      // transition itself is token-driven so reduced-motion users get an
+      // instant swap with no JS opt-out.
+      data-status-pill
+      data-status={status}
       className={cn(
         "inline-flex items-center rounded px-2 py-[3px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.02em]",
         statusPillTones[status]

@@ -139,12 +139,20 @@ export function InboxRow({
        */
       style={
         {
-          viewTransitionName: `pc-request-${row.id}`
+          viewTransitionName: `pc-request-${row.id}`,
+          // Drives the per-row stagger in `.pc-row-in`; capped at 20 in
+          // CSS so the cascade doesn't crawl past ~600ms on long lists.
+          ["--pc-row-i" as string]: String(index)
         } as React.CSSProperties
       }
       data-optimistic-resolved={optimisticallyResolved ? "true" : undefined}
       aria-busy={optimisticallyResolved ? "true" : undefined}
       className={cn(
+        // `pc-row-in` plays a 280ms fade+lift staggered by `--pc-row-i`
+        // when a row first mounts (initial inbox paint, or a new realtime
+        // arrival). Reduced-motion users see the row pop in instantly
+        // (handled by the existing `.pc-row-in` PRM block in globals.css).
+        "pc-row-in",
         "group relative grid items-center gap-3 border-b border-[var(--line)] px-4 transition-[opacity,background-color,box-shadow] duration-200 motion-reduce:transition-none",
         "hover:bg-[var(--soft)] focus-visible:bg-[var(--soft)]",
         "data-[selected=true]:bg-[var(--primary-soft)]",
