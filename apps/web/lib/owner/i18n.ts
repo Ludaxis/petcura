@@ -82,6 +82,9 @@ const en = {
   "login.phone.label": "Phone number",
   "login.phone.placeholder": "+372 5XXX XXXX",
   "login.phone.continue": "Continue",
+  "login.oauth.separator": "or",
+  "login.oauth.google": "Continue with Google",
+  "login.oauth.apple": "Continue with Apple",
   "login.otp.title": "Enter your code",
   "login.otp.subtitle": "We sent a 6-digit code to {phone}.",
   "login.otp.resend": "Send a new code",
@@ -92,7 +95,11 @@ const en = {
   "login.error.invalidPhone": "Enter a valid phone number with country code.",
   "login.error.invalidCode": "The code is incorrect or expired.",
   "login.error.otpUnavailable": "We could not send a code right now. Please try again soon.",
-  "login.error.loginError": "We could not sign you in right now. Please try again."
+  "login.error.loginError": "We could not sign you in right now. Please try again.",
+  "login.error.ownerRequired": "Please sign in with an owner account.",
+  "login.error.noMembership": "This account is not linked to a clinic yet. Please contact your clinic.",
+  "login.error.oauthNotLinked": "This Google or Apple account is not linked to a clinic owner profile yet. Ask your clinic to add the same email, or use your phone number.",
+  "login.error.oauthAmbiguousEmail": "More than one owner profile uses this email in the same clinic. Ask your clinic to confirm the correct profile."
 };
 
 type OwnerCopy = typeof en;
@@ -180,6 +187,9 @@ const et: OwnerCopy = {
   "login.phone.label": "Telefoninumber",
   "login.phone.placeholder": "+372 5XXX XXXX",
   "login.phone.continue": "Jätka",
+  "login.oauth.separator": "või",
+  "login.oauth.google": "Jätka Google'iga",
+  "login.oauth.apple": "Jätka Apple'iga",
   "login.otp.title": "Sisesta kood",
   "login.otp.subtitle": "Saatsime kuuekohalise koodi numbrile {phone}.",
   "login.otp.resend": "Saada uus kood",
@@ -190,7 +200,11 @@ const et: OwnerCopy = {
   "login.error.invalidPhone": "Sisesta kehtiv telefoninumber koos riigikoodiga.",
   "login.error.invalidCode": "Kood on vale või aegunud.",
   "login.error.otpUnavailable": "Me ei saanud praegu koodi saata. Palun proovi varsti uuesti.",
-  "login.error.loginError": "Me ei saanud Sind praegu sisse logida. Palun proovi uuesti."
+  "login.error.loginError": "Me ei saanud Sind praegu sisse logida. Palun proovi uuesti.",
+  "login.error.ownerRequired": "Palun logi sisse omaniku kontoga.",
+  "login.error.noMembership": "See konto pole veel kliinikuga seotud. Palun võta kliinikuga ühendust.",
+  "login.error.oauthNotLinked": "See Google'i või Apple'i konto pole veel kliiniku omaniku profiiliga seotud. Palu kliinikul lisada sama e-post või kasuta telefoninumbrit.",
+  "login.error.oauthAmbiguousEmail": "Sama e-post on selles kliinikus mitmel omaniku profiilil. Palu kliinikul õige profiil kinnitada."
 };
 
 const ru: OwnerCopy = {
@@ -275,6 +289,9 @@ const ru: OwnerCopy = {
   "login.phone.label": "Номер телефона",
   "login.phone.placeholder": "+372 5XXX XXXX",
   "login.phone.continue": "Продолжить",
+  "login.oauth.separator": "или",
+  "login.oauth.google": "Продолжить с Google",
+  "login.oauth.apple": "Продолжить с Apple",
   "login.otp.title": "Введите код",
   "login.otp.subtitle": "Мы отправили 6-значный код на номер {phone}.",
   "login.otp.resend": "Отправить новый код",
@@ -285,7 +302,11 @@ const ru: OwnerCopy = {
   "login.error.invalidPhone": "Введите корректный номер телефона с кодом страны.",
   "login.error.invalidCode": "Код неверный или истёк.",
   "login.error.otpUnavailable": "Не удалось отправить код. Попробуйте ещё раз чуть позже.",
-  "login.error.loginError": "Не удалось войти. Попробуйте ещё раз."
+  "login.error.loginError": "Не удалось войти. Попробуйте ещё раз.",
+  "login.error.ownerRequired": "Войдите с аккаунтом владельца питомца.",
+  "login.error.noMembership": "Этот аккаунт ещё не связан с клиникой. Свяжитесь с клиникой.",
+  "login.error.oauthNotLinked": "Этот аккаунт Google или Apple ещё не связан с профилем владельца в клинике. Попросите клинику добавить тот же email или используйте номер телефона.",
+  "login.error.oauthAmbiguousEmail": "В этой клинике несколько профилей владельцев используют этот email. Попросите клинику подтвердить правильный профиль."
 };
 
 const dictionaries: Record<SupportedLocale, OwnerCopy> = { en, et, ru };

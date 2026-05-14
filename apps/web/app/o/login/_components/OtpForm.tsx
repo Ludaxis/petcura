@@ -1,13 +1,22 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import {
+  AppleLogo,
+  ArrowLeft,
+  ArrowRight,
+  GoogleLogo
+} from "@phosphor-icons/react";
 import { Button, cn } from "@petcura/ui";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
 import type { SupportedLocale } from "@petcura/shared";
-import { requestOwnerOtp, verifyOwnerOtp } from "../actions";
+import { requestOwnerOtp, startOwnerOAuth, verifyOwnerOtp } from "../actions";
 
-type Props = { locale: SupportedLocale };
+type Props = {
+  initialError?: string | null;
+  locale: SupportedLocale;
+  nextPath: string;
+};
 
 type Step = "phone" | "otp";
 type ActionError =
@@ -30,12 +39,42 @@ function getErrorMessage(
   return t("login.error.loginError");
 }
 
-export function OtpForm({ locale }: Props) {
+function OAuthButton({
+  children,
+  icon,
+  locale,
+  nextPath,
+  provider
+}: {
+  children: string;
+  icon: React.ReactNode;
+  locale: SupportedLocale;
+  nextPath: string;
+  provider: "google" | "apple";
+}) {
+  return (
+    <form action={startOwnerOAuth}>
+      <input name="lang" type="hidden" value={locale} />
+      <input name="next" type="hidden" value={nextPath} />
+      <input name="provider" type="hidden" value={provider} />
+      <Button
+        className="w-full"
+        type="submit"
+        variant="secondary"
+      >
+        {icon}
+        {children}
+      </Button>
+    </form>
+  );
+}
+
+export function OtpForm({ initialError, locale, nextPath }: Props) {
   const t = createOwnerTranslator(locale);
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const [pending, setPending] = useState(false);
 
   async function onSubmitPhone(e: FormEvent) {
@@ -139,32 +178,57 @@ export function OtpForm({ locale }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmitPhone} className="flex flex-col gap-5">
-      <div>
-        <h2 className="text-xl font-semibold text-[var(--ink)]">{t("login.title")}</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">{t("login.subtitle")}</p>
+    <div className="flex flex-col gap-5">
+      <form onSubmit={onSubmitPhone} className="flex flex-col gap-5">
+        <div>
+          <h2 className="text-xl font-semibold text-[var(--ink)]">{t("login.title")}</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">{t("login.subtitle")}</p>
+        </div>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-[var(--ink)]">{t("login.phone.label")}</span>
+          <input
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder={t("login.phone.placeholder")}
+            className={cn(
+              "h-12 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-4 text-base text-[var(--ink)]",
+              "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+            )}
+          />
+        </label>
+        {error ? <p role="alert" className="text-sm text-[var(--red)]">{error}</p> : null}
+        <Button type="submit" disabled={pending}>
+          {t("login.phone.continue")}
+          <ArrowRight size={16} weight="bold" aria-hidden />
+        </Button>
+      </form>
+      <div className="grid gap-3">
+        <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
+          <span className="h-px flex-1 bg-[var(--line)]" />
+          {t("login.oauth.separator")}
+          <span className="h-px flex-1 bg-[var(--line)]" />
+        </div>
+        <OAuthButton
+          icon={<GoogleLogo size={17} weight="bold" aria-hidden />}
+          locale={locale}
+          nextPath={nextPath}
+          provider="google"
+        >
+          {t("login.oauth.google")}
+        </OAuthButton>
+        <OAuthButton
+          icon={<AppleLogo size={18} weight="fill" aria-hidden />}
+          locale={locale}
+          nextPath={nextPath}
+          provider="apple"
+        >
+          {t("login.oauth.apple")}
+        </OAuthButton>
       </div>
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-[var(--ink)]">{t("login.phone.label")}</span>
-        <input
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder={t("login.phone.placeholder")}
-          className={cn(
-            "h-12 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-4 text-base text-[var(--ink)]",
-            "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
-          )}
-        />
-      </label>
-      {error ? <p role="alert" className="text-sm text-[var(--red)]">{error}</p> : null}
-      <Button type="submit" disabled={pending}>
-        {t("login.phone.continue")}
-        <ArrowRight size={16} weight="bold" aria-hidden />
-      </Button>
       <p className="text-center text-xs text-[var(--muted)]">{t("login.help")}</p>
-    </form>
+    </div>
   );
 }

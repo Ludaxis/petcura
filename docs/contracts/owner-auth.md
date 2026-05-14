@@ -26,11 +26,30 @@ Codex (backend, Supabase Auth wiring, RLS, OTP delivery, isolation tests). Claud
 6. Session cookie: `__Host-pc_owner_session` (httpOnly, secure, SameSite=Lax, path=/).
 7. Owner JWT carries `app_metadata.petcura_actor = "owner"`. Staff RLS denies any session with that claim.
 
-### B. Email magic link (fallback)
+### B. Google / Apple OAuth (owner convenience)
+
+OAuth is available only on the owner app. Clinic staff continue to use staff
+magic links at `/login`.
+
+1. Owner clicks "Continue with Google" or "Continue with Apple" on `/o/login`.
+2. Supabase Auth starts the provider OAuth flow with redirect target
+   `/o/auth/callback`.
+3. Callback exchanges the PKCE code with the owner Supabase client and links the
+   user only when:
+   - the user already has an `owner_user_memberships` row, or
+   - the OAuth provider supplied a verified email that exactly matches existing
+     `owners.email` rows.
+4. On success, PetCura writes `owner_users`, `owner_user_identities`, and
+   `owner_user_memberships`, then sets
+   `app_metadata.petcura_actor = 'owner'`.
+5. If no clinic owner profile matches, the OAuth session is signed out and the
+   owner is asked to use phone OTP or contact the clinic.
+
+### C. Email magic link (future fallback)
 
 Standard Supabase magic link via `owner_user_identities(identity_type='email')`; restricted to `my.petcura.app` origin.
 
-### C. WhatsApp deep-link onboarding
+### D. WhatsApp deep-link onboarding
 
 Clinic staff send an approved WhatsApp template with `https://my.petcura.app/o/join?token=<jwt>`.
 
@@ -48,7 +67,7 @@ create table owner_users (
 
 create table owner_user_identities (
   user_id        uuid not null references owner_users(user_id) on delete cascade,
-  identity_type  text not null check (identity_type in ('phone','email')),
+  identity_type  text not null check (identity_type in ('phone','email','oauth_google','oauth_apple')),
   identity_value text not null,
   primary key (identity_type, identity_value)
 );
@@ -100,7 +119,7 @@ Owners can never read: `ai_outputs`, `ai_memory_items`, `internal_notes`, `audit
 ## Out of scope (v1.5)
 
 - WebAuthn / passkeys.
-- Social login.
+- Owner self-registration through social login without prior clinic intake.
 - Owner self-registration without prior clinic intake.
 - Staff impersonation of owner.
 

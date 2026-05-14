@@ -1,11 +1,20 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { normalizeLocale } from "@petcura/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requirePublicEnv } from "@/lib/env";
 import { createOwnerClient } from "@/lib/supabase/owner-server";
 import { normalizePhone } from "@/lib/intake/create-owner-request";
+import {
+  getOwnerOAuthScopes,
+  ownerOAuthLoginErrorPath,
+  parseOwnerOAuthProvider,
+  sanitizeOwnerNextPath
+} from "@/lib/owner/oauth-shared";
 import {
   requestOwnerOtpDelivery,
   verifyOwnerOtpCode
@@ -25,6 +34,12 @@ type OwnerOtpActionResult =
 
 const phoneRegex = /^\+?[0-9 ()-]{6,}$/;
 const codeRegex = /^[0-9]{6}$/;
+
+async function getActionOrigin() {
+  const requestHeaders = await headers();
+  const env = requirePublicEnv();
+  return requestHeaders.get("origin") ?? env.NEXT_PUBLIC_APP_URL;
+}
 
 async function findAuthUserByPhone(phone: string) {
   const admin = createAdminClient();
@@ -218,6 +233,38 @@ export async function verifyOwnerOtp(
   }
 
   redirect("/o");
+}
+
+export async function startOwnerOAuth(formData: FormData) {
+  const locale = normalizeLocale(formData.get("lang"));
+  const nextPath = sanitizeOwnerNextPath(formData.get("next"));
+  const provider = parseOwnerOAuthProvider(formData.get("provider"));
+
+  if (!provider) {
+    redirect(ownerOAuthLoginErrorPath(locale, nextPath, "login_error"));
+  }
+
+  const origin = await getActionOrigin();
+  const callbackUrl = new URL("/o/auth/callback", origin);
+
+  callbackUrl.searchParams.set("provider", provider);
+  callbackUrl.searchParams.set("next", nextPath);
+  callbackUrl.searchParams.set("lang", locale);
+
+  const supabase = await createOwnerClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: callbackUrl.toString(),
+      scopes: getOwnerOAuthScopes(provider)
+    }
+  });
+
+  if (error || !data.url) {
+    redirect(ownerOAuthLoginErrorPath(locale, nextPath, "login_error"));
+  }
+
+  redirect(data.url);
 }
 
 export async function signOutOwner() {
