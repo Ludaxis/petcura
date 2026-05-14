@@ -26,8 +26,10 @@ import {
   type ElementType,
   type ReactNode,
   createContext,
+  useEffect,
   useContext,
-  useMemo
+  useMemo,
+  useState
 } from "react";
 import {
   AnimatePresence,
@@ -58,6 +60,17 @@ const MotionSectionContext = createContext<MotionSectionContextValue | null>(
   null
 );
 
+function useMountedReducedMotion() {
+  const reduce = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  return mounted && reduce === true;
+}
+
 // ---------------------------------------------------------------------------
 // <Reveal>
 // ---------------------------------------------------------------------------
@@ -86,8 +99,9 @@ const RISE_PX: Record<MotionRiseKey, number> = {
 };
 
 /**
- * Fade + rise reveal triggered on first viewport entry. Renders content at
- * the final visible state when `prefers-reduced-motion: reduce`.
+ * Fade + rise reveal triggered on first viewport entry. SSR cannot observe
+ * `prefers-reduced-motion`, so reduced-motion CSS forces the SSR motion
+ * markup to its final state before the mounted static branch takes over.
  */
 export function Reveal({
   children,
@@ -100,7 +114,7 @@ export function Reveal({
   className,
   style
 }: RevealProps) {
-  const reduce = useReducedMotion();
+  const reduce = useMountedReducedMotion();
   const sectionCtx = useContext(MotionSectionContext);
   const Component = motion[as] as typeof motion.div;
 
@@ -181,7 +195,7 @@ export function KineticHeadline({
   className,
   id
 }: KineticHeadlineProps) {
-  const reduce = useReducedMotion();
+  const reduce = useMountedReducedMotion();
   const HeadingTag = as as ElementType;
 
   // Collapse to a single accessible string so screen readers don't hear
@@ -204,6 +218,7 @@ export function KineticHeadline({
     <HeadingTag
       aria-label={flatText}
       className={className}
+      data-kinetic="motion"
       id={id}
       style={{ textWrap: "balance" }}
     >
@@ -211,6 +226,7 @@ export function KineticHeadline({
         <motion.span
           aria-hidden="true"
           className="block"
+          data-kinetic-line=""
           initial={{ opacity: 0, y: 12 }}
           key={`${lineIndex}-${line}`}
           transition={{
@@ -294,7 +310,7 @@ export function Marquee({
   className,
   ariaLabel
 }: MarqueeProps) {
-  const reduce = useReducedMotion();
+  const reduce = useMountedReducedMotion();
   if (reduce) {
     return (
       <div aria-label={ariaLabel} className={className}>
@@ -346,4 +362,3 @@ export function isCoarseOrSmallViewport(): boolean {
     window.matchMedia("(pointer: coarse)").matches
   );
 }
-

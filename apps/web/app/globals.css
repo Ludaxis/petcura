@@ -264,6 +264,12 @@ textarea {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  [data-reveal="motion"],
+  [data-kinetic-line] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /*
