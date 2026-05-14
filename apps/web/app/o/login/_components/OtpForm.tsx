@@ -142,15 +142,20 @@ export function OtpForm({
       return;
     }
     setPending(true);
-    const result = await requestOwnerOtp(phone);
-    setPending(false);
-    if (!result.ok) {
-      setError(getErrorMessage(t, result.error));
-      return;
+    try {
+      const result = await requestOwnerOtp(phone);
+      if (!result.ok) {
+        setError(getErrorMessage(t, result.error));
+        return;
+      }
+      setStep("otp");
+      setResendAttempt(0);
+      startCooldown(0, submittedAt);
+    } catch {
+      setError(t("login.error.loginError"));
+    } finally {
+      setPending(false);
     }
-    setStep("otp");
-    setResendAttempt(0);
-    startCooldown(0, submittedAt);
   }
 
   async function onSubmitOtp(e: FormEvent) {
@@ -161,14 +166,20 @@ export function OtpForm({
       return;
     }
     setPending(true);
-    const result = await verifyOwnerOtp(phone, code, nextPath);
-    setPending(false);
-    if (!result.ok) {
-      setError(getErrorMessage(t, result.error));
-      setOtpCellState("error");
-      window.setTimeout(() => setOtpCellState("idle"), 400);
-    } else {
+    try {
+      const result = await verifyOwnerOtp(phone, code, nextPath);
+      if (!result.ok) {
+        setError(getErrorMessage(t, result.error));
+        setOtpCellState("error");
+        window.setTimeout(() => setOtpCellState("idle"), 400);
+        return;
+      }
       setOtpCellState("success");
+      window.location.assign(result.redirectTo ?? nextPath);
+    } catch {
+      setError(t("login.error.loginError"));
+    } finally {
+      setPending(false);
     }
   }
 
@@ -177,17 +188,22 @@ export function OtpForm({
     if (cooldownSecondsLeft > 0) return;
     setError(null);
     setPending(true);
-    const result = await requestOwnerOtp(phone);
-    setPending(false);
-    if (!result.ok) {
-      setError(getErrorMessage(t, result.error));
-      return;
+    try {
+      const result = await requestOwnerOtp(phone);
+      if (!result.ok) {
+        setError(getErrorMessage(t, result.error));
+        return;
+      }
+      setResendAttempt((a) => {
+        const next = a + 1;
+        startCooldown(next, requestedAt);
+        return next;
+      });
+    } catch {
+      setError(t("login.error.loginError"));
+    } finally {
+      setPending(false);
     }
-    setResendAttempt((a) => {
-      const next = a + 1;
-      startCooldown(next, requestedAt);
-      return next;
-    });
   }
 
   async function onSwitchChannel(e: MouseEvent<HTMLButtonElement>) {
@@ -198,14 +214,19 @@ export function OtpForm({
     setChannel(newChannel);
     setError(null);
     setPending(true);
-    const result = await requestOwnerOtp(phone);
-    setPending(false);
-    if (!result.ok) {
-      setError(getErrorMessage(t, result.error));
-      return;
+    try {
+      const result = await requestOwnerOtp(phone);
+      if (!result.ok) {
+        setError(getErrorMessage(t, result.error));
+        return;
+      }
+      setResendAttempt(0);
+      startCooldown(0, requestedAt);
+    } catch {
+      setError(t("login.error.loginError"));
+    } finally {
+      setPending(false);
     }
-    setResendAttempt(0);
-    startCooldown(0, requestedAt);
   }
 
   if (step === "otp") {

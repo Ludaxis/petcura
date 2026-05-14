@@ -3,6 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { normalizeLocale, type Database, type SupportedLocale } from "@petcura/shared";
+import { ownerMembershipSelect } from "@/lib/owner/membership-query";
 import { createOwnerClient } from "@/lib/supabase/owner-server";
 
 type OwnerSupabaseClient = Awaited<ReturnType<typeof createOwnerClient>>;
@@ -96,9 +97,7 @@ export async function requireOwnerContext(
 
   const { data, error: membershipError } = await supabase
     .from("owner_user_memberships")
-    .select(
-      "clinic_id, owner_id, joined_at, clinics(id, name, slug, timezone, locale), owners(id, name, email, phone, preferred_language, photo_url)"
-    )
+    .select(ownerMembershipSelect)
     .eq("user_id", user.id)
     .order("joined_at", { ascending: true });
 
