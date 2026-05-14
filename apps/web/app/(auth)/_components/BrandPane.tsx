@@ -36,12 +36,6 @@ export function BrandPane({ variant, quotes }: BrandPaneProps) {
         }}
       />
 
-      {/* loop trail motif — single vertical 2px sage line, only on desktop */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/4 hidden h-1/2 w-px -translate-x-1/2 bg-[var(--primary)] opacity-30 md:block"
-      />
-
       {/* mobile: tiny paw glyph only */}
       <div className="flex h-full items-center justify-center md:hidden">
         <span
@@ -52,8 +46,9 @@ export function BrandPane({ variant, quotes }: BrandPaneProps) {
         </span>
       </div>
 
-      {/* desktop: quote card */}
-      <div className="relative hidden h-full items-center justify-center px-8 md:flex">
+      {/* desktop: quote card centered, sage trail line beneath, paw anchor + wordmark at the bottom */}
+      <div className="relative z-10 hidden h-full min-h-dvh flex-col items-center px-8 py-12 md:flex">
+        <div className="flex-1" />
         <div
           className={cn(
             "relative min-h-[180px] w-full max-w-[420px]",
@@ -76,6 +71,25 @@ export function BrandPane({ variant, quotes }: BrandPaneProps) {
               <p className="text-sm text-[var(--muted)]">{q.attribution}</p>
             </div>
           ))}
+        </div>
+
+        {/* loop-trail motif: card -> paw, evokes the landing ProductLoopMock */}
+        <div
+          aria-hidden="true"
+          className="my-6 min-h-[64px] w-px flex-1 bg-[var(--primary)] opacity-30"
+          style={{ maxHeight: "40vh" }}
+        />
+
+        <div className="flex flex-col items-center gap-2">
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--paper)] text-[var(--primary)] shadow-sm"
+            aria-hidden="true"
+          >
+            <PawPrint size={18} weight="fill" />
+          </span>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            PetCura
+          </p>
         </div>
       </div>
     </aside>
