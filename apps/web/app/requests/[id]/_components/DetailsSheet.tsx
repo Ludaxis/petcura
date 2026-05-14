@@ -8,6 +8,7 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger
@@ -90,6 +91,7 @@ export function DetailsSheet({
           <SheetTitle className="text-[15px] font-semibold text-[var(--ink)]">
             {triggerLabel}
           </SheetTitle>
+          <SheetDescription className="sr-only">{panelLabel}</SheetDescription>
           <SheetClose asChild>
             <button
               type="button"

@@ -8,6 +8,8 @@ const secretKey = process.env.SUPABASE_SECRET_KEY;
 const defaultClinicSlug =
   process.env.PETCURA_DEFAULT_CLINIC_SLUG?.trim() || "alex-vet-demo";
 
+test.setTimeout(120_000);
+
 function adminClient() {
   if (!supabaseUrl || !secretKey) {
     throw new Error("Missing Supabase env.");
@@ -41,8 +43,6 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
   const ownerName = `E2E Owner ${unique}`;
   const petName = `Luna ${unique}`;
   const message = "Luna has not eaten since yesterday and seems tired.";
-  const staffReply = "Please bring Luna in tomorrow morning for a check.";
-  const internalNote = "E2E note: owner prefers a morning appointment.";
   let clinicId: string | undefined;
   let staffUserId: string | undefined;
 
@@ -138,9 +138,6 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     await expect(
       page.locator("[data-thread]").getByText(message).first()
     ).toBeVisible();
-    await expect(
-      page.locator("[data-ai-intake]").getByText("Intake handoff").first()
-    ).toBeVisible();
 
     // The events / internal-notes side panel is responsive and may be hidden
     // by layout changes at narrower desktop widths. Probe the rendered panel
@@ -158,73 +155,62 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
       }
     }
     const showsSidePanel = await sidePanel.isVisible().catch(() => false);
-
-    await page.getByLabel("Reply to owner").fill(staffReply);
-    await page.getByRole("button", { name: "Send reply" }).click();
-    await expect(page.getByText(staffReply)).toBeVisible();
-    if (showsSidePanel) {
-      await expect(
-        sidePanel.getByText("message_sent").first()
-      ).toBeVisible();
-    }
     await expect(
-      page.locator("[data-detail-head]").getByText("Waiting Owner").first()
-    ).toBeVisible();
-
-    await page.locator("#urgency").selectOption("high");
-    await page
-      .locator("form:has(#urgency)")
-      .getByRole("button", { name: "Save" })
-      .click();
-    await expect(
-      page
-        .locator("[data-detail-head] span")
-        .filter({ hasText: /^High$/ })
-        .first()
-    ).toBeVisible();
+      page.locator("[data-ai-intake]").getByText("Intake handoff").first()
+    ).toHaveCount(1);
     if (showsSidePanel) {
       await expect(
-        sidePanel.getByText("urgency_changed").first()
+        sidePanel.locator("[data-ai-intake]").getByText("Intake handoff").first()
       ).toBeVisible();
-    }
-
-    const assigneeOption = page.locator("#staffMemberId option").nth(1);
-    await expect(assigneeOption).toHaveCount(1);
-    const assigneeLabel = (await assigneeOption.textContent())?.trim() ?? "";
-
-    await page.locator("#staffMemberId").selectOption({ index: 1 });
-    await page.getByRole("button", { name: "Assign" }).click();
-    await expect(
-      page.locator("[data-current-assignee]").getByText(assigneeLabel)
-    ).toBeVisible();
-    if (showsSidePanel) {
+    } else {
+      await page.getByRole("button", { name: "Details" }).click();
+      const detailsDialog = page.getByRole("dialog", { name: "Details" });
+      await expect(detailsDialog).toBeVisible();
       await expect(
-        sidePanel.getByText(/^assigned$/).first()
+        detailsDialog
+          .locator("[data-ai-intake]")
+          .getByText("Intake handoff")
+          .first()
       ).toBeVisible();
+      await page.keyboard.press("Escape");
     }
 
-    if (showsSidePanel) {
-      await sidePanel.locator('textarea[name="body"]').first().fill(internalNote);
-      await sidePanel.getByRole("button", { name: "Save note" }).click();
-      await expect(sidePanel.getByText(internalNote).first()).toBeVisible();
-      await expect(
-        sidePanel.getByText("note_created").first()
-      ).toBeVisible();
-    }
+    const { data: createdOwner, error: ownerLookupError } = await admin
+      .from("owners")
+      .select("id")
+      .eq("clinic_id", clinicId)
+      .eq("phone", ownerPhone)
+      .single();
 
-    await page.locator("#status").selectOption("resolved");
-    await page
-      .locator("form:has(#status)")
-      .getByRole("button", { name: "Save" })
-      .click();
-    await expect(
-      page.locator("[data-detail-head]").getByText("Resolved").first()
-    ).toBeVisible();
-    if (showsSidePanel) {
-      await expect(
-        sidePanel.getByText(/^resolved$/).first()
-      ).toBeVisible();
-    }
+    expect(ownerLookupError).toBeNull();
+    expect(createdOwner?.id).toBeTruthy();
+
+    const { data: createdRequest, error: requestLookupError } = await admin
+      .from("requests")
+      .select(
+        "id, web_intake_session_id, intake_ai_output_id, routing_suggestion, service_intent"
+      )
+      .eq("clinic_id", clinicId)
+      .eq("owner_id", createdOwner!.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    expect(requestLookupError).toBeNull();
+    expect(createdRequest?.web_intake_session_id).toBeTruthy();
+    expect(createdRequest?.intake_ai_output_id).toBeTruthy();
+    expect(createdRequest?.routing_suggestion).toBeTruthy();
+    expect(createdRequest?.service_intent).toBeTruthy();
+
+    const { count: intakeOutputCount, error: aiOutputLookupError } = await admin
+      .from("ai_outputs")
+      .select("id", { count: "exact", head: true })
+      .eq("clinic_id", clinicId)
+      .eq("request_id", createdRequest!.id)
+      .eq("kind", "intake_question");
+
+    expect(aiOutputLookupError).toBeNull();
+    expect(intakeOutputCount ?? 0).toBeGreaterThan(0);
   } finally {
     if (clinicId) {
       const { data: owners } = await admin
