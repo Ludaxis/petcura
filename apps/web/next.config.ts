@@ -20,10 +20,22 @@ const nextConfig: NextConfig = {
     // `view-transition-name` then cross-fade or morph between routes.
     // Disabled automatically under prefers-reduced-motion (see globals.css).
     viewTransition: true,
-    // Tree-shake lucide-react barrel imports — without this, a
-    // `import { Search } from "lucide-react"` can pull the whole icon
-    // module index into a route's first-load JS.
-    optimizePackageImports: ["lucide-react"]
+    // Tree-shake barrel imports so we don't pull whole index modules into
+    // a route's first-load JS.
+    // - `lucide-react`: `import { Search } from "lucide-react"` would
+    //   otherwise drag the icon barrel along.
+    // - `motion`: marketing-only Framer Motion v12. The package re-exports
+    //   `motion/react`, `motion/dom`, etc. through a barrel; this keeps the
+    //   landing dynamic chunk lean.
+    //
+    // NOT included: `gsap`. GSAP is consumed via deep imports
+    // (`import { gsap } from "gsap"; import { ScrollTrigger } from
+    // "gsap/ScrollTrigger"`) and registered with side effects via
+    // `gsap.registerPlugin(ScrollTrigger)`. The optimizer's named-import
+    // rewrite targets ESM barrel re-exports; it doesn't shrink GSAP's
+    // plugin-registration pattern. The marketing entry already gates the
+    // bundle via a dynamic import below the fold.
+    optimizePackageImports: ["lucide-react", "motion"]
   }
 };
 
