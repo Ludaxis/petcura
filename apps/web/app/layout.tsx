@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { getRequestLocale } from "@/lib/locale";
 import { getResolvedThemeForSSR } from "@/lib/theme";
 import { ThemeBootstrap } from "./_components/ThemeBootstrap";
+import { WebVitalsReporter } from "./_components/WebVitalsReporter";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -51,6 +52,7 @@ export default async function RootLayout({
       </head>
       <body>
         <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+        <WebVitalsReporter />
         <Analytics />
         <SpeedInsights />
       </body>
