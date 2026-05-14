@@ -1010,7 +1010,121 @@ export const uiCopy = {
     "nav.bottom.reminders": "Reminders",
     "nav.bottom.me": "Me",
     "request.detail.editActions": "Edit",
-    "request.detail.editSheet.title": "Update request"
+    "request.detail.editSheet.title": "Update request",
+
+    "router.transient.settingUp": "Setting things up…",
+    "router.fallback.heading": "We couldn't place you just yet",
+    "router.fallback.body":
+      "Your account is signed in, but we couldn't match it to a clinic profile. Please sign in again, or contact your clinic.",
+    "router.fallback.retry": "Try signing in again",
+    "router.fallback.contact": "Contact your clinic",
+
+    "auth.login.eyebrowClinic": "Clinic inbox",
+    "auth.login.eyebrowInvite": "Invite",
+    "auth.login.headingCold": "Welcome back",
+    "auth.login.headingInvite": "Welcome to {clinicName}",
+    "auth.login.bodyCold":
+      "Sign in with the email your clinic uses for PetCura.",
+    "auth.login.bodyInvite":
+      "We'll email you a one-time sign-in link to finish setup.",
+    "auth.login.notYou": "Not you?",
+    "auth.login.help":
+      "Don't have access? Ask an admin to invite you, or join our waitlist.",
+    "auth.login.helpWaitlist": "join our waitlist",
+    "auth.login.terms":
+      "By continuing, you agree to our Terms and Privacy.",
+
+    "auth.brandPane.clinic.quote1":
+      "Owners love the WhatsApp replies — they feel heard without us drowning in calls.",
+    "auth.brandPane.clinic.attribution1": "— Dr. Mari, Tartu Loomakliinik",
+    "auth.brandPane.clinic.quote2":
+      "It took an hour to onboard reception. Cases stopped slipping through the cracks the same week.",
+    "auth.brandPane.clinic.attribution2": "— Liisa, practice manager",
+    "auth.brandPane.clinic.quote3":
+      "Every action is logged. Audits are not a Sunday job anymore.",
+    "auth.brandPane.clinic.attribution3": "— Dr. Pavel, head vet",
+
+    "auth.error.noMembership":
+      "This account is not linked to a clinic yet. Please contact your clinic.",
+    "auth.error.invalidEmail": "Enter a valid email address.",
+    "auth.error.rateLimited":
+      "Too many attempts. Please wait a few minutes and try again.",
+    "auth.error.emailNotAuthorized":
+      "We don't recognize that email. If your clinic invited you, double-check it matches the invite email.",
+    "auth.error.loginError":
+      "We couldn't sign you in just now. Please try again.",
+    "auth.error.recoveryContactClinic": "Contact your clinic",
+    "auth.error.recoveryWaitlist": "Join the waitlist",
+    "auth.error.recoveryTryAgain": "Try again",
+    "auth.error.recoverySignInStaff": "Sign in as staff",
+
+    "onboarding.clinic.heading": "Let's get {clinicName} set up",
+    "onboarding.clinic.body":
+      "These 5 quick steps will get your inbox ready for real owners.",
+    "onboarding.clinic.trust.eu": "EU residency by default",
+    "onboarding.clinic.trust.ai": "AI assists staff, never auto-sends",
+    "onboarding.clinic.trust.audit": "Every action audit-logged",
+    "onboarding.clinic.help": "Need help? Talk to your CSM.",
+    "onboarding.clinic.skip": "Skip to inbox",
+    "onboarding.clinic.doLater": "Do later",
+    "onboarding.clinic.skipItem": "Skip",
+    "onboarding.clinic.markDone": "Mark done",
+    "onboarding.clinic.edit": "Edit",
+    "onboarding.clinic.statusTodo": "To do",
+    "onboarding.clinic.statusDone": "Done",
+    "onboarding.clinic.statusSkipped": "Skipped",
+    "onboarding.clinic.allSet": "You're all set. Heading to your inbox…",
+    "onboarding.clinic.progressChipLabel": "{done} of {total} steps",
+    "onboarding.clinic.step.connect_whatsapp.title": "Connect WhatsApp number",
+    "onboarding.clinic.step.connect_whatsapp.subtext":
+      "Bring your clinic's WhatsApp line in.",
+    "onboarding.clinic.step.connect_whatsapp.cta": "Connect",
+    "onboarding.clinic.step.choose_pms.title": "Choose your PMS",
+    "onboarding.clinic.step.choose_pms.subtext":
+      "Connect Provet, Animal Health Director, or skip for now.",
+    "onboarding.clinic.step.choose_pms.cta": "Choose",
+    "onboarding.clinic.step.invite_teammate.title": "Invite 1 teammate",
+    "onboarding.clinic.step.invite_teammate.subtext":
+      "A reception or a vet who'll answer first messages.",
+    "onboarding.clinic.step.invite_teammate.cta": "Invite",
+    "onboarding.clinic.step.quiet_hours.title":
+      "Set quiet hours and auto-reply",
+    "onboarding.clinic.step.quiet_hours.subtext":
+      "When you're closed, owners get an honest auto-reply.",
+    "onboarding.clinic.step.quiet_hours.cta": "Set hours",
+    "onboarding.clinic.step.test_request.title":
+      "Send yourself a test request",
+    "onboarding.clinic.step.test_request.subtext":
+      "See how a real request flows from WhatsApp into your inbox.",
+    "onboarding.clinic.step.test_request.cta": "Run test",
+
+    "onboarding.staff.stepN": "Step {n} of 2",
+    "onboarding.staff.headingWelcome": "Welcome to {clinicName}",
+    "onboarding.staff.bodyWelcome":
+      "Just a couple of quick details before you head to the inbox.",
+    "onboarding.staff.avatarUpload": "Upload photo",
+    "onboarding.staff.avatarRemove": "Remove photo",
+    "onboarding.staff.nameLabel": "Your name",
+    "onboarding.staff.roleLabel": "Your role",
+    "onboarding.staff.roleChip.reception": "Reception",
+    "onboarding.staff.roleChip.vet": "Veterinarian",
+    "onboarding.staff.roleChip.admin": "Admin",
+    "onboarding.staff.roleWrong":
+      "This isn't right? Ask {adminName} to update.",
+    "onboarding.staff.continue": "Continue",
+    "onboarding.staff.headingNotifs": "How should we reach you?",
+    "onboarding.staff.pushLabel": "Push notifications",
+    "onboarding.staff.push.off": "Off",
+    "onboarding.staff.push.urgent": "Urgent and direct mentions",
+    "onboarding.staff.push.all": "Every new request",
+    "onboarding.staff.emailLabel": "Email digest",
+    "onboarding.staff.email.off": "Off",
+    "onboarding.staff.email.daily": "Daily summary",
+    "onboarding.staff.email.weekly": "Weekly summary",
+    "onboarding.staff.quietHoursHelp":
+      "Quiet hours follow your clinic's setting ({hours}).",
+    "onboarding.staff.back": "Back",
+    "onboarding.staff.finish": "Finish"
   },
   et: {
     "nav.back": "Tagasi",
@@ -1821,7 +1935,124 @@ export const uiCopy = {
     "nav.bottom.reminders": "Meeldetuletused",
     "nav.bottom.me": "Mina",
     "request.detail.editActions": "Muuda",
-    "request.detail.editSheet.title": "Uuenda pöördumist"
+    "request.detail.editSheet.title": "Uuenda pöördumist",
+
+    "router.transient.settingUp": "Valmistame ette…",
+    "router.fallback.heading": "Me ei suutnud sind kohe paigutada",
+    "router.fallback.body":
+      "Sinu konto on sisse logitud, kuid me ei leidnud sobivat kliiniku profiili. Logi uuesti sisse või võta ühendust oma kliinikuga.",
+    "router.fallback.retry": "Logi uuesti sisse",
+    "router.fallback.contact": "Võta ühendust kliinikuga",
+
+    "auth.login.eyebrowClinic": "Kliiniku sisendkast",
+    "auth.login.eyebrowInvite": "Kutse",
+    "auth.login.headingCold": "Tere tulemast tagasi",
+    "auth.login.headingInvite": "Tere tulemast {clinicName}",
+    "auth.login.bodyCold":
+      "Logi sisse e-postiga, mida sinu kliinik PetCuras kasutab.",
+    "auth.login.bodyInvite":
+      "Saadame ühekordse sisselogimislingi seadistuse lõpetamiseks.",
+    "auth.login.notYou": "Pole sina?",
+    "auth.login.help":
+      "Pole ligipääsu? Palu administraatorit sind kutsuda või liitu ootenimekirjaga.",
+    "auth.login.helpWaitlist": "liitu ootenimekirjaga",
+    "auth.login.terms":
+      "Jätkates nõustud Tingimuste ja Privaatsuspoliitikaga.",
+
+    "auth.brandPane.clinic.quote1":
+      "Omanikud armastavad WhatsApi vastuseid — nad tunnevad, et neid kuulatakse, ilma et kõned uputaksid.",
+    "auth.brandPane.clinic.attribution1": "— Dr. Mari, Tartu Loomakliinik",
+    "auth.brandPane.clinic.quote2":
+      "Vastuvõtt sai tunniga koolitatud. Juhtumid ei jäänud enam sõelale.",
+    "auth.brandPane.clinic.attribution2": "— Liisa, kliiniku juht",
+    "auth.brandPane.clinic.quote3":
+      "Iga toiming on logitud. Auditid pole enam pühapäevane töö.",
+    "auth.brandPane.clinic.attribution3": "— Dr. Pavel, peaveterinaar",
+
+    "auth.error.noMembership":
+      "See konto pole veel kliinikuga seotud. Palun võta kliinikuga ühendust.",
+    "auth.error.invalidEmail": "Sisesta kehtiv e-posti aadress.",
+    "auth.error.rateLimited":
+      "Liiga palju katseid. Palun oota mõni minut ja proovi uuesti.",
+    "auth.error.emailNotAuthorized":
+      "Me ei tunne seda e-posti aadressi. Kui kliinik sind kutsus, kontrolli, et see vastaks kutse aadressile.",
+    "auth.error.loginError":
+      "Me ei saanud sind praegu sisse logida. Palun proovi uuesti.",
+    "auth.error.recoveryContactClinic": "Võta ühendust kliinikuga",
+    "auth.error.recoveryWaitlist": "Liitu ootenimekirjaga",
+    "auth.error.recoveryTryAgain": "Proovi uuesti",
+    "auth.error.recoverySignInStaff": "Logi sisse töötajana",
+
+    "onboarding.clinic.heading": "Seadistame {clinicName} valmis",
+    "onboarding.clinic.body":
+      "Need 5 kiiret sammu valmistavad sinu sisendkasti reaalsete omanike jaoks.",
+    "onboarding.clinic.trust.eu": "EU residentsus vaikimisi",
+    "onboarding.clinic.trust.ai":
+      "AI abistab töötajaid, ei saada kunagi automaatselt",
+    "onboarding.clinic.trust.audit": "Iga toiming auditeeritud",
+    "onboarding.clinic.help": "Vajad abi? Räägi oma CSM-iga.",
+    "onboarding.clinic.skip": "Mine sisendkasti",
+    "onboarding.clinic.doLater": "Tee hiljem",
+    "onboarding.clinic.skipItem": "Jäta vahele",
+    "onboarding.clinic.markDone": "Märgi tehtuks",
+    "onboarding.clinic.edit": "Muuda",
+    "onboarding.clinic.statusTodo": "Teha",
+    "onboarding.clinic.statusDone": "Tehtud",
+    "onboarding.clinic.statusSkipped": "Vahele jäetud",
+    "onboarding.clinic.allSet":
+      "Kõik on valmis. Suundume sinu sisendkasti…",
+    "onboarding.clinic.progressChipLabel": "{done} / {total} sammu",
+    "onboarding.clinic.step.connect_whatsapp.title":
+      "Ühenda WhatsApi number",
+    "onboarding.clinic.step.connect_whatsapp.subtext":
+      "Too kliiniku WhatsApi liin sisse.",
+    "onboarding.clinic.step.connect_whatsapp.cta": "Ühenda",
+    "onboarding.clinic.step.choose_pms.title": "Vali oma PMS",
+    "onboarding.clinic.step.choose_pms.subtext":
+      "Ühenda Provet, Animal Health Director või jäta praegu vahele.",
+    "onboarding.clinic.step.choose_pms.cta": "Vali",
+    "onboarding.clinic.step.invite_teammate.title": "Kutsu 1 kolleeg",
+    "onboarding.clinic.step.invite_teammate.subtext":
+      "Vastuvõtt või veterinaar, kes vastab esimestele sõnumitele.",
+    "onboarding.clinic.step.invite_teammate.cta": "Kutsu",
+    "onboarding.clinic.step.quiet_hours.title":
+      "Sea vaikne aeg ja auto-vastus",
+    "onboarding.clinic.step.quiet_hours.subtext":
+      "Kui oled suletud, saavad omanikud ausa auto-vastuse.",
+    "onboarding.clinic.step.quiet_hours.cta": "Sea ajad",
+    "onboarding.clinic.step.test_request.title":
+      "Saada endale testpöördumine",
+    "onboarding.clinic.step.test_request.subtext":
+      "Vaata, kuidas päring liigub WhatsApist sinu sisendkasti.",
+    "onboarding.clinic.step.test_request.cta": "Käivita test",
+
+    "onboarding.staff.stepN": "Samm {n} / 2",
+    "onboarding.staff.headingWelcome": "Tere tulemast {clinicName}",
+    "onboarding.staff.bodyWelcome":
+      "Veel mõned kiired andmed enne sisendkasti minekut.",
+    "onboarding.staff.avatarUpload": "Lae üles foto",
+    "onboarding.staff.avatarRemove": "Eemalda foto",
+    "onboarding.staff.nameLabel": "Sinu nimi",
+    "onboarding.staff.roleLabel": "Sinu roll",
+    "onboarding.staff.roleChip.reception": "Vastuvõtt",
+    "onboarding.staff.roleChip.vet": "Veterinaar",
+    "onboarding.staff.roleChip.admin": "Administraator",
+    "onboarding.staff.roleWrong":
+      "See pole õige? Palu, et {adminName} muudaks.",
+    "onboarding.staff.continue": "Jätka",
+    "onboarding.staff.headingNotifs": "Kuidas peaksime sinuga ühendust võtma?",
+    "onboarding.staff.pushLabel": "Tõuketeavitused",
+    "onboarding.staff.push.off": "Väljas",
+    "onboarding.staff.push.urgent": "Kiired ja otsesed mainimised",
+    "onboarding.staff.push.all": "Iga uus pöördumine",
+    "onboarding.staff.emailLabel": "E-posti kokkuvõte",
+    "onboarding.staff.email.off": "Väljas",
+    "onboarding.staff.email.daily": "Päevane kokkuvõte",
+    "onboarding.staff.email.weekly": "Nädalane kokkuvõte",
+    "onboarding.staff.quietHoursHelp":
+      "Vaikne aeg järgib sinu kliiniku seadeid ({hours}).",
+    "onboarding.staff.back": "Tagasi",
+    "onboarding.staff.finish": "Lõpeta"
   },
   ru: {
     "nav.back": "Назад",
@@ -2637,14 +2868,140 @@ export const uiCopy = {
     "nav.bottom.reminders": "Напоминания",
     "nav.bottom.me": "Я",
     "request.detail.editActions": "Изменить",
-    "request.detail.editSheet.title": "Обновить запрос"
+    "request.detail.editSheet.title": "Обновить запрос",
+
+    "router.transient.settingUp": "Подготавливаем всё для вас…",
+    "router.fallback.heading": "Мы пока не смогли вас определить",
+    "router.fallback.body":
+      "Ваш аккаунт подключен, но мы не смогли сопоставить его с профилем клиники. Войдите снова или свяжитесь с клиникой.",
+    "router.fallback.retry": "Войти заново",
+    "router.fallback.contact": "Связаться с клиникой",
+
+    "auth.login.eyebrowClinic": "Кабинет клиники",
+    "auth.login.eyebrowInvite": "Приглашение",
+    "auth.login.headingCold": "С возвращением",
+    "auth.login.headingInvite": "Добро пожаловать в {clinicName}",
+    "auth.login.bodyCold":
+      "Войдите с помощью email, который ваша клиника использует в PetCura.",
+    "auth.login.bodyInvite":
+      "Мы отправим одноразовую ссылку для входа на этот адрес.",
+    "auth.login.notYou": "Это не вы?",
+    "auth.login.help":
+      "Нет доступа? Попросите администратора пригласить вас или присоединитесь к листу ожидания.",
+    "auth.login.helpWaitlist": "присоединитесь к листу ожидания",
+    "auth.login.terms":
+      "Продолжая, вы соглашаетесь с Условиями и Политикой конфиденциальности.",
+
+    "auth.brandPane.clinic.quote1":
+      "Владельцы любят ответы в WhatsApp — чувствуют, что их слышат, без потока звонков.",
+    "auth.brandPane.clinic.attribution1":
+      "— Доктор Мари, Tartu Loomakliinik",
+    "auth.brandPane.clinic.quote2":
+      "Обучили ресепшен за час. Случаи перестали теряться на той же неделе.",
+    "auth.brandPane.clinic.attribution2":
+      "— Лийза, управляющая клиникой",
+    "auth.brandPane.clinic.quote3":
+      "Каждое действие журналируется. Аудит больше не воскресная работа.",
+    "auth.brandPane.clinic.attribution3":
+      "— Доктор Павел, главный ветврач",
+
+    "auth.error.noMembership":
+      "Этот аккаунт пока не связан с клиникой. Свяжитесь со своей клиникой.",
+    "auth.error.invalidEmail": "Введите корректный email.",
+    "auth.error.rateLimited":
+      "Слишком много попыток. Подождите несколько минут и попробуйте снова.",
+    "auth.error.emailNotAuthorized":
+      "Мы не узнаём этот email. Если клиника вас пригласила, убедитесь, что адрес совпадает с приглашением.",
+    "auth.error.loginError":
+      "Не удалось войти. Попробуйте ещё раз.",
+    "auth.error.recoveryContactClinic": "Связаться с клиникой",
+    "auth.error.recoveryWaitlist": "В лист ожидания",
+    "auth.error.recoveryTryAgain": "Попробовать снова",
+    "auth.error.recoverySignInStaff": "Войти как сотрудник",
+
+    "onboarding.clinic.heading": "Настроим {clinicName}",
+    "onboarding.clinic.body":
+      "5 быстрых шагов — и ваш входящий готов к работе с реальными владельцами.",
+    "onboarding.clinic.trust.eu": "Хранение в ЕС по умолчанию",
+    "onboarding.clinic.trust.ai":
+      "AI помогает персоналу, никогда не отправляет автоматически",
+    "onboarding.clinic.trust.audit": "Каждое действие в журнале",
+    "onboarding.clinic.help": "Нужна помощь? Свяжитесь с вашим CSM.",
+    "onboarding.clinic.skip": "Перейти в входящие",
+    "onboarding.clinic.doLater": "Позже",
+    "onboarding.clinic.skipItem": "Пропустить",
+    "onboarding.clinic.markDone": "Отметить выполненным",
+    "onboarding.clinic.edit": "Изменить",
+    "onboarding.clinic.statusTodo": "К выполнению",
+    "onboarding.clinic.statusDone": "Готово",
+    "onboarding.clinic.statusSkipped": "Пропущено",
+    "onboarding.clinic.allSet":
+      "Готово. Переходим к вашим входящим…",
+    "onboarding.clinic.progressChipLabel": "{done} из {total} шагов",
+    "onboarding.clinic.step.connect_whatsapp.title":
+      "Подключить номер WhatsApp",
+    "onboarding.clinic.step.connect_whatsapp.subtext":
+      "Подключите линию WhatsApp вашей клиники.",
+    "onboarding.clinic.step.connect_whatsapp.cta": "Подключить",
+    "onboarding.clinic.step.choose_pms.title": "Выберите PMS",
+    "onboarding.clinic.step.choose_pms.subtext":
+      "Подключите Provet, Animal Health Director или пропустите.",
+    "onboarding.clinic.step.choose_pms.cta": "Выбрать",
+    "onboarding.clinic.step.invite_teammate.title": "Пригласите 1 коллегу",
+    "onboarding.clinic.step.invite_teammate.subtext":
+      "Ресепшен или ветврач, который ответит на первые сообщения.",
+    "onboarding.clinic.step.invite_teammate.cta": "Пригласить",
+    "onboarding.clinic.step.quiet_hours.title":
+      "Настройте часы тишины и авто-ответ",
+    "onboarding.clinic.step.quiet_hours.subtext":
+      "Когда вы закрыты, владельцы получают честный авто-ответ.",
+    "onboarding.clinic.step.quiet_hours.cta": "Настроить часы",
+    "onboarding.clinic.step.test_request.title":
+      "Отправьте себе тестовый запрос",
+    "onboarding.clinic.step.test_request.subtext":
+      "Посмотрите, как запрос идёт из WhatsApp в ваши входящие.",
+    "onboarding.clinic.step.test_request.cta": "Запустить тест",
+
+    "onboarding.staff.stepN": "Шаг {n} из 2",
+    "onboarding.staff.headingWelcome": "Добро пожаловать в {clinicName}",
+    "onboarding.staff.bodyWelcome":
+      "Несколько быстрых деталей перед переходом к входящим.",
+    "onboarding.staff.avatarUpload": "Загрузить фото",
+    "onboarding.staff.avatarRemove": "Удалить фото",
+    "onboarding.staff.nameLabel": "Ваше имя",
+    "onboarding.staff.roleLabel": "Ваша роль",
+    "onboarding.staff.roleChip.reception": "Ресепшен",
+    "onboarding.staff.roleChip.vet": "Ветеринар",
+    "onboarding.staff.roleChip.admin": "Администратор",
+    "onboarding.staff.roleWrong":
+      "Не верно? Попросите {adminName} обновить.",
+    "onboarding.staff.continue": "Продолжить",
+    "onboarding.staff.headingNotifs": "Как с вами связаться?",
+    "onboarding.staff.pushLabel": "Push-уведомления",
+    "onboarding.staff.push.off": "Выключено",
+    "onboarding.staff.push.urgent": "Срочные и прямые упоминания",
+    "onboarding.staff.push.all": "Каждый новый запрос",
+    "onboarding.staff.emailLabel": "Email-дайджест",
+    "onboarding.staff.email.off": "Выключено",
+    "onboarding.staff.email.daily": "Ежедневная сводка",
+    "onboarding.staff.email.weekly": "Еженедельная сводка",
+    "onboarding.staff.quietHoursHelp":
+      "Часы тишины следуют настройкам клиники ({hours}).",
+    "onboarding.staff.back": "Назад",
+    "onboarding.staff.finish": "Завершить"
   }
 } satisfies Record<SupportedLocale, Record<string, string>>;
 
 export type CopyKey = keyof (typeof uiCopy)[typeof defaultLocale];
 
 export function createTranslator(locale: SupportedLocale) {
-  return (key: CopyKey) => uiCopy[locale][key] ?? uiCopy[defaultLocale][key];
+  return (key: CopyKey, params?: Record<string, string | number>) => {
+    const raw = uiCopy[locale][key] ?? uiCopy[defaultLocale][key];
+    if (!params) return raw;
+    return raw.replace(/\{(\w+)\}/g, (_, token: string) =>
+      params[token] !== undefined ? String(params[token]) : `{${token}}`
+    );
+  };
 }
 
 export function getRequestCategoryLabel(

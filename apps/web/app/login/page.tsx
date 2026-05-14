@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowLeft, Mail } from "lucide-react";
-import { Badge, Button, Panel } from "@petcura/ui";
-import { createTranslator, withLocale } from "@petcura/shared";
-import { LanguageSwitcher } from "@/components/language-switcher";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@petcura/ui";
+import { createTranslator } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
+import { AuthShell } from "@/app/(auth)/_components/AuthShell";
+import type { BrandPaneQuote } from "@/app/(auth)/_components/BrandPane";
 import { signInWithMagicLink } from "./actions";
 
 type LoginPageProps = {
@@ -12,11 +13,51 @@ type LoginPageProps = {
     lang?: string | string[];
     next?: string | string[];
     sent?: string | string[];
+    invite?: string | string[];
+    email?: string | string[];
+    clinic?: string | string[];
   }>;
+};
+
+type ErrorEntry = {
+  copy: string;
+  action?: { label: string; href: string };
 };
 
 function getSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function resolveError(
+  t: ReturnType<typeof createTranslator>,
+  code: string | undefined
+): ErrorEntry | null {
+  if (!code) return null;
+  if (code === "no_membership") {
+    return {
+      copy: t("auth.error.noMembership"),
+      action: {
+        label: t("auth.error.recoveryContactClinic"),
+        href: "mailto:support@petcura.app"
+      }
+    };
+  }
+  if (code === "invalid_email") {
+    return { copy: t("auth.error.invalidEmail") };
+  }
+  if (code === "rate_limited") {
+    return { copy: t("auth.error.rateLimited") };
+  }
+  if (code === "email_not_authorized") {
+    return {
+      copy: t("auth.error.emailNotAuthorized"),
+      action: {
+        label: t("auth.error.recoveryWaitlist"),
+        href: "/#waitlist"
+      }
+    };
+  }
+  return { copy: t("auth.error.loginError") };
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -24,86 +65,126 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const locale = await getRequestLocale(params?.lang);
   const t = createTranslator(locale);
   const nextPath = getSearchParam(params?.next) ?? "/inbox";
-  const error = getSearchParam(params?.error);
   const sent = getSearchParam(params?.sent) === "1";
-  let errorCopy: string | null = null;
+  const invite = getSearchParam(params?.invite) === "1";
+  const inviteEmail = getSearchParam(params?.email) ?? "";
+  const inviteClinic = getSearchParam(params?.clinic) ?? "";
+  const error = resolveError(t, getSearchParam(params?.error));
 
-  if (error === "no_membership") {
-    errorCopy = t("auth.noMembership");
-  } else if (error === "invalid_email") {
-    errorCopy = t("auth.invalidEmail");
-  } else if (error === "rate_limited") {
-    errorCopy = t("auth.rateLimited");
-  } else if (error === "email_not_authorized") {
-    errorCopy = t("auth.emailNotAuthorized");
-  } else if (error) {
-    errorCopy = t("auth.loginError");
-  }
+  const heading = invite && inviteClinic
+    ? t("auth.login.headingInvite", { clinicName: inviteClinic })
+    : t("auth.login.headingCold");
+  const body = invite
+    ? t("auth.login.bodyInvite")
+    : t("auth.login.bodyCold");
+  const eyebrow = invite
+    ? t("auth.login.eyebrowInvite")
+    : t("auth.login.eyebrowClinic");
+
+  const quotes: BrandPaneQuote[] = [
+    {
+      body: t("auth.brandPane.clinic.quote1"),
+      attribution: t("auth.brandPane.clinic.attribution1")
+    },
+    {
+      body: t("auth.brandPane.clinic.quote2"),
+      attribution: t("auth.brandPane.clinic.attribution2")
+    },
+    {
+      body: t("auth.brandPane.clinic.quote3"),
+      attribution: t("auth.brandPane.clinic.attribution3")
+    }
+  ];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-5 px-4 py-5 sm:px-6">
-      <header className="flex items-center justify-between gap-4 border-b border-[var(--line)] pb-4">
-        <Button asChild variant="ghost">
-          <Link href={withLocale("/", locale)}>
-            <ArrowLeft aria-hidden="true" size={16} />
-            {t("nav.back")}
-          </Link>
-        </Button>
-        <LanguageSwitcher
-          currentPath="/login"
-          label={t("language.label")}
-          locale={locale}
-        />
-      </header>
+    <AuthShell
+      variant="clinic"
+      locale={locale}
+      eyebrow={eyebrow}
+      quotes={quotes}
+      currentPath="/login"
+      languageLabel={t("language.label")}
+    >
+      <div className="grid gap-2">
+        <h1
+          id="auth-heading"
+          className="text-2xl font-semibold leading-tight text-[var(--ink)]"
+        >
+          {heading}
+        </h1>
+        <p className="text-sm leading-6 text-[var(--muted)]">{body}</p>
+      </div>
 
-      <Panel className="p-5 sm:p-6">
-        <div className="mb-6 flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary)]">
-            <Mail aria-hidden="true" size={21} />
-          </div>
-          <div>
-            <Badge tone="teal">{t("nav.clinicInbox")}</Badge>
-            <h1 className="mt-3 text-2xl font-semibold">{t("auth.login")}</h1>
-          </div>
+      {sent ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]"
+        >
+          {t("auth.checkEmail")}
         </div>
+      ) : null}
 
-        {sent ? (
-          <div
-            role="status"
-            className="mb-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm leading-6 text-[var(--muted)]"
-          >
-            {t("auth.checkEmail")}
-          </div>
-        ) : null}
+      {error ? (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="flex flex-col gap-2 rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm leading-6 text-[var(--red)] sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="flex-1">{error.copy}</p>
+          {error.action ? (
+            <Button asChild size="sm" variant="ghost">
+              <Link
+                href={error.action.href}
+                className="text-[var(--red)] hover:text-[var(--red)]"
+              >
+                {error.action.label}
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
-        {errorCopy ? (
-          <div
-            role="alert"
-            className="mb-4 rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm leading-6 text-[var(--red)]"
-          >
-            {errorCopy}
-          </div>
-        ) : null}
+      <form action={signInWithMagicLink} className="grid gap-4">
+        <input name="lang" type="hidden" value={locale} />
+        <input name="next" type="hidden" value={nextPath} />
+        <input name="invite" type="hidden" value={invite ? "1" : ""} />
+        <input name="clinic" type="hidden" value={inviteClinic} />
 
-        <form action={signInWithMagicLink} className="grid gap-4">
-          <input name="lang" type="hidden" value={locale} />
-          <input name="next" type="hidden" value={nextPath} />
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="email">
-              {t("auth.email")}
-            </label>
+        <div className="grid gap-2">
+          <label className="text-sm font-medium" htmlFor="email">
+            {t("auth.email")}
+          </label>
+          <div className="flex items-center gap-2">
             <input
               autoComplete="email"
-              className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
+              autoFocus={!invite}
+              className="h-11 flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-base"
               id="email"
               name="email"
               placeholder="name@clinic.ee"
               type="email"
+              defaultValue={invite ? inviteEmail : undefined}
+              readOnly={invite}
+              aria-readonly={invite ? "true" : undefined}
             />
+            {invite ? (
+              <Button asChild size="sm" variant="ghost">
+                <Link href="/login">{t("auth.login.notYou")}</Link>
+              </Button>
+            ) : null}
           </div>
-          <Button type="submit">{t("auth.sendLink")}</Button>
-        </form>
-      </Panel>
-    </main>
+        </div>
+
+        <Button type="submit" className="h-11 w-full">
+          {t("auth.sendLink")}
+          <ArrowRight aria-hidden="true" size={16} />
+        </Button>
+      </form>
+
+      <p className="text-xs text-[var(--muted)]">
+        {t("auth.login.help")}{" "}
+      </p>
+    </AuthShell>
   );
 }

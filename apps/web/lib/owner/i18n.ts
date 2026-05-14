@@ -99,7 +99,72 @@ const en = {
   "login.error.ownerRequired": "Please sign in with an owner account.",
   "login.error.noMembership": "This account is not linked to a clinic yet. Please contact your clinic.",
   "login.error.oauthNotLinked": "This Google or Apple account is not linked to a clinic owner profile yet. Ask your clinic to add the same email, or use your phone number.",
-  "login.error.oauthAmbiguousEmail": "More than one owner profile uses this email in the same clinic. Ask your clinic to confirm the correct profile."
+  "login.error.oauthAmbiguousEmail": "More than one owner profile uses this email in the same clinic. Ask your clinic to confirm the correct profile.",
+  "login.error.inviteExpired":
+    "Your invite link expired. Sign in with your phone number to continue.",
+  "login.error.rateLimited":
+    "Too many attempts. Please wait a few minutes and try again.",
+
+  "login.eyebrowOwner": "Owner app",
+  "login.otp.subtitleWhatsApp":
+    "We sent a 6-digit code to {phone} via WhatsApp.",
+  "login.otp.subtitleSms": "We sent a 6-digit code to {phone} via SMS.",
+  "login.otp.cellLabel": "Digit {n} of 6",
+  "login.otp.helper": "Paste or type the 6-digit code",
+  "login.otp.resendIn": "Resend in {time}",
+  "login.otp.resendNow": "Send a new code",
+  "login.otp.tryChannel.sms": "Try SMS instead",
+  "login.otp.tryChannel.whatsapp": "Try WhatsApp instead",
+
+  "auth.brandPane.owner.quote1":
+    "I get straight answers from the vet without phone tag.",
+  "auth.brandPane.owner.attribution1": "— Anna, owner of two cats",
+  "auth.brandPane.owner.quote2":
+    "When my dog was sick, the clinic answered in minutes.",
+  "auth.brandPane.owner.attribution2": "— Mart, dog parent",
+  "auth.brandPane.owner.quote3":
+    "I love that all of my pet's history is in one place.",
+  "auth.brandPane.owner.attribution3": "— Elena, rabbit owner",
+
+  "home.welcome.headingFresh": "Welcome to PetCura, {name}",
+  "home.welcome.headingFromJoin":
+    "{clinicName} is reviewing {petName}'s request",
+  "home.welcome.headingFromJoinNoPet": "{clinicName} got your request",
+  "home.nextStep.eyebrow": "Next step",
+  "home.nextStep.active_request.title": "Open clinic chat",
+  "home.nextStep.active_request.subtitle":
+    "{clinicName} replied {relativeTime}.",
+  "home.nextStep.active_request.cta": "Open chat",
+  "home.nextStep.no_pets.title": "Add your first pet",
+  "home.nextStep.no_pets.subtitle":
+    "This helps the clinic answer faster.",
+  "home.nextStep.no_pets.cta": "Add a pet",
+  "home.nextStep.send_first.title": "Message {clinicName}",
+  "home.nextStep.send_first.subtitle":
+    "Got a question? Send it any time.",
+  "home.nextStep.send_first.cta": "Open chat",
+  "home.journey.heading": "What happens next",
+  "home.journey.step1": "Clinic reviews your request",
+  "home.journey.step2": "You'll get a WhatsApp reply",
+  "home.journey.step3": "Updates show up here",
+  "home.seededPet.banner":
+    "We've got {petName}'s basics from your intake.",
+  "home.seededPet.cta": "Finish profile",
+
+  "join.eyebrow": "From {clinicName}",
+  "join.headingClinic": "{clinicName}",
+  "join.subheadingWithPet": "Continue as {petName}'s owner",
+  "join.subheadingNoPet": "Continue as the pet's owner",
+  "join.body": "We'll set up your owner account on this phone.",
+  "join.cta.continue": "Continue as {petName}'s owner",
+  "join.cta.continueNoPet": "Continue",
+  "join.notMe": "This isn't me",
+  "join.terms":
+    "By continuing, you agree to our Terms and Privacy.",
+  "join.confirm.heading": "We've sent your request to {clinicName}",
+  "join.confirm.body": "They'll be in touch shortly.",
+  "join.confirm.redirecting": "Heading to your home page…",
+  "join.confirm.continueNow": "Continue now"
 };
 
 type OwnerCopy = typeof en;
@@ -204,7 +269,74 @@ const et: OwnerCopy = {
   "login.error.ownerRequired": "Palun logi sisse omaniku kontoga.",
   "login.error.noMembership": "See konto pole veel kliinikuga seotud. Palun võta kliinikuga ühendust.",
   "login.error.oauthNotLinked": "See Google'i või Apple'i konto pole veel kliiniku omaniku profiiliga seotud. Palu kliinikul lisada sama e-post või kasuta telefoninumbrit.",
-  "login.error.oauthAmbiguousEmail": "Sama e-post on selles kliinikus mitmel omaniku profiilil. Palu kliinikul õige profiil kinnitada."
+  "login.error.oauthAmbiguousEmail": "Sama e-post on selles kliinikus mitmel omaniku profiilil. Palu kliinikul õige profiil kinnitada.",
+  "login.error.inviteExpired":
+    "Sinu kutselink on aegunud. Jätka oma telefoninumbriga.",
+  "login.error.rateLimited":
+    "Liiga palju katseid. Palun oota mõni minut ja proovi uuesti.",
+
+  "login.eyebrowOwner": "Omaniku rakendus",
+  "login.otp.subtitleWhatsApp":
+    "Saatsime 6-kohalise koodi numbrile {phone} WhatsAppi kaudu.",
+  "login.otp.subtitleSms":
+    "Saatsime 6-kohalise koodi numbrile {phone} SMS-iga.",
+  "login.otp.cellLabel": "Number {n} 6-st",
+  "login.otp.helper": "Kleebi või sisesta 6-kohaline kood",
+  "login.otp.resendIn": "Saada uuesti {time} pärast",
+  "login.otp.resendNow": "Saada uus kood",
+  "login.otp.tryChannel.sms": "Proovi SMS-i",
+  "login.otp.tryChannel.whatsapp": "Proovi WhatsAppi",
+
+  "auth.brandPane.owner.quote1":
+    "Saan veterinaarilt selgeid vastuseid ilma telefonimängudeta.",
+  "auth.brandPane.owner.attribution1": "— Anna, kahe kassi omanik",
+  "auth.brandPane.owner.quote2":
+    "Kui koer haigeks jäi, vastas kliinik minutitega.",
+  "auth.brandPane.owner.attribution2": "— Mart, koeraomanik",
+  "auth.brandPane.owner.quote3":
+    "Mulle meeldib, et kogu lemmiku ajalugu on ühes kohas.",
+  "auth.brandPane.owner.attribution3": "— Elena, küüliku omanik",
+
+  "home.welcome.headingFresh": "Tere tulemast PetCurasse, {name}",
+  "home.welcome.headingFromJoin":
+    "{clinicName} vaatab üle {petName} pöördumise",
+  "home.welcome.headingFromJoinNoPet":
+    "{clinicName} sai sinu pöördumise",
+  "home.nextStep.eyebrow": "Järgmine samm",
+  "home.nextStep.active_request.title": "Ava kliiniku vestlus",
+  "home.nextStep.active_request.subtitle":
+    "{clinicName} vastas {relativeTime}.",
+  "home.nextStep.active_request.cta": "Ava vestlus",
+  "home.nextStep.no_pets.title": "Lisa oma esimene lemmik",
+  "home.nextStep.no_pets.subtitle":
+    "See aitab kliinikul kiiremini vastata.",
+  "home.nextStep.no_pets.cta": "Lisa lemmik",
+  "home.nextStep.send_first.title": "Kirjuta {clinicName}",
+  "home.nextStep.send_first.subtitle":
+    "Küsimus? Saada igal ajal.",
+  "home.nextStep.send_first.cta": "Ava vestlus",
+  "home.journey.heading": "Mis edasi juhtub",
+  "home.journey.step1": "Kliinik vaatab sinu pöördumise üle",
+  "home.journey.step2": "Saad WhatsApi vastuse",
+  "home.journey.step3": "Uuendused ilmuvad siia",
+  "home.seededPet.banner":
+    "Meil on {petName} põhiandmed sinu pöördumisest.",
+  "home.seededPet.cta": "Lõpeta profiil",
+
+  "join.eyebrow": "Kliinikust {clinicName}",
+  "join.headingClinic": "{clinicName}",
+  "join.subheadingWithPet": "Jätka {petName} omanikuna",
+  "join.subheadingNoPet": "Jätka lemmiku omanikuna",
+  "join.body": "Loome sulle omaniku konto sellel telefonil.",
+  "join.cta.continue": "Jätka {petName} omanikuna",
+  "join.cta.continueNoPet": "Jätka",
+  "join.notMe": "See pole mina",
+  "join.terms":
+    "Jätkates nõustud Tingimuste ja Privaatsuspoliitikaga.",
+  "join.confirm.heading": "Saatsime sinu pöördumise {clinicName}-le",
+  "join.confirm.body": "Nad võtavad varsti ühendust.",
+  "join.confirm.redirecting": "Suundume sinu avalehele…",
+  "join.confirm.continueNow": "Jätka kohe"
 };
 
 const ru: OwnerCopy = {
@@ -306,7 +438,78 @@ const ru: OwnerCopy = {
   "login.error.ownerRequired": "Войдите с аккаунтом владельца питомца.",
   "login.error.noMembership": "Этот аккаунт ещё не связан с клиникой. Свяжитесь с клиникой.",
   "login.error.oauthNotLinked": "Этот аккаунт Google или Apple ещё не связан с профилем владельца в клинике. Попросите клинику добавить тот же email или используйте номер телефона.",
-  "login.error.oauthAmbiguousEmail": "В этой клинике несколько профилей владельцев используют этот email. Попросите клинику подтвердить правильный профиль."
+  "login.error.oauthAmbiguousEmail": "В этой клинике несколько профилей владельцев используют этот email. Попросите клинику подтвердить правильный профиль.",
+  "login.error.inviteExpired":
+    "Ваша ссылка-приглашение истекла. Войдите с помощью номера телефона.",
+  "login.error.rateLimited":
+    "Слишком много попыток. Подождите несколько минут и попробуйте снова.",
+
+  "login.eyebrowOwner": "Приложение владельца",
+  "login.otp.subtitleWhatsApp":
+    "Мы отправили 6-значный код на {phone} через WhatsApp.",
+  "login.otp.subtitleSms":
+    "Мы отправили 6-значный код на {phone} через SMS.",
+  "login.otp.cellLabel": "Цифра {n} из 6",
+  "login.otp.helper": "Вставьте или введите 6-значный код",
+  "login.otp.resendIn": "Отправить заново через {time}",
+  "login.otp.resendNow": "Отправить новый код",
+  "login.otp.tryChannel.sms": "Попробовать SMS",
+  "login.otp.tryChannel.whatsapp": "Попробовать WhatsApp",
+
+  "auth.brandPane.owner.quote1":
+    "Получаю чёткие ответы ветврача без бесконечных звонков.",
+  "auth.brandPane.owner.attribution1": "— Анна, владелица двух кошек",
+  "auth.brandPane.owner.quote2":
+    "Когда собака заболела, клиника ответила за минуты.",
+  "auth.brandPane.owner.attribution2": "— Март, хозяин собаки",
+  "auth.brandPane.owner.quote3":
+    "Люблю, что вся история питомца в одном месте.",
+  "auth.brandPane.owner.attribution3": "— Елена, владелица кролика",
+
+  "home.welcome.headingFresh":
+    "Добро пожаловать в PetCura, {name}",
+  "home.welcome.headingFromJoin":
+    "{clinicName} рассматривает запрос {petName}",
+  "home.welcome.headingFromJoinNoPet":
+    "{clinicName} получила ваш запрос",
+  "home.nextStep.eyebrow": "Следующий шаг",
+  "home.nextStep.active_request.title": "Открыть чат с клиникой",
+  "home.nextStep.active_request.subtitle":
+    "{clinicName} ответила {relativeTime}.",
+  "home.nextStep.active_request.cta": "Открыть чат",
+  "home.nextStep.no_pets.title": "Добавьте первого питомца",
+  "home.nextStep.no_pets.subtitle":
+    "Это поможет клинике быстрее ответить.",
+  "home.nextStep.no_pets.cta": "Добавить питомца",
+  "home.nextStep.send_first.title": "Написать {clinicName}",
+  "home.nextStep.send_first.subtitle":
+    "Есть вопрос? Напишите в любое время.",
+  "home.nextStep.send_first.cta": "Открыть чат",
+  "home.journey.heading": "Что будет дальше",
+  "home.journey.step1": "Клиника рассмотрит ваш запрос",
+  "home.journey.step2": "Вам придёт ответ в WhatsApp",
+  "home.journey.step3": "Обновления появятся здесь",
+  "home.seededPet.banner":
+    "У нас уже есть основные данные о {petName} из вашей заявки.",
+  "home.seededPet.cta": "Заполнить профиль",
+
+  "join.eyebrow": "От клиники {clinicName}",
+  "join.headingClinic": "{clinicName}",
+  "join.subheadingWithPet": "Продолжить как владелец {petName}",
+  "join.subheadingNoPet": "Продолжить как владелец питомца",
+  "join.body":
+    "Мы создадим аккаунт владельца на этом телефоне.",
+  "join.cta.continue": "Продолжить как владелец {petName}",
+  "join.cta.continueNoPet": "Продолжить",
+  "join.notMe": "Это не я",
+  "join.terms":
+    "Продолжая, вы соглашаетесь с Условиями и Политикой конфиденциальности.",
+  "join.confirm.heading":
+    "Мы отправили ваш запрос в {clinicName}",
+  "join.confirm.body": "С вами скоро свяжутся.",
+  "join.confirm.redirecting":
+    "Переходим на вашу главную страницу…",
+  "join.confirm.continueNow": "Продолжить сейчас"
 };
 
 const dictionaries: Record<SupportedLocale, OwnerCopy> = { en, et, ru };

@@ -120,6 +120,47 @@
   --green-soft: #1f2a1d;
 }
 
+/*
+ * Motion tokens — durations, easings, rise distances, and stagger windows
+ * shared across the design system. Mirrors `packages/ui/src/motion-tokens.ts`;
+ * change them together. See `docs/design/motion-system-2026-05.md` for the
+ * marketing-vs-app policy split and per-primitive reduced-motion contract.
+ *
+ * Rules:
+ *   - Animate transform + opacity ONLY. Never width/height/background-color.
+ *   - `--motion-storytell` is landing-only (scroll-driven beats).
+ *   - `--ease-leitmotif` is the brand signature curve, sourced from the
+ *     existing `pc-loop-trail` keyframe (line ~461). Reserve for the
+ *     single app-wide progress / route-morph indicator, not generic hover.
+ */
+@layer motion-tokens {
+  :root {
+    /* Durations */
+    --motion-instant: 80ms;
+    --motion-fast: 160ms;
+    --motion-base: 240ms;
+    --motion-slow: 400ms;
+    --motion-extra-slow: 640ms;
+    --motion-storytell: 1200ms; /* landing-only */
+
+    /* Easings — Material 3 emphasized + brand leitmotif */
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+    --ease-enter: cubic-bezier(0, 0, 0, 1);
+    --ease-leitmotif: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Rise distances — used by Reveal primitive */
+    --motion-rise-sm: 8px;
+    --motion-rise-md: 16px;
+    --motion-rise-lg: 24px;
+
+    /* Stagger windows — used for sequential reveals */
+    --motion-stagger-tight: 40ms;
+    --motion-stagger-base: 80ms;
+    --motion-stagger-loose: 120ms;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -472,7 +513,8 @@ textarea {
   .pc-walk-step,
   .pc-typing-dot,
   .pc-loop-trail {
-    animation: none;
+    animation: none !important;
+    animation-name: none !important;
     opacity: 1;
     transform: none;
     box-shadow: none;
@@ -509,5 +551,240 @@ textarea {
   ::view-transition-new(*),
   ::view-transition-group(*) {
     animation: none !important;
+  }
+}
+
+/*
+ * Motion tokens — reduced-motion zeroing.
+ *
+ * When the user opts out of motion, every duration token collapses to
+ * effectively zero (0.01ms keeps Element.animate() callbacks firing so JS
+ * doesn't deadlock waiting on `transitionend`). Easings are left alone —
+ * a zero-duration transition with the standard curve still ends instantly.
+ * Rise distances are zeroed so any `translateY(var(--motion-rise-*))`
+ * resolves to a static layout, our first-class presentation under reduce.
+ *
+ * The existing per-component reduced-motion blocks above stay authoritative
+ * for `animation: none` on infinite keyframes (`pc-shimmer`, `pc-loop-*`,
+ * `pc-walk-*`, `pc-typing-dot`, `pc-caret`, `pc-progress`, `pc-row-in`).
+ * This block only governs token-driven transitions/transforms.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 0.01ms;
+    --motion-fast: 0.01ms;
+    --motion-base: 0.01ms;
+    --motion-slow: 0.01ms;
+    --motion-extra-slow: 0.01ms;
+    --motion-storytell: 0.01ms;
+
+    --motion-rise-sm: 0px;
+    --motion-rise-md: 0px;
+    --motion-rise-lg: 0px;
+
+    --motion-stagger-tight: 0ms;
+    --motion-stagger-base: 0ms;
+    --motion-stagger-loose: 0ms;
+  }
+}
+
+/*
+ * App-side motion rules (Wave 2b). Reuse the Wave 1 motion tokens above; do
+ * NOT redefine durations or easings here. Marketing surfaces use motion/react
+ * primitives — these rules are scoped to clinic/owner app surfaces only.
+ */
+
+/* Linear-style sliding sidebar active indicator via View Transitions. */
+::view-transition-group(pc-nav-active) {
+  animation-duration: var(--motion-base);
+  animation-timing-function: var(--ease-standard);
+}
+
+/* Inbox row status pill background morph on optimistic state flip. */
+[data-inbox-row] [data-status-pill] {
+  transition: background-color var(--motion-base) var(--ease-standard),
+    color var(--motion-base) var(--ease-standard);
+}
+
+/* Owner intake stepper — horizontal slide using transform + opacity only. */
+.pc-stepper-step {
+  transition:
+    transform var(--motion-base) var(--ease-enter),
+    opacity var(--motion-base) var(--ease-enter);
+  will-change: transform, opacity;
+}
+
+.pc-stepper-step[data-stepper-state="enter"] {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+[data-stepper-direction="forward"] .pc-stepper-step[data-stepper-state="exit"] {
+  transform: translateX(-12px);
+  opacity: 0;
+}
+
+[data-stepper-direction="back"] .pc-stepper-step[data-stepper-state="exit"] {
+  transform: translateX(12px);
+  opacity: 0;
+}
+
+[data-stepper-direction="forward"] .pc-stepper-step[data-stepper-state="from"] {
+  transform: translateX(12px);
+  opacity: 0;
+}
+
+[data-stepper-direction="back"] .pc-stepper-step[data-stepper-state="from"] {
+  transform: translateX(-12px);
+  opacity: 0;
+}
+
+/* Stepper progress bar — width-driven, uses leitmotif curve for sage rhythm. */
+.pc-stepper-progress-track {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--soft);
+}
+
+.pc-stepper-progress-fill {
+  width: calc(var(--pc-stepper-progress, 0) * 100%);
+  background-color: var(--primary);
+  transition: width var(--motion-base) var(--ease-leitmotif);
+}
+
+/* Sidebar labels fade out faster than the rail collapses (Linear-style). */
+[data-slot="sidebar"][data-collapsible="icon"] [data-sidebar="menu-button"] > span:last-child,
+[data-slot="sidebar"][data-collapsible="icon"] [data-sidebar="menu-sub-button"] > span:last-child,
+[data-slot="sidebar"][data-collapsible="icon"] [data-sidebar="group-label"] {
+  transition: opacity var(--motion-fast) var(--ease-standard);
+}
+
+/*
+ * Auth + onboarding motion (Pillars 1–4). View Transitions + CSS only; no
+ * JS animation libraries. Every keyframe below is reduced-motion safe via
+ * the global :root token reset + per-rule `animation: none` overrides.
+ */
+
+/* AuthShell + onboarding card mount: opacity + transform only. */
+.pc-auth-mount {
+  opacity: 0;
+  transform: translateY(var(--motion-rise-md));
+  animation: pc-auth-mount var(--motion-base) var(--ease-enter) forwards;
+}
+
+@keyframes pc-auth-mount {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-auth-mount {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* AuthShell label stagger — drives cascade via --pc-stagger-index. */
+.pc-auth-stagger {
+  opacity: 0;
+  transform: translateY(var(--motion-rise-md));
+  animation: pc-auth-mount var(--motion-base) var(--ease-enter) forwards;
+  animation-delay: calc(var(--pc-stagger-index, 0) * var(--motion-stagger-base));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-auth-stagger {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* BrandPane quote crossfade — three children, 18s cycle. */
+.pc-brand-quote {
+  opacity: 0;
+  animation: pc-brand-quote-cycle 18s linear infinite;
+}
+
+.pc-brand-quote[data-index="0"] { animation-delay: 0s; }
+.pc-brand-quote[data-index="1"] { animation-delay: 6s; }
+.pc-brand-quote[data-index="2"] { animation-delay: 12s; }
+
+@keyframes pc-brand-quote-cycle {
+  0%, 28% { opacity: 0; }
+  4%, 24% { opacity: 1; }
+  33%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-brand-quote {
+    animation: none;
+    opacity: 0;
+  }
+  .pc-brand-quote[data-index="0"] {
+    opacity: 1;
+  }
+}
+
+/* OTP cell on verify-success: sage outline pulse (240ms). */
+.pc-otp-cell {
+  transition: border-color var(--motion-base) var(--ease-standard);
+}
+
+.pc-otp-cell[data-state="error"] {
+  border-color: var(--red);
+}
+
+.pc-otp-cell[data-state="success"] {
+  border-color: var(--primary);
+}
+
+/* Onboarding checklist card stagger — cascades the 5 items in. */
+.pc-checklist-item {
+  opacity: 0;
+  transform: translateY(var(--motion-rise-md));
+  animation: pc-auth-mount var(--motion-base) var(--ease-enter) forwards;
+  animation-delay: calc(var(--pc-stagger-index, 0) * var(--motion-stagger-base));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-checklist-item {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Onboarding checklist check-in: scale + draw the check stroke. */
+.pc-check-in-circle {
+  transform-origin: center;
+  animation: pc-check-in-circle var(--motion-fast) var(--ease-enter) both;
+}
+
+.pc-check-in-path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: pc-check-in-path var(--motion-base) var(--ease-standard) 80ms forwards;
+}
+
+@keyframes pc-check-in-circle {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pc-check-in-path {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-check-in-circle,
+  .pc-check-in-path {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    stroke-dashoffset: 0;
   }
 }
