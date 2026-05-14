@@ -4,9 +4,23 @@ import nextEnv from "@next/env";
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
+const e2eTestMatch = [
+  "apps/web/tests/e2e/**/*.spec.ts",
+  "apps/web/e2e/**/*.spec.ts",
+  "tests/e2e/**/*.spec.ts"
+];
+
+const visualTestMatch = ["tests/visual/**/*.spec.ts"];
+
 export default defineConfig({
-  testDir: ".",
-  testMatch: ["**/tests/e2e/**/*.spec.ts", "**/e2e/**/*.spec.ts"],
+  testDir: "../..",
+  testMatch: [...e2eTestMatch, ...visualTestMatch],
+  testIgnore: [
+    "**/.claude/**",
+    "**/.next/**",
+    "**/node_modules/**",
+    "**/test-results/**"
+  ],
   timeout: 60_000,
   expect: {
     timeout: 10_000
@@ -27,11 +41,18 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testMatch: e2eTestMatch,
       use: { ...devices["Desktop Chrome"] }
     },
     {
       name: "mobile-chrome",
+      testMatch: e2eTestMatch,
       use: { ...devices["Pixel 7"] }
+    },
+    {
+      name: "visual",
+      testMatch: visualTestMatch,
+      use: { ...devices["Desktop Chrome"] }
     }
   ]
 });
