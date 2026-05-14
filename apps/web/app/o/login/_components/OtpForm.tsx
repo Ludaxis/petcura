@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type MouseEvent
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -34,6 +40,8 @@ const phoneRegex = /^\+?[0-9 ()-]{6,}$/;
 
 // Initial cooldown 45s, then 60/90/120 — capped at 120 (Twilio Verify defaults).
 const COOLDOWN_SCHEDULE = [45, 60, 90, 120];
+const OTP_LABEL_ID = "otp-step-heading";
+const OTP_HELPER_ID = "otp-step-helper";
 
 function nextCooldown(attempt: number): number {
   return COOLDOWN_SCHEDULE[Math.min(attempt, COOLDOWN_SCHEDULE.length - 1)]!;
@@ -43,6 +51,10 @@ function formatCooldown(secondsLeft: number): string {
   const m = Math.floor(secondsLeft / 60);
   const s = secondsLeft - m * 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function eventEpochMs(e: { timeStamp: number }): number {
+  return performance.timeOrigin + e.timeStamp;
 }
 
 function getErrorMessage(
@@ -101,8 +113,8 @@ export function OtpForm({
   const [resendAttempt, setResendAttempt] = useState(0);
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState(() => Date.now());
-  const otpLabelId = useRef("otp-step-heading").current;
-  const otpHelperId = useRef("otp-step-helper").current;
+  const otpLabelId = OTP_LABEL_ID;
+  const otpHelperId = OTP_HELPER_ID;
 
   // Tick once per second for the cooldown countdown when active.
   useEffect(() => {
@@ -116,13 +128,14 @@ export function OtpForm({
     return Math.max(0, Math.ceil((cooldownEndsAt - nowTs) / 1000));
   }, [cooldownEndsAt, nowTs]);
 
-  function startCooldown(attempt: number) {
+  function startCooldown(attempt: number, startedAt: number) {
     const seconds = nextCooldown(attempt);
-    setCooldownEndsAt(Date.now() + seconds * 1000);
+    setCooldownEndsAt(startedAt + seconds * 1000);
   }
 
   async function onSubmitPhone(e: FormEvent) {
     e.preventDefault();
+    const submittedAt = eventEpochMs(e);
     setError(null);
     if (!phoneRegex.test(phone)) {
       setError(t("login.error.invalidPhone"));
@@ -137,7 +150,7 @@ export function OtpForm({
     }
     setStep("otp");
     setResendAttempt(0);
-    startCooldown(0);
+    startCooldown(0, submittedAt);
   }
 
   async function onSubmitOtp(e: FormEvent) {
@@ -159,7 +172,8 @@ export function OtpForm({
     }
   }
 
-  async function onResend() {
+  async function onResend(e: MouseEvent<HTMLButtonElement>) {
+    const requestedAt = eventEpochMs(e);
     if (cooldownSecondsLeft > 0) return;
     setError(null);
     setPending(true);
@@ -171,12 +185,13 @@ export function OtpForm({
     }
     setResendAttempt((a) => {
       const next = a + 1;
-      startCooldown(next);
+      startCooldown(next, requestedAt);
       return next;
     });
   }
 
-  async function onSwitchChannel() {
+  async function onSwitchChannel(e: MouseEvent<HTMLButtonElement>) {
+    const requestedAt = eventEpochMs(e);
     if (cooldownSecondsLeft > 0) return;
     const newChannel: Channel =
       channel === "whatsapp" ? "sms" : "whatsapp";
@@ -190,7 +205,7 @@ export function OtpForm({
       return;
     }
     setResendAttempt(0);
-    startCooldown(0);
+    startCooldown(0, requestedAt);
   }
 
   if (step === "otp") {
