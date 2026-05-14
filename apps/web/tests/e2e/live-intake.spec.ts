@@ -57,6 +57,18 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     expect(clinic?.id).toBeTruthy();
     clinicId = clinic!.id;
 
+    const { error: webIntakeMigrationError } = await admin
+      .from("clinic_web_intake_configs")
+      .select("clinic_id")
+      .eq("clinic_id", clinicId)
+      .limit(1)
+      .maybeSingle();
+
+    test.skip(
+      Boolean(webIntakeMigrationError),
+      "AI-assisted web intake migration is not applied to this Supabase database."
+    );
+
     const { data: staffUser, error: userError } =
       await admin.auth.admin.createUser({
         email: staffEmail,
@@ -83,8 +95,9 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     await page.getByLabel("Lemmiku nimi").fill(petName);
     await page.getByLabel("Liik").fill("Kass");
     await page.getByLabel("Mis toimub?").fill(message);
-    await page.getByRole("button", { name: "Saada pöördumine" }).click();
-    await expect(page.getByText("Pöördumine saadetud")).toBeVisible();
+    await page.locator('input[name="consent"]').check();
+    await page.getByRole("button", { name: "Korrasta AI-ga" }).click();
+    await expect(page.getByText("Pöördumine alustatud")).toBeVisible();
 
     const { data: link, error: linkError } =
       await admin.auth.admin.generateLink({
@@ -124,6 +137,9 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     ).toBeVisible();
     await expect(
       page.locator("[data-thread]").getByText(message).first()
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-ai-intake]").getByText("Intake handoff").first()
     ).toBeVisible();
 
     // The events / internal-notes side panel is responsive and may be hidden

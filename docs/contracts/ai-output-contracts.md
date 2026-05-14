@@ -1,6 +1,6 @@
 # AI Output Contracts
 
-Last updated: 2026-05-12.
+Last updated: 2026-05-14.
 
 ## Kinds
 
@@ -45,6 +45,39 @@ Last updated: 2026-05-12.
   - `AI_GATEWAY_API_KEY` is for Vercel AI Gateway.
   - `ANTHROPIC_API_KEY` is for a direct Anthropic Console key.
   - Direct Anthropic calls map `anthropic/claude-haiku-4.5` to Claude API alias `claude-haiku-4-5`.
+
+## Intake Question V1
+
+- Prompt version: `intake-question-v1.0.0`
+- Default model: `PETCURA_AI_INTAKE_MODEL` or `anthropic/claude-haiku-4.5`
+- Trigger: owner starts or continues clinic-scoped web intake
+- Storage:
+  - `ai_outputs.kind = intake_question`
+  - `output_json.categorySuggestion`
+  - `output_json.serviceIntent`
+  - `output_json.routingSuggestion`
+  - `output_json.urgencySuggestion`
+  - `output_json.emergencySignal`
+  - `output_json.riskFlags[]`
+  - `output_json.missingFields[]`
+  - `output_json.clarifyingQuestions[]`
+  - `output_json.handoffSummary`
+  - `output_json.confidence`
+  - `output_json.safetyNotes[]`
+  - `requests.urgency_suggestion`
+  - `requests.risk_flags_json`
+  - `requests.routing_suggestion`
+  - `requests.service_intent`
+  - `requests.intake_ai_output_id`
+  - `requests.web_intake_session_id`
+- Routing targets: `reception`, `vet`, `tech`, `grooming`, `on_call`, `general`
+- Service intents: `medical`, `appointment`, `refill`, `follow_up`, `admin`, `grooming`, `delivery`, `walking`, `boarding`, `other`, `unknown`
+- Safety:
+  - Output is advisory and visible to staff as an intake handoff.
+  - Rule-based emergency language detection runs before/alongside AI and overrides to high urgency suggestion plus `on_call` routing when triggered.
+  - The public owner UI may show conservative emergency banner copy, but not diagnosis, prescription, or treatment instructions.
+  - Grooming, delivery, walking, and boarding are route-only intents in V1; no marketplace, provider matching, logistics, payment, sitter, or boarding operation is created.
+  - If AI Gateway is unavailable or disabled, PetCura writes a rules fallback output with model `petcura/rules-fallback`.
 
 ## Summary V1
 

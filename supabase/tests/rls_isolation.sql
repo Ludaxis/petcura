@@ -88,6 +88,44 @@ values
     'Owner B'
   );
 
+insert into public.clinic_web_intake_configs (clinic_id)
+values
+  ('20000000-0000-4000-8000-000000000001'),
+  ('20000000-0000-4000-8000-000000000002');
+
+insert into public.clinic_hours (clinic_id, weekday, opens_at, closes_at)
+values
+  ('20000000-0000-4000-8000-000000000001', 1, '09:00', '17:00'),
+  ('20000000-0000-4000-8000-000000000002', 1, '09:00', '17:00');
+
+insert into public.clinic_emergency_policies (clinic_id, emergency_phone)
+values
+  ('20000000-0000-4000-8000-000000000001', '+372000001'),
+  ('20000000-0000-4000-8000-000000000002', '+372000002');
+
+insert into public.web_intake_sessions (
+  clinic_id,
+  public_token_hash,
+  owner_id,
+  locale,
+  consented_at
+)
+values
+  (
+    '20000000-0000-4000-8000-000000000001',
+    'token-a',
+    '30000000-0000-4000-8000-000000000001',
+    'en',
+    now()
+  ),
+  (
+    '20000000-0000-4000-8000-000000000002',
+    'token-b',
+    '30000000-0000-4000-8000-000000000002',
+    'en',
+    now()
+  );
+
 insert into public.ai_memory_items (
   id,
   clinic_id,
@@ -166,6 +204,22 @@ begin
     raise exception 'staff A should see exactly one AI memory item';
   end if;
 
+  if (select count(*) from public.clinic_web_intake_configs) <> 1 then
+    raise exception 'staff A should see exactly one web intake config';
+  end if;
+
+  if (select count(*) from public.clinic_hours) <> 1 then
+    raise exception 'staff A should see exactly one clinic hours row';
+  end if;
+
+  if (select count(*) from public.clinic_emergency_policies) <> 1 then
+    raise exception 'staff A should see exactly one emergency policy';
+  end if;
+
+  if (select count(*) from public.web_intake_sessions) <> 1 then
+    raise exception 'staff A should see exactly one web intake session';
+  end if;
+
   if exists (
     select 1
     from public.ai_memory_sources
@@ -190,6 +244,17 @@ begin
     'Owner prefers morning callback windows.',
     'candidate'
   );
+
+  begin
+    insert into public.clinic_hours (clinic_id, weekday, opens_at, closes_at)
+    values ('20000000-0000-4000-8000-000000000002', 2, '09:00', '17:00');
+    raise exception 'staff A inserted clinic B hours row';
+  exception
+    when others then
+      if sqlstate not in ('42501', '23514') then
+        raise;
+      end if;
+  end;
 
   begin
     insert into public.ai_memory_items (
@@ -272,6 +337,30 @@ begin
   if (select count(*) from public.ai_memory_items) <> 0 then
     raise exception 'anonymous user can read AI memory items';
   end if;
+
+  begin
+    if (select count(*) from public.web_intake_sessions) <> 0 then
+      raise exception 'anonymous user can read web intake sessions';
+    end if;
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  begin
+    if (select count(*) from public.clinic_web_intake_configs) <> 0 then
+      raise exception 'anonymous user can read web intake configs';
+    end if;
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  begin
+    if (select count(*) from public.clinic_emergency_policies) <> 0 then
+      raise exception 'anonymous user can read emergency policies';
+    end if;
+  exception
+    when insufficient_privilege then null;
+  end;
 end $$;
 
 rollback;

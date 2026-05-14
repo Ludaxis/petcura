@@ -443,6 +443,35 @@ export const uiCopy = {
     "landing.footer.contact": "Contact",
     "landing.footer.owners": "For pet owners",
     "landing.footer.legal": "© 2026 PetCura · Built in the EU",
+    "landing.logos.consent_footnote":
+      "Pilot cohort. Named with each clinic's written consent.",
+    "landing.problem.scene_caption":
+      "A reception desk during a phone surge: front desk on call, vet mid-consult, owner on hold, voicemail blinking.",
+    "landing.walkthrough.beat.1": "Owner messages on WhatsApp.",
+    "landing.walkthrough.beat.2":
+      "PetCura structures the request and suggests a category.",
+    "landing.walkthrough.beat.3": "Your team approves a drafted reply.",
+    "landing.walkthrough.beat.4":
+      "PetCura logs the audit trail and exports to your PMS.",
+    "landing.usecases.front.outcome":
+      "Phone load down meaningfully in month one.",
+    "landing.usecases.vet.outcome":
+      "Triage summaries arrive before the owner does.",
+    "landing.usecases.owner.outcome":
+      "Every reply is auditable. Every export is clean.",
+    "landing.safety.tagline_kinetic_1": "PetCura drafts.",
+    "landing.safety.tagline_kinetic_2": "Your team decides.",
+    "landing.compliance.strip":
+      "EU-hosted · GDPR-aligned · Full audit trail · SOC 2 in progress.",
+    "landing.compliance.training":
+      "We don't train your data on our models.",
+    "landing.compliance.trustcenter_link": "View Trust Center",
+    "landing.pricing.cta_secondary": "Try the sandbox inbox",
+    "landing.pricing.sandbox_note":
+      "Seeded with fake owner messages. No card, no commitment.",
+    "landing.cta.secondary_sandbox": "Try the sandbox inbox",
+    "landing.mobilebar.primary": "Book demo",
+    "landing.mobilebar.secondary": "Sandbox",
     "owners.eyebrow": "For pet owners",
     "owners.title": "Your vet uses PetCura. Here's what that means.",
     "owners.body":
@@ -462,10 +491,10 @@ export const uiCopy = {
     "owners.cta.primary": "Open the app",
     "owners.cta.secondary": "Or open the web intake form",
     "owners.cta.back": "Back to PetCura for clinics",
-    "intake.badge": "Owner web fallback",
-    "intake.title": "Create a request",
+    "intake.badge": "AI-assisted intake",
+    "intake.title": "Tell the clinic what is happening",
     "intake.description":
-      "Use this form when WhatsApp is not convenient. Your clinic will review the request and reply in your preferred language.",
+      "PetCura organizes your message for clinic staff, asks safe follow-up questions, and keeps the clinic in control.",
     "intake.ownerName": "Your name",
     "intake.phone": "Phone number",
     "intake.petName": "Pet name",
@@ -479,9 +508,33 @@ export const uiCopy = {
     "intake.disclaimer":
       "PetCura structures requests for clinic staff. It does not provide diagnosis or emergency medical advice.",
     "intake.submit": "Submit request",
+    "intake.aiOrganize": "Organize with AI",
+    "intake.aiOrganizing": "Organizing...",
+    "intake.manualSubmit": "Send without AI",
     "intake.submitting": "Submitting...",
     "intake.successTitle": "Request sent",
     "intake.successBody": "Your request is now in the clinic inbox.",
+    "intake.aiSubmittedTitle": "Request started",
+    "intake.aiSubmittedBody":
+      "The clinic has your request. You can add answers while staff review it.",
+    "intake.aiReviewTitle": "What we will send to the clinic",
+    "intake.aiReviewBody":
+      "AI suggestions are advisory. Clinic staff choose the final route and urgency.",
+    "intake.route": "Route",
+    "intake.serviceIntent": "Service",
+    "intake.categorySuggestion": "Category",
+    "intake.urgencySuggestion": "Urgency",
+    "intake.clarifyingQuestions": "Helpful follow-up questions",
+    "intake.followUpLabel": "Add more details",
+    "intake.followUpPlaceholder":
+      "Answer a question or add anything important for the clinic.",
+    "intake.followUpSend": "Add to request",
+    "intake.followUpSending": "Adding...",
+    "intake.aiFallback":
+      "AI is using the safe fallback path. Your request is still in the clinic inbox.",
+    "intake.consent":
+      "I agree that the clinic may process this request and that this AI assistant only collects intake information.",
+    "intake.emergencyInfoLink": "Open emergency info",
     "intake.caseId": "Case ID",
     "intake.error": "Could not submit the request. Check the fields and try again.",
     "inbox.kicker": "Clinic dashboard",
@@ -577,6 +630,16 @@ export const uiCopy = {
     "request.aiSummary": "AI summary",
     "request.draft": "draft",
     "request.aiNotice": "AI summary is advisory until clinic staff review it.",
+    "request.intakeHandoff": "Intake handoff",
+    "request.intakeRoute": "Route",
+    "request.intakeService": "Service",
+    "request.intakeCategorySuggestion": "Suggested category",
+    "request.intakeEmergencySignal": "Emergency signal",
+    "request.intakeConfidence": "Confidence",
+    "request.intakeQuestions": "Questions shown",
+    "request.intakeMissing": "Missing",
+    "request.intakeAdvisoryNotice":
+      "AI intake is advisory. Staff keep final routing, assignment, and urgency.",
     "request.aiRiskFlags": "Risk flags",
     "request.aiUrgencySuggestion": "Suggested urgency",
     "request.aiVersion": "Prompt {version}",
@@ -1190,6 +1253,35 @@ export const uiCopy = {
     "landing.footer.contact": "Kontakt",
     "landing.footer.owners": "Lemmikloomade omanikele",
     "landing.footer.legal": "© 2026 PetCura · Euroopas tehtud",
+    "landing.logos.consent_footnote":
+      "Pilootgrupp. Nimetatud iga kliiniku kirjalikul nõusolekul.",
+    "landing.problem.scene_caption":
+      "Vastuvõtt telefonitulva ajal: vastuvõtuametnik kõnel, veterinaararst konsultatsioonis, omanik ootel, kõnepost vilgub.",
+    "landing.walkthrough.beat.1": "Omanik kirjutab WhatsAppis.",
+    "landing.walkthrough.beat.2":
+      "PetCura struktureerib pöördumise ja pakub kategooria.",
+    "landing.walkthrough.beat.3": "Tiim kinnitab koostatud vastuse.",
+    "landing.walkthrough.beat.4":
+      "PetCura logib auditijälje ja ekspordib PMS-i.",
+    "landing.usecases.front.outcome":
+      "Telefonikoormus esimesel kuul märgatavalt langeb.",
+    "landing.usecases.vet.outcome":
+      "Triaaži kokkuvõtted jõuavad enne omanikku.",
+    "landing.usecases.owner.outcome":
+      "Iga vastus on kontrollitav. Iga eksport on puhas.",
+    "landing.safety.tagline_kinetic_1": "PetCura koostab.",
+    "landing.safety.tagline_kinetic_2": "Sinu tiim otsustab.",
+    "landing.compliance.strip":
+      "EU-s majutatud · GDPR-iga kooskõlas · Täielik auditijälg · SOC 2 töös.",
+    "landing.compliance.training":
+      "Me ei treeni teie andmetel oma mudeleid.",
+    "landing.compliance.trustcenter_link": "Vaata Usalduskeskust",
+    "landing.pricing.cta_secondary": "Proovi näidispostkasti",
+    "landing.pricing.sandbox_note":
+      "Täidetud näidisõnumitega. Kaarti pole, kohustusi pole.",
+    "landing.cta.secondary_sandbox": "Proovi näidispostkasti",
+    "landing.mobilebar.primary": "Broneeri demo",
+    "landing.mobilebar.secondary": "Näidis",
     "owners.eyebrow": "Lemmikloomade omanikele",
     "owners.title": "Sinu kliinik kasutab PetCurat. Vaata, mida see tähendab.",
     "owners.body":
@@ -1209,10 +1301,10 @@ export const uiCopy = {
     "owners.cta.primary": "Ava rakendus",
     "owners.cta.secondary": "Või ava veebivorm",
     "owners.cta.back": "Tagasi PetCura kliinikutele",
-    "intake.badge": "Omaniku veebivorm",
-    "intake.title": "Loo pöördumine",
+    "intake.badge": "AI-abiga vastuvõtt",
+    "intake.title": "Kirjelda kliinikule, mis toimub",
     "intake.description":
-      "Kasuta seda vormi, kui WhatsApp ei sobi. Kliinik vaatab pöördumise üle ja vastab sinu eelistatud keeles.",
+      "PetCura korrastab sinu sõnumi kliiniku töötajatele, küsib turvalisi täpsustusi ja jätab otsused kliinikule.",
     "intake.ownerName": "Sinu nimi",
     "intake.phone": "Telefoninumber",
     "intake.petName": "Lemmiku nimi",
@@ -1226,9 +1318,33 @@ export const uiCopy = {
     "intake.disclaimer":
       "PetCura struktureerib pöördumised kliiniku töötajatele. See ei anna diagnoosi ega erakorralist meditsiinilist nõu.",
     "intake.submit": "Saada pöördumine",
+    "intake.aiOrganize": "Korrasta AI-ga",
+    "intake.aiOrganizing": "Korrastan...",
+    "intake.manualSubmit": "Saada ilma AI-ta",
     "intake.submitting": "Saadan...",
     "intake.successTitle": "Pöördumine saadetud",
     "intake.successBody": "Sinu pöördumine on nüüd kliiniku postkastis.",
+    "intake.aiSubmittedTitle": "Pöördumine alustatud",
+    "intake.aiSubmittedBody":
+      "Kliinikul on sinu pöördumine olemas. Saad lisada vastuseid, kuni töötajad seda üle vaatavad.",
+    "intake.aiReviewTitle": "Mida saadame kliinikule",
+    "intake.aiReviewBody":
+      "AI soovitused on nõuandvad. Lõpliku suunamise ja kiireloomulisuse valib kliinik.",
+    "intake.route": "Suunamine",
+    "intake.serviceIntent": "Teenus",
+    "intake.categorySuggestion": "Kategooria",
+    "intake.urgencySuggestion": "Kiireloomulisus",
+    "intake.clarifyingQuestions": "Kasulikud täpsustavad küsimused",
+    "intake.followUpLabel": "Lisa täpsustusi",
+    "intake.followUpPlaceholder":
+      "Vasta küsimusele või lisa kliiniku jaoks oluline info.",
+    "intake.followUpSend": "Lisa pöördumisele",
+    "intake.followUpSending": "Lisan...",
+    "intake.aiFallback":
+      "AI kasutab turvalist varuteed. Sinu pöördumine on siiski kliiniku postkastis.",
+    "intake.consent":
+      "Nõustun, et kliinik võib seda pöördumist töödelda ja AI assistent kogub ainult vastuvõtuinfot.",
+    "intake.emergencyInfoLink": "Ava erakorralise abi info",
     "intake.caseId": "Juhtumi ID",
     "intake.error": "Pöördumist ei saanud saata. Kontrolli välju ja proovi uuesti.",
     "inbox.kicker": "Kliiniku töölaud",
@@ -1325,6 +1441,16 @@ export const uiCopy = {
     "request.draft": "mustand",
     "request.aiNotice":
       "AI kokkuvõte on nõuandev, kuni kliiniku töötaja selle üle vaatab.",
+    "request.intakeHandoff": "Vastuvõtu üleandmine",
+    "request.intakeRoute": "Suunamine",
+    "request.intakeService": "Teenus",
+    "request.intakeCategorySuggestion": "Soovitatud kategooria",
+    "request.intakeEmergencySignal": "Erakorraline signaal",
+    "request.intakeConfidence": "Kindlus",
+    "request.intakeQuestions": "Kuvatud küsimused",
+    "request.intakeMissing": "Puudu",
+    "request.intakeAdvisoryNotice":
+      "AI vastuvõtt on nõuandev. Lõplik suunamine, määramine ja kiireloomulisus jäävad töötajatele.",
     "request.aiRiskFlags": "Riskimärgid",
     "request.aiUrgencySuggestion": "Soovitatud kiireloomulisus",
     "request.aiVersion": "Prompt {version}",
@@ -1942,6 +2068,35 @@ export const uiCopy = {
     "landing.footer.contact": "Контакты",
     "landing.footer.owners": "Для владельцев",
     "landing.footer.legal": "© 2026 PetCura · Сделано в ЕС",
+    "landing.logos.consent_footnote":
+      "Пилотная группа. Указано с письменного согласия каждой клиники.",
+    "landing.problem.scene_caption":
+      "Регистратура в час пиковой нагрузки: сотрудник на звонке, врач на приёме, владелец ждёт, мигает голосовая почта.",
+    "landing.walkthrough.beat.1": "Владелец пишет в WhatsApp.",
+    "landing.walkthrough.beat.2":
+      "PetCura структурирует запрос и предлагает категорию.",
+    "landing.walkthrough.beat.3": "Команда утверждает подготовленный ответ.",
+    "landing.walkthrough.beat.4":
+      "PetCura записывает журнал аудита и выгружает в PMS.",
+    "landing.usecases.front.outcome":
+      "Нагрузка на телефон заметно снижается в первый месяц.",
+    "landing.usecases.vet.outcome":
+      "Сводка по триажу приходит раньше владельца.",
+    "landing.usecases.owner.outcome":
+      "Каждый ответ можно проверить. Каждая выгрузка чистая.",
+    "landing.safety.tagline_kinetic_1": "PetCura готовит.",
+    "landing.safety.tagline_kinetic_2": "Ваша команда решает.",
+    "landing.compliance.strip":
+      "Размещено в ЕС · соответствует GDPR · полный журнал аудита · SOC 2 в процессе.",
+    "landing.compliance.training":
+      "Мы не обучаем наши модели на ваших данных.",
+    "landing.compliance.trustcenter_link": "Открыть Центр доверия",
+    "landing.pricing.cta_secondary": "Открыть демо-входящие",
+    "landing.pricing.sandbox_note":
+      "Заполнено демо-сообщениями. Без карты и обязательств.",
+    "landing.cta.secondary_sandbox": "Открыть демо-входящие",
+    "landing.mobilebar.primary": "Демо",
+    "landing.mobilebar.secondary": "Демо-входящие",
     "owners.eyebrow": "Для владельцев питомцев",
     "owners.title": "Ваш ветеринар использует PetCura. Вот что это значит.",
     "owners.body":
@@ -1961,10 +2116,10 @@ export const uiCopy = {
     "owners.cta.primary": "Открыть приложение",
     "owners.cta.secondary": "Или открыть веб-форму",
     "owners.cta.back": "Назад к PetCura для клиник",
-    "intake.badge": "Веб-форма владельца",
-    "intake.title": "Создать запрос",
+    "intake.badge": "Прием с AI-помощью",
+    "intake.title": "Расскажите клинике, что происходит",
     "intake.description":
-      "Используйте эту форму, если WhatsApp неудобен. Клиника рассмотрит запрос и ответит на предпочитаемом языке.",
+      "PetCura структурирует сообщение для сотрудников клиники, задает безопасные уточняющие вопросы и оставляет решения за клиникой.",
     "intake.ownerName": "Ваше имя",
     "intake.phone": "Номер телефона",
     "intake.petName": "Имя питомца",
@@ -1978,9 +2133,33 @@ export const uiCopy = {
     "intake.disclaimer":
       "PetCura структурирует запросы для сотрудников клиники. Сервис не ставит диагноз и не дает экстренные медицинские советы.",
     "intake.submit": "Отправить запрос",
+    "intake.aiOrganize": "Структурировать с AI",
+    "intake.aiOrganizing": "Структурируем...",
+    "intake.manualSubmit": "Отправить без AI",
     "intake.submitting": "Отправка...",
     "intake.successTitle": "Запрос отправлен",
     "intake.successBody": "Ваш запрос теперь во входящих клиники.",
+    "intake.aiSubmittedTitle": "Запрос начат",
+    "intake.aiSubmittedBody":
+      "Клиника уже получила запрос. Вы можете добавить ответы, пока сотрудники его проверяют.",
+    "intake.aiReviewTitle": "Что отправим в клинику",
+    "intake.aiReviewBody":
+      "AI-подсказки носят справочный характер. Финальный маршрут и срочность выбирает клиника.",
+    "intake.route": "Маршрут",
+    "intake.serviceIntent": "Услуга",
+    "intake.categorySuggestion": "Категория",
+    "intake.urgencySuggestion": "Срочность",
+    "intake.clarifyingQuestions": "Полезные уточняющие вопросы",
+    "intake.followUpLabel": "Добавить детали",
+    "intake.followUpPlaceholder":
+      "Ответьте на вопрос или добавьте важную информацию для клиники.",
+    "intake.followUpSend": "Добавить к запросу",
+    "intake.followUpSending": "Добавляем...",
+    "intake.aiFallback":
+      "AI использует безопасный резервный режим. Запрос все равно уже во входящих клиники.",
+    "intake.consent":
+      "Я согласен(на), что клиника может обработать этот запрос, а AI-ассистент только собирает информацию для приема.",
+    "intake.emergencyInfoLink": "Открыть экстренную информацию",
     "intake.caseId": "ID обращения",
     "intake.error": "Не удалось отправить запрос. Проверьте поля и попробуйте снова.",
     "inbox.kicker": "Панель клиники",
@@ -2078,6 +2257,16 @@ export const uiCopy = {
     "request.draft": "черновик",
     "request.aiNotice":
       "AI-резюме носит справочный характер, пока его не проверит сотрудник клиники.",
+    "request.intakeHandoff": "Передача приема",
+    "request.intakeRoute": "Маршрут",
+    "request.intakeService": "Услуга",
+    "request.intakeCategorySuggestion": "Предложенная категория",
+    "request.intakeEmergencySignal": "Экстренный сигнал",
+    "request.intakeConfidence": "Уверенность",
+    "request.intakeQuestions": "Показанные вопросы",
+    "request.intakeMissing": "Не хватает",
+    "request.intakeAdvisoryNotice":
+      "AI-прием носит справочный характер. Финальный маршрут, назначение и срочность остаются за сотрудниками.",
     "request.aiRiskFlags": "Факторы риска",
     "request.aiUrgencySuggestion": "Предложенная срочность",
     "request.aiVersion": "Промпт {version}",

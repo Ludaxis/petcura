@@ -14,7 +14,9 @@ import {
   requestStatusUpdateSchema,
   requestUrgencyUpdateSchema,
   staffReplySchema,
-  userProfileSchema
+  userProfileSchema,
+  webIntakeMessageSchema,
+  webIntakeStartSchema
 } from "./index";
 
 const requestId = "11111111-1111-4111-8111-111111111111";
@@ -45,6 +47,53 @@ describe("intakeRequestSchema", () => {
 
   it("rejects urgent as a persisted status", () => {
     expect(requestStatusSchema.safeParse("urgent").success).toBe(false);
+  });
+
+  it("accepts consented AI-assisted web intake starts", () => {
+    const parsed = webIntakeStartSchema.parse({
+      ownerName: " Marta Tamm ",
+      phone: " +372 5555 0000 ",
+      petName: " Luna ",
+      petSpecies: " Cat ",
+      category: "medical_question",
+      message: "Luna ate chocolate and looks weak.",
+      clinicSlug: "alex-vet-demo",
+      preferredLanguage: "en",
+      consent: "true",
+      idempotencyKey: "browser-123456"
+    });
+
+    expect(parsed.consent).toBe(true);
+    expect(parsed.idempotencyKey).toBe("browser-123456");
+  });
+
+  it("requires consent and validates follow-up message sessions", () => {
+    expect(
+      webIntakeStartSchema.safeParse({
+        ownerName: "Marta",
+        phone: "+37255550000",
+        petName: "Luna",
+        petSpecies: "Cat",
+        category: "medical_question",
+        message: "Luna has been vomiting since morning.",
+        preferredLanguage: "en",
+        consent: "false"
+      }).success
+    ).toBe(false);
+
+    expect(
+      webIntakeMessageSchema.parse({
+        sessionToken: "a".repeat(64),
+        requestId,
+        message: "She vomited twice and is drinking water.",
+        preferredLanguage: "et",
+        idempotencyKey: ""
+      })
+    ).toMatchObject({
+      requestId,
+      preferredLanguage: "et",
+      idempotencyKey: undefined
+    });
   });
 });
 

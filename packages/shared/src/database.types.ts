@@ -559,6 +559,182 @@ export type Database = {
         }
         Relationships: []
       }
+      clinic_emergency_policies: {
+        Row: {
+          after_hours_instructions_i18n: Json
+          after_hours_phone: string | null
+          clinic_id: string
+          created_at: string
+          emergency_phone: string | null
+          emergency_url: string | null
+          instructions_i18n: Json
+          is_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          after_hours_instructions_i18n?: Json
+          after_hours_phone?: string | null
+          clinic_id: string
+          created_at?: string
+          emergency_phone?: string | null
+          emergency_url?: string | null
+          instructions_i18n?: Json
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          after_hours_instructions_i18n?: Json
+          after_hours_phone?: string | null
+          clinic_id?: string
+          created_at?: string
+          emergency_phone?: string | null
+          emergency_url?: string | null
+          instructions_i18n?: Json
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_emergency_policies_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_holidays: {
+        Row: {
+          clinic_id: string
+          closes_at: string | null
+          created_at: string
+          holiday_date: string
+          id: string
+          is_closed: boolean
+          name: string | null
+          opens_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          closes_at?: string | null
+          created_at?: string
+          holiday_date: string
+          id?: string
+          is_closed?: boolean
+          name?: string | null
+          opens_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          closes_at?: string | null
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          is_closed?: boolean
+          name?: string | null
+          opens_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_holidays_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_hours: {
+        Row: {
+          clinic_id: string
+          closes_at: string
+          created_at: string
+          id: string
+          is_closed: boolean
+          opens_at: string
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          clinic_id: string
+          closes_at: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          opens_at: string
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          clinic_id?: string
+          closes_at?: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          opens_at?: string
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_hours_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_web_intake_configs: {
+        Row: {
+          ai_enabled: boolean
+          allowed_origins: string[]
+          clinic_id: string
+          created_at: string
+          default_locale: string
+          enabled: boolean
+          rate_limit_per_hour: number
+          retention_days: number
+          updated_at: string
+          widget_copy_i18n: Json
+        }
+        Insert: {
+          ai_enabled?: boolean
+          allowed_origins?: string[]
+          clinic_id: string
+          created_at?: string
+          default_locale?: string
+          enabled?: boolean
+          rate_limit_per_hour?: number
+          retention_days?: number
+          updated_at?: string
+          widget_copy_i18n?: Json
+        }
+        Update: {
+          ai_enabled?: boolean
+          allowed_origins?: string[]
+          clinic_id?: string
+          created_at?: string
+          default_locale?: string
+          enabled?: boolean
+          rate_limit_per_hour?: number
+          retention_days?: number
+          updated_at?: string
+          widget_copy_i18n?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_web_intake_configs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internal_notes: {
         Row: {
           author_id: string | null
@@ -1236,10 +1412,13 @@ export type Database = {
           clinic_id: string
           created_at: string
           id: string
+          intake_ai_output_id: string | null
           owner_id: string
           pet_id: string | null
           resolved_at: string | null
           risk_flags_json: Json
+          routing_suggestion: string | null
+          service_intent: string | null
           sla_due_at: string | null
           status: Database["public"]["Enums"]["request_status"]
           updated_at: string
@@ -1247,6 +1426,7 @@ export type Database = {
           urgency_suggestion:
             | Database["public"]["Enums"]["request_urgency"]
             | null
+          web_intake_session_id: string | null
         }
         Insert: {
           ai_summary?: string | null
@@ -1258,10 +1438,13 @@ export type Database = {
           clinic_id: string
           created_at?: string
           id?: string
+          intake_ai_output_id?: string | null
           owner_id: string
           pet_id?: string | null
           resolved_at?: string | null
           risk_flags_json?: Json
+          routing_suggestion?: string | null
+          service_intent?: string | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
@@ -1269,6 +1452,7 @@ export type Database = {
           urgency_suggestion?:
             | Database["public"]["Enums"]["request_urgency"]
             | null
+          web_intake_session_id?: string | null
         }
         Update: {
           ai_summary?: string | null
@@ -1280,10 +1464,13 @@ export type Database = {
           clinic_id?: string
           created_at?: string
           id?: string
+          intake_ai_output_id?: string | null
           owner_id?: string
           pet_id?: string | null
           resolved_at?: string | null
           risk_flags_json?: Json
+          routing_suggestion?: string | null
+          service_intent?: string | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
@@ -1291,6 +1478,7 @@ export type Database = {
           urgency_suggestion?:
             | Database["public"]["Enums"]["request_urgency"]
             | null
+          web_intake_session_id?: string | null
         }
         Relationships: [
           {
@@ -1308,6 +1496,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "requests_intake_ai_output_id_fkey"
+            columns: ["intake_ai_output_id"]
+            isOneToOne: false
+            referencedRelation: "ai_outputs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "requests_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
@@ -1319,6 +1514,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requests_web_intake_session_id_fkey"
+            columns: ["web_intake_session_id"]
+            isOneToOne: false
+            referencedRelation: "web_intake_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1427,6 +1629,82 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pets"
             referencedColumns: ["clinic_id", "id"]
+          },
+        ]
+      }
+      web_intake_sessions: {
+        Row: {
+          clinic_id: string
+          consented_at: string | null
+          created_at: string
+          id: string
+          ip_hash: string | null
+          last_seen_at: string
+          locale: string
+          origin: string | null
+          owner_id: string | null
+          public_token_hash: string
+          referrer: string | null
+          request_id: string | null
+          status: string
+          updated_at: string
+          user_agent_hash: string | null
+        }
+        Insert: {
+          clinic_id: string
+          consented_at?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          last_seen_at?: string
+          locale?: string
+          origin?: string | null
+          owner_id?: string | null
+          public_token_hash: string
+          referrer?: string | null
+          request_id?: string | null
+          status?: string
+          updated_at?: string
+          user_agent_hash?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          consented_at?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          last_seen_at?: string
+          locale?: string
+          origin?: string | null
+          owner_id?: string | null
+          public_token_hash?: string
+          referrer?: string | null
+          request_id?: string | null
+          status?: string
+          updated_at?: string
+          user_agent_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "web_intake_sessions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "web_intake_sessions_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "web_intake_sessions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
           },
         ]
       }
