@@ -61,24 +61,34 @@ export async function requestOwnerOtpDelivery(phone: string) {
   const client = twilio(config.accountSid, config.authToken);
 
   try {
-    await client.verify.v2
+    const verification = await client.verify.v2
       .services(config.serviceSid)
-      .verifications.create({ to: phone, channel: "whatsapp" });
+      .verifications.create({ to: phone, channel: "sms" });
+    console.info("[petcura] owner OTP delivery accepted", {
+      channel: "sms",
+      sid: verification.sid,
+      status: verification.status
+    });
     return { ok: true as const };
-  } catch (whatsappError) {
-    console.warn("[petcura] owner OTP WhatsApp delivery failed", {
-      channel: "whatsapp",
-      ...getTwilioErrorMeta(whatsappError)
+  } catch (smsError) {
+    console.warn("[petcura] owner OTP SMS delivery failed", {
+      channel: "sms",
+      ...getTwilioErrorMeta(smsError)
     });
     try {
-      await client.verify.v2
+      const verification = await client.verify.v2
         .services(config.serviceSid)
-        .verifications.create({ to: phone, channel: "sms" });
+        .verifications.create({ to: phone, channel: "whatsapp" });
+      console.info("[petcura] owner OTP delivery accepted", {
+        channel: "whatsapp",
+        sid: verification.sid,
+        status: verification.status
+      });
       return { ok: true as const };
-    } catch (smsError) {
-      console.warn("[petcura] owner OTP SMS delivery failed", {
-        channel: "sms",
-        ...getTwilioErrorMeta(smsError)
+    } catch (whatsappError) {
+      console.warn("[petcura] owner OTP WhatsApp delivery failed", {
+        channel: "whatsapp",
+        ...getTwilioErrorMeta(whatsappError)
       });
       return { ok: false as const, error: "otp_unavailable" as const };
     }
