@@ -76,7 +76,6 @@ export async function loadOnboardingProgress(
 // TODO(codex): replace stub with upsert into `onboarding_progress`.
 export async function markOnboardingStep(args: MarkStepArgs): Promise<void> {
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.warn(
       "[onboarding-progress] stub markOnboardingStep — replace once Codex schema lands",
       args

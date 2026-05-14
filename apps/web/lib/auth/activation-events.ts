@@ -26,7 +26,6 @@ export async function fireActivationEvent(
   args: FireActivationEventArgs
 ): Promise<void> {
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.info("[activation-event] stub fireActivationEvent", args);
   }
 }

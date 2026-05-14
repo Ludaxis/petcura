@@ -36,7 +36,6 @@ export type WriteAuthEventArgs = {
 // never fail because audit failed. See docs/contracts/auth-audit-events.md.
 export async function writeAuthEvent(args: WriteAuthEventArgs): Promise<void> {
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.info("[auth-event] stub writeAuthEvent", args);
   }
 }
