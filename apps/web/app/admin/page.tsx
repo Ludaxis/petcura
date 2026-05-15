@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Building2,
   ExternalLink,
+  Inbox,
   ShieldCheck,
   ShieldOff,
   UserPlus
@@ -15,7 +16,10 @@ import {
   withLocale
 } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
-import { listAdminClinics } from "@/lib/admin/bootstrap";
+import {
+  listAdminClinics,
+  listAdminMarketingLeads
+} from "@/lib/admin/bootstrap";
 import { getSuperAdminResult } from "@/lib/auth/super-admin";
 import { requirePublicEnv } from "@/lib/env";
 import { AppShell } from "@/app/_components/AppShell";
@@ -34,6 +38,17 @@ type AdminPageProps = {
 };
 
 const roleOptions = staffRoles;
+const leadSourceLabels: Record<string, string> = {
+  hero: "Hero",
+  owner_path: "Owner path",
+  pricing: "Pricing",
+  final_cta: "Final CTA",
+  mobile_bar: "Mobile bar",
+  demo_page: "Demo page",
+  sandbox: "Sandbox",
+  trust: "Trust",
+  footer: "Footer"
+};
 
 function getSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -53,6 +68,11 @@ function getStatusCopy(status: string | undefined): CopyKey | null {
   }
 
   return null;
+}
+
+function formatLeadValue(value: string | null | undefined, fallback: string) {
+  if (!value) return fallback;
+  return leadSourceLabels[value] ?? value.replaceAll("_", " ");
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
@@ -119,13 +139,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </AppShell>
     );
   }
-  const clinics = await listAdminClinics();
+  const [clinics, marketingLeadList] = await Promise.all([
+    listAdminClinics(),
+    listAdminMarketingLeads()
+  ]);
   const env = requirePublicEnv();
   const statusKey = getStatusCopy(getSearchParam(params?.admin_status));
   const hasError = Boolean(getSearchParam(params?.admin_error));
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short"
+  });
+  const compactDateFormatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium"
   });
 
   return (
@@ -174,6 +200,122 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           {t("admin.error")}
         </div>
       ) : null}
+
+      <section className="grid gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Inbox
+                aria-hidden="true"
+                className="text-[var(--primary)]"
+                size={18}
+              />
+              <h2 className="text-xl font-semibold">
+                {t("admin.demoLeads")}
+              </h2>
+            </div>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+              {t("admin.demoLeadsDescription")}
+            </p>
+          </div>
+          <Badge tone="neutral">
+            {t("admin.demoLeadsCount", {
+              count: marketingLeadList.total
+            })}
+          </Badge>
+        </div>
+
+        <Panel className="overflow-hidden p-0">
+          {marketingLeadList.leads.length === 0 ? (
+            <div className="p-5 text-sm leading-6 text-[var(--muted)]">
+              {t("admin.demoLeadsEmpty")}
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--line)]">
+              {marketingLeadList.leads.map((lead) => (
+                <article className="grid gap-4 p-5" key={lead.id}>
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="break-words text-base font-semibold text-[var(--ink)]">
+                          {lead.clinic_name}
+                        </h3>
+                        <Badge tone="teal">
+                          {formatLeadValue(lead.source, "")}
+                        </Badge>
+                        <Badge tone="neutral">
+                          {lead.locale.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 break-words text-sm leading-6 text-[var(--muted)]">
+                        {lead.contact_name} ·{" "}
+                        <a
+                          className="font-medium text-[var(--primary)] hover:underline"
+                          href={`mailto:${lead.work_email}`}
+                        >
+                          {lead.work_email}
+                        </a>
+                      </p>
+                    </div>
+                    <time className="text-sm text-[var(--muted)]">
+                      {dateFormatter.format(new Date(lead.created_at))}
+                    </time>
+                  </div>
+
+                  <dl className="grid gap-3 text-sm sm:grid-cols-3">
+                    <div>
+                      <dt className="font-medium text-[var(--muted)]">
+                        {t("admin.country")}
+                      </dt>
+                      <dd className="mt-1 break-words text-[var(--ink)]">
+                        {lead.country}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-[var(--muted)]">
+                        {t("admin.demoLeadsPms")}
+                      </dt>
+                      <dd className="mt-1 break-words text-[var(--ink)]">
+                        {formatLeadValue(
+                          lead.pms_system,
+                          t("admin.demoLeadsNotProvided")
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-[var(--muted)]">
+                        {t("admin.demoLeadsVolume")}
+                      </dt>
+                      <dd className="mt-1 break-words text-[var(--ink)]">
+                        {formatLeadValue(
+                          lead.monthly_request_volume,
+                          t("admin.demoLeadsNotProvided")
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {lead.message ? (
+                    <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3">
+                      <p className="text-xs font-medium uppercase tracking-[0.06em] text-[var(--muted-2)]">
+                        {t("admin.demoLeadsMessage")}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--ink)]">
+                        {lead.message}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <p className="text-xs leading-5 text-[var(--muted-2)]">
+                    {t("admin.demoLeadsConsent")} ·{" "}
+                    {compactDateFormatter.format(new Date(lead.created_at))}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </Panel>
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Panel className="p-5">

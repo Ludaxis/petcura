@@ -21,6 +21,29 @@ export type AdminClinic = ClinicRow & {
   staff: AdminStaffMember[];
 };
 
+type MarketingLeadRow = Pick<
+  Database["public"]["Tables"]["marketing_leads"]["Row"],
+  | "id"
+  | "created_at"
+  | "source"
+  | "locale"
+  | "clinic_name"
+  | "contact_name"
+  | "work_email"
+  | "country"
+  | "pms_system"
+  | "monthly_request_volume"
+  | "message"
+  | "consent_given"
+>;
+
+export type AdminMarketingLead = MarketingLeadRow;
+
+export type AdminMarketingLeadList = {
+  leads: AdminMarketingLead[];
+  total: number;
+};
+
 export async function listAuthUserEmails() {
   const admin = createAdminClient();
   const usersById = new Map<string, string>();
@@ -89,6 +112,29 @@ export async function listAdminClinics(): Promise<AdminClinic[]> {
     ...clinic,
     staff: staffByClinic.get(clinic.id) ?? []
   }));
+}
+
+export async function listAdminMarketingLeads(
+  limit = 25
+): Promise<AdminMarketingLeadList> {
+  const admin = createAdminClient();
+  const { data, error, count } = await admin
+    .from("marketing_leads")
+    .select(
+      "id, created_at, source, locale, clinic_name, contact_name, work_email, country, pms_system, monthly_request_volume, message, consent_given",
+      { count: "exact" }
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Could not list marketing leads: ${error.message}`);
+  }
+
+  return {
+    leads: data ?? [],
+    total: count ?? data?.length ?? 0
+  };
 }
 
 export async function findAuthUserByEmail(email: string) {

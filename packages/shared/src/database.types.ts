@@ -1019,6 +1019,54 @@ export type Database = {
           },
         ]
       }
+      marketing_leads: {
+        Row: {
+          clinic_name: string
+          consent_given: boolean
+          contact_name: string
+          country: string
+          created_at: string
+          id: string
+          locale: string
+          message: string | null
+          monthly_request_volume: string | null
+          pms_system: string | null
+          source: string
+          user_agent_hash: string | null
+          work_email: string
+        }
+        Insert: {
+          clinic_name: string
+          consent_given?: boolean
+          contact_name: string
+          country: string
+          created_at?: string
+          id?: string
+          locale?: string
+          message?: string | null
+          monthly_request_volume?: string | null
+          pms_system?: string | null
+          source?: string
+          user_agent_hash?: string | null
+          work_email: string
+        }
+        Update: {
+          clinic_name?: string
+          consent_given?: boolean
+          contact_name?: string
+          country?: string
+          created_at?: string
+          id?: string
+          locale?: string
+          message?: string | null
+          monthly_request_volume?: string | null
+          pms_system?: string | null
+          source?: string
+          user_agent_hash?: string | null
+          work_email?: string
+        }
+        Relationships: []
+      }
       twilio_media_ingestion_jobs: {
         Row: {
           attachment_id: string
