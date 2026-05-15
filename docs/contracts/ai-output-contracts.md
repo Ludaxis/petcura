@@ -1,6 +1,6 @@
 # AI Output Contracts
 
-Last updated: 2026-05-14.
+Last updated: 2026-05-15.
 
 ## Kinds
 
@@ -19,8 +19,12 @@ Last updated: 2026-05-14.
 - `clinic_id`
 - `request_id`
 - `kind`
+- `status`: `success`, `fallback`, `schema_failure`, `provider_error`, or `blocked`
+- `provider`
 - `model`
+- `prompt_key`
 - `prompt_version`
+- `prompt_hash`
 - `input_json`
 - `output_json`
 - `tokens_in`
@@ -31,15 +35,42 @@ Last updated: 2026-05-14.
 
 ## Review Fields
 
+- `review_status`: `pending`, `accepted`, `accepted_with_edits`, `edited`, `rejected`, or `not_reviewable`
 - `reviewed_by`
+- `reviewed_at`
 - `accepted`
 - `edited_output_json`
+- `review_notes`
+
+Failure rows use `review_status = not_reviewable`.
+
+## Provenance Fields
+
+- `failure_reason`
+- `blocked_reason`
+- `raw_output_text`
+- `provenance_json`
+- `ai_output_sources[]`
+
+`ai_output_sources` stores source row references for each accountable output:
+`request`, `message`, `internal_note`, `ai_output`, `ai_memory_item`, `owner`,
+`pet`, or `web_intake_session`.
 
 ## Rules
 
 - Prompt changes require version bumps.
+- Prompt material is hashed with SHA-256 using `prompt_key`, `prompt_version`,
+  system text, and user prompt text. The hash is stored on `ai_outputs.prompt_hash`
+  and repeated in `input_json.prompt_hash`.
 - Structured outputs must pass schema validation.
-- Failed validation falls back to manual UI and logs the failure.
+- Failed validation writes `status = schema_failure`. If a rules fallback is
+  available, the fallback also writes `status = fallback`.
+- Provider errors write `status = provider_error` unless a task has a rules
+  fallback, in which case the used fallback writes `status = fallback` with
+  `failure_reason`.
+- Safety-blocked model outputs write `status = blocked`. If a rules fallback is
+  available, the fallback output is written as a separate `fallback` row linked
+  through `ai_output_sources`.
 - AI output is advisory unless a human review field marks it accepted.
 - Provider credentials:
   - `AI_GATEWAY_API_KEY` is for Vercel AI Gateway.
@@ -161,6 +192,7 @@ Last updated: 2026-05-14.
 - Trigger: staff clicks generate or regenerate draft on request detail
 - Storage:
   - `ai_outputs.kind = reply_draft`
+  - `ai_outputs.status = success | schema_failure | provider_error | blocked`
   - `input_json.source_locale`
   - `input_json.target_locale`
   - `input_json.context_retrieval_ai_output_id`
@@ -172,3 +204,6 @@ Last updated: 2026-05-14.
   - Drafts are never sent automatically.
   - Drafts can use accepted memory only as prior context, not as current symptoms.
   - Staff accept, edit-and-accept, or reject remains the human approval path.
+  - Draft stream endpoints only stream the exact persisted `ai_outputs.id`
+    requested by the client; missing `draftId` disables streaming and falls
+    back to the already-loaded persisted text.

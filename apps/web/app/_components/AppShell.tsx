@@ -2,6 +2,7 @@ import "server-only";
 import type { ReactNode } from "react";
 import {
   createTranslator,
+  getClinicPermissions,
   type CopyKey,
   type StaffRole,
   type SupportedLocale
@@ -163,6 +164,7 @@ export async function AppShell({
 
   const role = staffContext.membership.role as StaffRole;
   const roleLabel: string = roleCopyKeys[role] ? t(roleCopyKeys[role]) : role;
+  const permissions = getClinicPermissions(role);
 
   return (
     <SidebarProvider defaultOpen>
@@ -179,6 +181,7 @@ export async function AppShell({
         countsPromise={countsPromise}
         inboxStream={inboxStream}
         isSuperAdmin={isSuperAdmin}
+        permissions={permissions}
         signOutAction={signOutStaff}
         labels={{
           sectionInbox: t("nav.section.inbox"),

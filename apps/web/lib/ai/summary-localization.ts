@@ -34,7 +34,7 @@ export type AiSummaryLocalizationMap = Partial<
   Record<SupportedLocale, AiSummaryLocalization>
 >;
 
-function getSummaryTranslationModel() {
+export function getSummaryTranslationModel() {
   return (
     process.env.PETCURA_AI_SUMMARY_TRANSLATION_MODEL ??
     process.env.PETCURA_AI_TRANSLATION_MODEL ??
@@ -122,6 +122,32 @@ export function buildEditedAiSummaryLocalization({
   };
 }
 
+export const summaryTranslationSystemPrompt =
+  "You are PetCura's veterinary clinic translation assistant. Translate staff-facing case summaries exactly and neutrally. Do not diagnose, prescribe, add facts, remove uncertainty, or soften urgent owner language.";
+
+export function buildSummaryLocalizationPrompt({
+  summaryText,
+  riskFlags,
+  targetLocale
+}: {
+  summaryText: string;
+  riskFlags: string[];
+  targetLocale: Exclude<SupportedLocale, "en">;
+}) {
+  const targetLanguage = targetLocaleNames[targetLocale];
+
+  return [
+    `Translate this veterinary clinic staff summary from English to ${targetLanguage}.`,
+    "Preserve clinical uncertainty and urgency language exactly.",
+    "Translate risk flags as short staff-facing phrases.",
+    "Return only JSON with keys: summaryText, riskFlags, confidence.",
+    "",
+    `Summary: ${summaryText}`,
+    "",
+    `Risk flags: ${riskFlags.length > 0 ? riskFlags.join("; ") : "none"}`
+  ].join("\n");
+}
+
 export async function generateAiSummaryLocalization({
   summaryText,
   riskFlags,
@@ -132,22 +158,15 @@ export async function generateAiSummaryLocalization({
   targetLocale: Exclude<SupportedLocale, "en">;
 }): Promise<GatewayJsonResult<SummaryLocalizationOutput>> {
   const model = getSummaryTranslationModel();
-  const targetLanguage = targetLocaleNames[targetLocale];
 
   return generateJsonWithGateway({
     model,
-    system:
-      "You are PetCura's veterinary clinic translation assistant. Translate staff-facing case summaries exactly and neutrally. Do not diagnose, prescribe, add facts, remove uncertainty, or soften urgent owner language.",
-    prompt: [
-      `Translate this veterinary clinic staff summary from English to ${targetLanguage}.`,
-      "Preserve clinical uncertainty and urgency language exactly.",
-      "Translate risk flags as short staff-facing phrases.",
-      "Return only JSON with keys: summaryText, riskFlags, confidence.",
-      "",
-      `Summary: ${summaryText}`,
-      "",
-      `Risk flags: ${riskFlags.length > 0 ? riskFlags.join("; ") : "none"}`
-    ].join("\n"),
+    system: summaryTranslationSystemPrompt,
+    prompt: buildSummaryLocalizationPrompt({
+      summaryText,
+      riskFlags,
+      targetLocale
+    }),
     schema: summaryLocalizationOutputSchema,
     timeoutMs: 8_000,
     maxOutputTokens: 900

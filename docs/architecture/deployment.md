@@ -1,6 +1,6 @@
 # Deployment
 
-Last updated: 2026-05-12.
+Last updated: 2026-05-15.
 
 ## Vercel Project
 
@@ -66,6 +66,36 @@ Vercel Git auto-deploy is active for:
 
 Pushes to `main` should create production deployments. Manual CLI deploy remains available when an explicit deployment is needed.
 
+## Health Checks
+
+`GET /health` returns a non-secret readiness payload:
+
+- build SHA (`VERCEL_GIT_COMMIT_SHA` when available)
+- runtime region (`VERCEL_REGION` when available)
+- public environment readiness
+- pilot secret-key presence by key name only, never values
+- Supabase Auth health latency/status
+
+Default mode returns `200` when public env and Supabase are reachable. Use
+`/health?strict=1` for staging promotion checks; strict mode also requires
+pilot-critical server env keys such as Twilio, cron, and Supabase secret
+presence.
+
+## CI Gates
+
+The GitHub Actions CI now separates gates so failures are easier to triage:
+
+- **App quality gates**: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
+- **Supabase RLS and schema gates**: local Supabase boot, `supabase test db --local`, and `supabase db lint --local --fail-on error`.
+- **Playwright smoke**: `npm run test:e2e:smoke`.
+- **Accessibility lane**: `npm run test:a11y`.
+
+Manual/live lanes remain available for staging promotion:
+
+- `PLAYWRIGHT_LIVE_BASE_URL=https://staging.petcura.app npm run test:e2e:live`
+- `npm run test:visual`
+- `npm run test:e2e:db` with `PETCURA_RUN_DB_PLAYWRIGHT=1` and a deterministic test database.
+
 Latest verified production deployment:
 
 - Commit: `ca9a95a` (`Fix AI draft locale metadata`)
@@ -80,3 +110,24 @@ Production cron jobs are configured from `apps/web/vercel.json`.
 - `/api/cron/reminders` runs every five minutes and dispatches due reminders.
 - Vercel invokes cron jobs only on production deployments.
 - The route requires `Authorization: Bearer $CRON_SECRET`; keep `CRON_SECRET` configured in Vercel Production and local `.env.local` for manual testing.
+
+## Staging Promotion Checklist
+
+Promotion to production is blocked until every item is green:
+
+- GitHub CI green on `main`.
+- `/health?strict=1` returns expected readiness on staging.
+- `npm run test:rls:linked` and `npm run db:lint:linked` pass against the linked staging Supabase project.
+- Playwright smoke passes against staging: `PLAYWRIGHT_LIVE_BASE_URL=https://staging.petcura.app npm run test:e2e:live`.
+- One pilot rehearsal is completed: WhatsApp intake → AI summary → staff reply → delivery event → reminder → export.
+- Sentry/Vercel logs show no new unhandled route errors during rehearsal.
+
+## Rollback Checklist
+
+If staging or production promotion fails:
+
+- Stop the rollout and keep the failed deployment URL for log inspection.
+- Revert the application deployment in Vercel to the last known good deployment.
+- Do not roll back migrations blindly. If a migration shipped, apply the documented down/forward-fix plan for that migration.
+- Re-run `/health?strict=1`, RLS linked tests, and the affected Playwright lane.
+- Add a short incident note to the PR with blast radius, mitigation, and follow-up owner.

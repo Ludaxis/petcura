@@ -1,6 +1,8 @@
 begin;
 
-select plan(9);
+set local search_path = public, extensions;
+
+select plan(16);
 
 insert into auth.users (
   id,
@@ -214,6 +216,7 @@ values
   );
 
 insert into public.ai_outputs (
+  id,
   clinic_id,
   request_id,
   kind,
@@ -223,6 +226,7 @@ insert into public.ai_outputs (
   output_json
 )
 values (
+  '67000000-0000-4000-8000-000000000001',
   '62000000-0000-4000-8000-000000000001',
   '66000000-0000-4000-8000-000000000001',
   'reply_draft',
@@ -230,6 +234,19 @@ values (
   'v1',
   '{}'::jsonb,
   '{}'::jsonb
+);
+
+insert into public.ai_output_sources (
+  clinic_id,
+  ai_output_id,
+  source_type,
+  source_id
+)
+values (
+  '62000000-0000-4000-8000-000000000001',
+  '67000000-0000-4000-8000-000000000001',
+  'request',
+  '66000000-0000-4000-8000-000000000001'
 );
 
 set local role authenticated;
@@ -257,6 +274,92 @@ select is((select count(*)::integer from public.vaccinations), 1, 'owner A sees 
 select is((select count(*)::integer from public.requests), 1, 'owner A sees one request');
 select is((select count(*)::integer from public.messages), 1, 'owner A sees one message');
 select is((select count(*)::integer from public.ai_outputs), 0, 'owner A cannot read AI outputs');
+select is((select count(*)::integer from public.ai_output_sources), 0, 'owner A cannot read AI output sources');
+select lives_ok(
+  $test$
+  update public.owners
+  set
+    name = 'Owner A Updated',
+    email = 'owner-a@example.test',
+    preferred_language = 'et',
+    photo_url = '62000000-0000-4000-8000-000000000001/owners/63000000-0000-4000-8000-000000000001/avatar.webp'
+  where id = '63000000-0000-4000-8000-000000000001'
+  $test$,
+  'owner A can update safe owner profile fields'
+);
+select throws_ok(
+  $test$
+  update public.owners
+  set notes = 'owner should not edit clinic-owned notes'
+  where id = '63000000-0000-4000-8000-000000000001'
+  $test$,
+  'P0001',
+  'owner_forbidden_field_update',
+  'owner A cannot update clinic-owned owner notes'
+);
+select lives_ok(
+  $test$
+  update public.pets
+  set
+    owner_notes = 'Prefers quiet rooms.',
+    photo_url = '62000000-0000-4000-8000-000000000001/pets/64000000-0000-4000-8000-000000000001/avatar.webp'
+  where id = '64000000-0000-4000-8000-000000000001'
+  $test$,
+  'owner A can update safe pet self-service fields'
+);
+select throws_ok(
+  $test$
+  update public.pets
+  set medical_notes = 'owner should not edit medical notes'
+  where id = '64000000-0000-4000-8000-000000000001'
+  $test$,
+  'P0001',
+  'owner_forbidden_field_update',
+  'owner A cannot update clinic-owned pet medical notes'
+);
+select throws_ok(
+  $test$
+  update public.pets
+  set weight_kg = 7.25
+  where id = '64000000-0000-4000-8000-000000000001'
+  $test$,
+  'P0001',
+  'owner_forbidden_field_update',
+  'owner A cannot directly update pet weight'
+);
+select lives_ok(
+  $test$
+  do $block$
+  begin
+    insert into public.pet_weight_entries (
+      clinic_id,
+      pet_id,
+      weight_kg,
+      measured_at,
+      source,
+      created_by
+    )
+    values (
+      '62000000-0000-4000-8000-000000000001',
+      '64000000-0000-4000-8000-000000000001',
+      5.55,
+      current_date,
+      'owner',
+      '61000000-0000-4000-8000-000000000001'
+    );
+
+    if (
+      select weight_kg
+      from public.pets
+      where id = '64000000-0000-4000-8000-000000000001'
+    ) <> 5.55 then
+      raise exception 'owner weight entry did not sync pet latest weight';
+    end if;
+  end
+  $block$
+  $test$,
+  'owner A can add an owner-sourced weight entry'
+);
 select is(
   public.is_active_clinic_member('62000000-0000-4000-8000-000000000001'),
   false,

@@ -12,15 +12,28 @@ and writes `request_events.message_sent`.
 For WhatsApp-originated requests:
 
 1. Resolve the owner phone from the request owner.
-2. Resolve the sender from active `clinic_channels` where
-   `channel = whatsapp`, falling back to `TWILIO_WHATSAPP_FROM`.
-3. Send a freeform WhatsApp reply through Twilio Programmable Messaging.
-4. Store the returned Twilio message SID in `messages.external_id`.
-5. Insert an initial `message_delivery_events` row with provider `twilio`.
-6. Write `request_events.message_sent` with channel and delivery metadata.
+2. Store the staff reply in `messages` with `external_id = null`.
+3. Insert `outbound_messages` with `source = staff_reply`,
+   `channel = whatsapp`, and `status = queued`.
+4. Insert a queued `message_delivery_events` row with provider `twilio`.
+5. Write `request_events.message_sent` with the outbox ID.
+6. Emit `outbound.message.queued` for Inngest.
 
-If Twilio credentials or a sender are missing, the action redirects with a
-delivery error and does not persist a local staff reply.
+If the owner phone is missing, the action redirects with a delivery error and
+does not persist a local staff reply. Twilio credentials and sender validation
+happen in the worker, after the local message/outbox rows exist.
+
+## Outbox Worker
+
+The Inngest worker:
+
+1. Claims the queued `outbound_messages` row.
+2. Inserts `message_delivery_attempts`.
+3. Resolves the sender from active `clinic_channels` where
+   `channel = whatsapp`, falling back to `TWILIO_WHATSAPP_FROM`.
+4. Sends through Twilio Programmable Messaging.
+5. Stores the returned Twilio SID on `message_delivery_attempts.provider_message_sid`
+   and, for compatibility, on `messages.external_id` when empty.
 
 ## Delivery Callback
 
@@ -38,7 +51,8 @@ Security:
 
 Mapping:
 
-- `MessageSid` / `SmsSid` matches `messages.external_id`.
+- `MessageSid` / `SmsSid` matches
+  `message_delivery_attempts.provider_message_sid`.
 - `MessageStatus` / `SmsStatus` maps to PetCura delivery statuses:
   - `accepted`, `queued`, other unknown states -> `queued`
   - `sending`, `sent` -> `sent`
@@ -56,10 +70,10 @@ Mapping:
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_WHATSAPP_FROM` unless the clinic has a `clinic_channels` sender row
 - `NEXT_PUBLIC_APP_URL` for the callback URL
+- Optional SMS fallback: `PETCURA_SMS_FALLBACK_ENABLED=true` and
+  `TWILIO_SMS_FROM` unless the clinic has an active SMS sender row
 
 ## Not In This Slice
 
-- SMS fallback after WhatsApp failure.
 - Template messages outside WhatsApp's customer-service window.
-- Retry/outbox durability for transient Twilio failures.
-- Delivery status badges in the conversation UI.
+- Automatic owner-facing sends without staff approval.

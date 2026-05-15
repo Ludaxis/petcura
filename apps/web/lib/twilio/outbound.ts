@@ -29,6 +29,12 @@ export type WhatsAppOwnerMessageInput = {
   body: string;
 };
 
+export type TwilioOutboundChannel = "whatsapp" | "sms";
+
+export type TwilioOwnerMessageInput = WhatsAppOwnerMessageInput & {
+  channel: TwilioOutboundChannel;
+};
+
 function getTwilioStatusCallbackUrl() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -43,7 +49,7 @@ function getTwilioStatusCallbackUrl() {
   }
 }
 
-function requireTwilioCredentials() {
+export function requireTwilioCredentials() {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
 
@@ -58,43 +64,68 @@ export async function resolveClinicWhatsAppSender(
   supabase: ServerSupabaseClient,
   clinicId: string
 ) {
+  return resolveClinicTwilioSender(supabase, clinicId, "whatsapp");
+}
+
+export async function resolveClinicSmsSender(
+  supabase: ServerSupabaseClient,
+  clinicId: string
+) {
+  return resolveClinicTwilioSender(supabase, clinicId, "sms");
+}
+
+async function resolveClinicTwilioSender(
+  supabase: ServerSupabaseClient,
+  clinicId: string,
+  channel: TwilioOutboundChannel
+) {
   const { data, error } = await supabase
     .from("clinic_channels")
     .select("external_id")
     .eq("clinic_id", clinicId)
-    .eq("channel", "whatsapp")
+    .eq("channel", channel)
     .eq("is_active", true)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Could not resolve WhatsApp sender: ${error.message}`);
+    throw new Error(`Could not resolve ${channel} sender: ${error.message}`);
   }
 
-  const channel = data as ClinicChannelRow | null;
-  return channel?.external_id ?? process.env.TWILIO_WHATSAPP_FROM ?? null;
+  const channelRow = data as ClinicChannelRow | null;
+  if (channelRow?.external_id) {
+    return channelRow.external_id;
+  }
+
+  return channel === "sms"
+    ? process.env.TWILIO_SMS_FROM ?? null
+    : process.env.TWILIO_WHATSAPP_FROM ?? null;
 }
 
-export async function sendWhatsAppOwnerMessage({
+export async function sendTwilioOwnerMessage({
   supabase,
   clinicId,
   toPhone,
-  body
-}: WhatsAppOwnerMessageInput): Promise<WhatsAppSendResult> {
+  body,
+  channel
+}: TwilioOwnerMessageInput): Promise<WhatsAppSendResult> {
   const { accountSid, authToken } = requireTwilioCredentials();
-  const from = await resolveClinicWhatsAppSender(supabase, clinicId);
+  const from =
+    channel === "sms"
+      ? await resolveClinicSmsSender(supabase, clinicId)
+      : await resolveClinicWhatsAppSender(supabase, clinicId);
 
   if (!from) {
-    throw new Error("twilio_sender_not_configured");
+    throw new Error(`twilio_${channel}_sender_not_configured`);
   }
 
   const statusCallback = getTwilioStatusCallbackUrl();
   const client = twilio(accountSid, authToken);
   const message = await client.messages.create({
     body,
-    from: formatTwilioWhatsAppAddress(from),
-    to: formatTwilioWhatsAppAddress(toPhone),
+    from: channel === "sms" ? from : formatTwilioWhatsAppAddress(from),
+    to: channel === "sms" ? toPhone : formatTwilioWhatsAppAddress(toPhone),
     ...(statusCallback ? { statusCallback } : {})
   });
   const rawStatus = message.status ?? "queued";
@@ -104,6 +135,18 @@ export async function sendWhatsAppOwnerMessage({
     rawStatus,
     status: mapTwilioDeliveryStatus(rawStatus)
   };
+}
+
+export async function sendWhatsAppOwnerMessage(
+  input: WhatsAppOwnerMessageInput
+): Promise<WhatsAppSendResult> {
+  return sendTwilioOwnerMessage({ ...input, channel: "whatsapp" });
+}
+
+export async function sendSmsOwnerMessage(
+  input: WhatsAppOwnerMessageInput
+): Promise<WhatsAppSendResult> {
+  return sendTwilioOwnerMessage({ ...input, channel: "sms" });
 }
 
 export async function sendWhatsAppStaffMessage(

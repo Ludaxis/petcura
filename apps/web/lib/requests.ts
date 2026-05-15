@@ -308,6 +308,7 @@ export async function getRequestDetail(
         .eq("clinic_id", clinicId)
         .eq("request_id", requestId)
         .eq("kind", "reply_draft")
+        .in("status", ["success", "fallback"])
         .is("accepted", null)
         .order("created_at", { ascending: false })
         .limit(1)

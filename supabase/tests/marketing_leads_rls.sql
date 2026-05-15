@@ -1,5 +1,7 @@
 begin;
 
+set local search_path = public, extensions;
+
 select plan(5);
 
 set local role anon;

@@ -6,11 +6,7 @@ import type {
   ReminderType
 } from "@petcura/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  sendWhatsAppOwnerMessage,
-  type WhatsAppSendResult
-} from "@/lib/twilio/outbound";
-import { getTwilioDeliveryEventId } from "@/lib/twilio/whatsapp";
+import { enqueueOutboundMessage } from "@/lib/twilio/outbox";
 import {
   buildReminderWhatsAppBody,
   getFailureStatus,
@@ -50,6 +46,7 @@ type DueReminderRow = Pick<
   requests: {
     id: string;
     owners: {
+      id: string;
       phone: string;
       preferred_language: string;
     } | null;
@@ -79,7 +76,7 @@ export type DispatchDueReminderOptions = {
   maxAttempts?: number;
   retryAfterMs?: number;
   supabase?: AdminClient;
-  sendWhatsApp?: typeof sendWhatsAppOwnerMessage;
+  enqueueOutbound?: typeof enqueueOutboundMessage;
 };
 
 function emptyResult(): ReminderDispatchResult {
@@ -101,7 +98,7 @@ async function listDueReminders(
   const { data, error } = await supabase
     .from("reminders")
     .select(
-      "id, clinic_id, request_id, pet_id, type, title, body, due_at, channel, status, send_attempts, last_send_attempt_at, clinics(name, locale), pets(name), requests(id, owners(phone, preferred_language))"
+      "id, clinic_id, request_id, pet_id, type, title, body, due_at, channel, status, send_attempts, last_send_attempt_at, clinics(name, locale), pets(name), requests(id, owners(id, phone, preferred_language))"
     )
     .eq("status", "scheduled")
     .lte("due_at", now.toISOString())
@@ -213,20 +210,24 @@ async function recordReminderFailure(
   return nextStatus;
 }
 
-async function recordReminderSuccess({
+async function recordReminderQueued({
   supabase,
   reminder,
   body,
   ownerLanguage,
-  delivery,
-  now
+  ownerId,
+  ownerPhone,
+  now,
+  enqueueOutbound
 }: {
   supabase: AdminClient;
   reminder: DueReminderRow;
   body: string;
   ownerLanguage: string;
-  delivery: WhatsAppSendResult;
+  ownerId: string;
+  ownerPhone: string;
   now: Date;
+  enqueueOutbound: typeof enqueueOutboundMessage;
 }) {
   if (!reminder.request_id) {
     throw new Error("missing_request");
@@ -241,7 +242,7 @@ async function recordReminderSuccess({
       sender_id: null,
       body,
       source_locale: ownerLanguage,
-      external_id: delivery.sid
+      external_id: null
     })
     .select("id")
     .single();
@@ -265,29 +266,23 @@ async function recordReminderSuccess({
     throw new Error(`Could not mark reminder sent: ${reminderError.message}`);
   }
 
-  const { error: deliveryError } = await supabase
-    .from("message_delivery_events")
-    .insert({
-      message_id: message.id,
-      clinic_id: reminder.clinic_id,
-      channel: "whatsapp",
-      status: delivery.status,
-      provider: "twilio",
-      external_event_id: getTwilioDeliveryEventId(
-        delivery.sid,
-        delivery.rawStatus
-      ),
-      payload_json: {
-        provider_status: delivery.rawStatus,
-        reminder_id: reminder.id
-      }
-    });
-
-  if (deliveryError) {
-    throw new Error(
-      `Could not record reminder delivery event: ${deliveryError.message}`
-    );
-  }
+  const outbound = await enqueueOutbound({
+    supabase,
+    clinicId: reminder.clinic_id,
+    requestId: reminder.request_id,
+    messageId: message.id,
+    reminderId: reminder.id,
+    ownerId,
+    source: "reminder",
+    channel: "whatsapp",
+    toPhone: ownerPhone,
+    body,
+    idempotencyKey: `reminder:${reminder.id}:${message.id}`,
+    metadata: {
+      reminder_id: reminder.id,
+      reminder_type: reminder.type
+    }
+  });
 
   const { error: eventError } = await supabase.from("request_events").insert({
     clinic_id: reminder.clinic_id,
@@ -298,9 +293,10 @@ async function recordReminderSuccess({
     payload_json: {
       reminder_id: reminder.id,
       message_id: message.id,
+      outbound_message_id: outbound.id,
       channel: reminder.channel,
-      external_id: delivery.sid,
-      delivery_status: delivery.status
+      external_id: null,
+      delivery_status: "queued"
     }
   });
 
@@ -314,15 +310,16 @@ async function dispatchReminder({
   reminder,
   now,
   maxAttempts,
-  sendWhatsApp
+  enqueueOutbound
 }: {
   supabase: AdminClient;
   reminder: DueReminderRow;
   now: Date;
   maxAttempts: number;
-  sendWhatsApp: typeof sendWhatsAppOwnerMessage;
+  enqueueOutbound: typeof enqueueOutboundMessage;
 }) {
   const owner = reminder.requests?.owners;
+  const ownerId = owner?.id;
   const ownerPhone = owner?.phone;
   const ownerLanguage = owner?.preferred_language ?? reminder.clinics?.locale ?? "en";
 
@@ -331,6 +328,16 @@ async function dispatchReminder({
       supabase,
       reminder,
       "missing_request",
+      maxAttempts,
+      maxAttempts
+    );
+  }
+
+  if (!ownerId) {
+    return recordReminderFailure(
+      supabase,
+      reminder,
+      "missing_owner",
       maxAttempts,
       maxAttempts
     );
@@ -366,20 +373,15 @@ async function dispatchReminder({
   });
 
   try {
-    const delivery = await sendWhatsApp({
-      supabase,
-      clinicId: reminder.clinic_id,
-      toPhone: ownerPhone,
-      body
-    });
-
-    await recordReminderSuccess({
+    await recordReminderQueued({
       supabase,
       reminder,
       body,
       ownerLanguage,
-      delivery,
-      now
+      ownerId,
+      ownerPhone,
+      now,
+      enqueueOutbound
     });
 
     return "sent";
@@ -403,7 +405,7 @@ export async function dispatchDueReminders(
   const retryAfterMs =
     options.retryAfterMs ?? reminderDispatchDefaults.retryAfterMs;
   const supabase = options.supabase ?? createAdminClient();
-  const sendWhatsApp = options.sendWhatsApp ?? sendWhatsAppOwnerMessage;
+  const enqueueOutbound = options.enqueueOutbound ?? enqueueOutboundMessage;
   const result = emptyResult();
   const dueReminders = await listDueReminders(supabase, now, batchSize);
   result.scanned = dueReminders.length;
@@ -431,7 +433,7 @@ export async function dispatchDueReminders(
         },
         now,
         maxAttempts,
-        sendWhatsApp
+        enqueueOutbound
       });
 
       if (status === "sent") {

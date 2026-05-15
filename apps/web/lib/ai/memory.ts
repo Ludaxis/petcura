@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import {
+  aiPromptRegistry,
   contextRetrievalOutputSchema,
   memoryExtractionOutputSchema,
   replyDraftOutputSchema,
@@ -15,15 +16,20 @@ import {
   type SupportedLocale
 } from "@petcura/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  generateAccountedJson,
+  writeAccountedAiOutput,
+  type AiOutputSourceInput
+} from "./accountability";
 import { resolveReplyDraftSourceLocale } from "./draft-locale";
-import { generateJsonWithGateway } from "./gateway";
 
 const defaultAnthropicHaikuModel = "anthropic/claude-haiku-4.5";
 export const memoryExtractionPromptVersion =
-  "memory_extraction.v1.2026-05-12";
+  aiPromptRegistry.memoryExtraction.version;
 export const contextRetrievalPromptVersion =
-  "context_retrieval.v1.2026-05-12";
-export const replyDraftPromptVersion = "reply_draft.v1.2026-05-12";
+  aiPromptRegistry.contextRetrieval.version;
+export const replyDraftPromptVersion = aiPromptRegistry.replyDraft.version;
+const fallbackModel = "petcura/rules-fallback";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 type Json = Database["public"]["Tables"]["ai_outputs"]["Insert"]["input_json"];
@@ -93,6 +99,13 @@ function promptHash(value: unknown) {
     .update(JSON.stringify(value))
     .digest("hex")
     .slice(0, 24);
+}
+
+function messageSources(messages: MessageForAi[]): AiOutputSourceInput[] {
+  return messages.map((message) => ({
+    sourceType: "message",
+    sourceId: message.id
+  }));
 }
 
 function scopeIdsForRequest(request: RequestMemoryContext) {
@@ -225,34 +238,44 @@ export async function retrieveAcceptedMemoryContext({
         ? "Structured clinic-scoped request, pet, and owner memories selected by scope and recency."
         : "No accepted, unexpired memory matched this request."
   });
-  const { data: aiOutput, error: aiError } = await admin
-    .from("ai_outputs")
-    .insert({
-      clinic_id: request.clinic_id,
-      request_id: request.id,
-      kind: "context_retrieval",
-      model: "petcura/structured-retrieval",
-      prompt_version: contextRetrievalPromptVersion,
-      input_json: toJson({
-        task_kind: taskKind,
-        scopes
-      }),
-      output_json: toJson(output),
-      tokens_in: null,
-      tokens_out: null,
-      latency_ms: 0,
-      confidence: null,
-      accepted: null
-    })
-    .select("id")
-    .single();
-
-  if (aiError) {
-    throw new Error(`Could not log AI context retrieval: ${aiError.message}`);
-  }
+  const inputJson = toJson({
+    task_kind: taskKind,
+    scopes,
+    selected_memory_ids: items.map((item) => item.id)
+  });
+  const written = await writeAccountedAiOutput({
+    db: admin,
+    clinicId: request.clinic_id,
+    requestId: request.id,
+    kind: "context_retrieval",
+    status: "success",
+    model: "petcura/structured-retrieval",
+    promptKey: aiPromptRegistry.contextRetrieval.key,
+    promptVersion: contextRetrievalPromptVersion,
+    system: "Structured clinic-scoped memory retrieval.",
+    prompt: JSON.stringify(inputJson, null, 2),
+    inputJson,
+    outputJson: toJson(output),
+    tokensIn: null,
+    tokensOut: null,
+    latencyMs: 0,
+    confidence: null,
+    sources: [
+      ...items.map((item) => ({
+        sourceType: "ai_memory_item" as const,
+        sourceId: item.id
+      })),
+      ...items.flatMap((item) =>
+        item.sources.map((source) => ({
+          sourceType: source.sourceType,
+          sourceId: source.sourceId
+        }))
+      )
+    ]
+  });
 
   return {
-    aiOutputId: aiOutput.id,
+    aiOutputId: written.aiOutputId,
     output,
     items
   };
@@ -352,45 +375,46 @@ export async function createMemoryCandidatesFromOwnerMessage({
   }
 
   const model = getMemoryExtractionModel();
-  const gatewayResult = await generateJsonWithGateway({
+  const system =
+    "You are PetCura's veterinary clinic operations memory assistant. You extract reviewable staff context only. You never diagnose, prescribe, set final urgency, or create unsupported medical facts.";
+  const prompt = buildMemoryExtractionPrompt({ request, messages, sourceMessageId });
+  const accounted = await generateAccountedJson({
+    db: admin,
+    clinicId: request.clinic_id,
+    requestId: request.id,
+    kind: "memory_extraction",
+    promptKey: aiPromptRegistry.memoryExtraction.key,
+    promptVersion: memoryExtractionPromptVersion,
     model,
-    system:
-      "You are PetCura's veterinary clinic operations memory assistant. You extract reviewable staff context only. You never diagnose, prescribe, set final urgency, or create unsupported medical facts.",
-    prompt: buildMemoryExtractionPrompt({ request, messages, sourceMessageId }),
+    system,
+    prompt,
     schema: memoryExtractionOutputSchema,
-    timeoutMs: 8_000,
-    maxOutputTokens: 900
-  });
-  const output: MemoryExtractionOutput = gatewayResult.ok
-    ? gatewayResult.output
-    : { candidates: [], confidence: 0 };
-  const { data: aiOutput, error: aiError } = await admin
-    .from("ai_outputs")
-    .insert({
-      clinic_id: request.clinic_id,
-      request_id: request.id,
-      kind: "memory_extraction",
-      model: gatewayResult.ok ? gatewayResult.model : model,
+    inputJson: toJson({
+      source_message_id: sourceMessageId,
       prompt_version: memoryExtractionPromptVersion,
-      input_json: toJson({
-        source_message_id: sourceMessageId,
-        prompt_version: memoryExtractionPromptVersion,
-        fallback_reason: gatewayResult.ok ? null : gatewayResult.reason
-      }),
-      output_json: toJson(output),
-      tokens_in: gatewayResult.ok ? gatewayResult.tokensIn : null,
-      tokens_out: gatewayResult.ok ? gatewayResult.tokensOut : null,
-      latency_ms: gatewayResult.latencyMs,
-      confidence: output.confidence,
-      accepted: null
-    })
-    .select("id")
-    .single();
+      messages: messages.map((message) => ({
+        id: message.id,
+        sender_type: message.sender_type,
+        source_locale: message.source_locale,
+        body: message.body
+      }))
+    }),
+    sources: messageSources(messages),
+    timeoutMs: 8_000,
+    maxOutputTokens: 900,
+    fallback: {
+      output: { candidates: [], confidence: 0 },
+      model: fallbackModel
+    }
+  });
 
-  if (aiError) {
-    throw new Error(`Could not store AI memory extraction: ${aiError.message}`);
+  if (!accounted.ok) {
+    throw new Error(
+      `Could not generate accountable AI memory extraction: ${accounted.reason}`
+    );
   }
 
+  const output: MemoryExtractionOutput = accounted.output;
   const allowedCandidates = output.candidates
     .filter((candidate) => isAllowedCandidateScope(request, candidate))
     .map((candidate) => ({
@@ -413,7 +437,7 @@ export async function createMemoryCandidatesFromOwnerMessage({
       source_locale: candidate.sourceLocale ?? null,
       status: "candidate",
       confidence: candidate.confidence,
-      source_ai_output_id: aiOutput.id,
+      source_ai_output_id: accounted.aiOutputId,
       expires_at: candidate.expiresAt ?? null
     };
     const { data: memory, error: memoryError } = await admin
@@ -449,7 +473,7 @@ export async function createMemoryCandidatesFromOwnerMessage({
     actor_id: null,
     event_type: "ai_memory_candidates_created",
     payload_json: {
-      ai_output_id: aiOutput.id,
+      ai_output_id: accounted.aiOutputId,
       source_message_id: sourceMessageId,
       candidate_count: inserted
     }
@@ -459,7 +483,7 @@ export async function createMemoryCandidatesFromOwnerMessage({
     throw new Error(`Could not write AI memory event: ${eventError.message}`);
   }
 
-  return { aiOutputId: aiOutput.id, candidates: inserted, skipped: false };
+  return { aiOutputId: accounted.aiOutputId, candidates: inserted, skipped: false };
 }
 
 function buildReplyDraftPrompt({
@@ -547,22 +571,61 @@ export async function generateReplyDraftForRequest({
   const targetLocale = normalizeLocale(
     locale ?? request.owners?.preferred_language ?? request.clinics?.locale
   );
-  const gatewayResult = await generateJsonWithGateway({
+  const system =
+    "You are PetCura's veterinary clinic operations assistant. You draft staff-reviewed replies only. You never diagnose, prescribe, set final urgency, or send messages.";
+  const prompt = buildReplyDraftPrompt({
+    request,
+    messages,
+    memoryItems: context.items,
+    targetLocale
+  });
+  const accounted = await generateAccountedJson({
+    db: admin,
+    clinicId,
+    requestId,
+    kind: "reply_draft",
+    promptKey: aiPromptRegistry.replyDraft.key,
+    promptVersion: replyDraftPromptVersion,
     model,
-    system:
-      "You are PetCura's veterinary clinic operations assistant. You draft staff-reviewed replies only. You never diagnose, prescribe, set final urgency, or send messages.",
-    prompt: buildReplyDraftPrompt({
-      request,
-      messages,
-      memoryItems: context.items,
-      targetLocale
-    }),
+    system,
+    prompt,
     schema: replyDraftOutputSchema,
+    inputJson: toJson({
+      prompt_version: replyDraftPromptVersion,
+      source_locale: sourceLocale,
+      target_locale: targetLocale,
+      context_retrieval_ai_output_id: context.aiOutputId,
+      memory_ids: context.items.map((item) => item.id),
+      messages: messages.map((message) => ({
+        id: message.id,
+        sender_type: message.sender_type,
+        source_locale: message.source_locale,
+        body: message.body
+      }))
+    }),
+    sources: [
+      ...messageSources(messages),
+      {
+        sourceType: "ai_output",
+        sourceId: context.aiOutputId,
+        sourceLabel: "context_retrieval"
+      },
+      ...context.items.map((item) => ({
+        sourceType: "ai_memory_item" as const,
+        sourceId: item.id
+      }))
+    ],
+    transformOutput: (output) => ({
+      ...output,
+      usedMemoryIds: output.usedMemoryIds.filter((id) =>
+        context.items.some((item) => item.id === id)
+      )
+    }),
     timeoutMs: 10_000,
     maxOutputTokens: 900
   });
 
-  if (!gatewayResult.ok) {
+  if (!accounted.ok) {
     const { error: eventError } = await admin.from("request_events").insert({
       clinic_id: clinicId,
       request_id: requestId,
@@ -570,7 +633,9 @@ export async function generateReplyDraftForRequest({
       actor_id: null,
       event_type: "ai_draft_generation_failed",
       payload_json: {
-        reason: gatewayResult.reason,
+        ai_output_id: accounted.aiOutputId,
+        reason: accounted.reason,
+        status: accounted.status,
         context_retrieval_ai_output_id: context.aiOutputId
       }
     });
@@ -578,44 +643,10 @@ export async function generateReplyDraftForRequest({
     if (eventError) {
       return { ok: false as const, error: eventError.message };
     }
-    return { ok: false as const, error: gatewayResult.reason };
+    return { ok: false as const, error: accounted.reason };
   }
 
-  const output: ReplyDraftOutput = {
-    ...gatewayResult.output,
-    usedMemoryIds: gatewayResult.output.usedMemoryIds.filter((id) =>
-      context.items.some((item) => item.id === id)
-    )
-  };
-  const { data: aiOutput, error: aiError } = await admin
-    .from("ai_outputs")
-    .insert({
-      clinic_id: clinicId,
-      request_id: requestId,
-      kind: "reply_draft",
-      model: gatewayResult.model,
-      prompt_version: replyDraftPromptVersion,
-      input_json: toJson({
-        prompt_version: replyDraftPromptVersion,
-        source_locale: sourceLocale,
-        target_locale: targetLocale,
-        context_retrieval_ai_output_id: context.aiOutputId,
-        memory_ids: context.items.map((item) => item.id)
-      }),
-      output_json: toJson(output),
-      tokens_in: gatewayResult.tokensIn,
-      tokens_out: gatewayResult.tokensOut,
-      latency_ms: gatewayResult.latencyMs,
-      confidence: output.confidence,
-      accepted: null
-    })
-    .select("id")
-    .single();
-
-  if (aiError) {
-    return { ok: false as const, error: aiError.message };
-  }
-
+  const output: ReplyDraftOutput = accounted.output;
   const { error: eventError } = await admin.from("request_events").insert({
     clinic_id: clinicId,
     request_id: requestId,
@@ -623,7 +654,7 @@ export async function generateReplyDraftForRequest({
     actor_id: null,
     event_type: "ai_draft_generated",
     payload_json: {
-      ai_output_id: aiOutput.id,
+      ai_output_id: accounted.aiOutputId,
       prompt_version: replyDraftPromptVersion,
       source_locale: sourceLocale,
       target_locale: targetLocale,
@@ -636,7 +667,7 @@ export async function generateReplyDraftForRequest({
     return { ok: false as const, error: eventError.message };
   }
 
-  return { ok: true as const, aiOutputId: aiOutput.id };
+  return { ok: true as const, aiOutputId: accounted.aiOutputId };
 }
 
 export async function loadRequestMemoryContext(

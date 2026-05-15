@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SIDEBAR_NAV,
   activeStreamId,
+  canShowNavItem,
   type NavItem
 } from "./sidebar-nav";
 
@@ -45,6 +46,43 @@ describe("sidebar-nav", () => {
     const directory = SIDEBAR_NAV.find((item) => item.id === "directory");
     expect(directory?.href).toBe("/directory");
     expect(directory?.labelKey).toBe("nav.directory");
+  });
+
+  it("gates staff surfaces by clinic permissions", () => {
+    const directory = SIDEBAR_NAV.find((item) => item.id === "directory")!;
+    const settings = SIDEBAR_NAV.find((item) => item.id === "settings")!;
+    const admin = SIDEBAR_NAV.find((item) => item.id === "admin")!;
+
+    expect(
+      canShowNavItem(directory, {
+        isSuperAdmin: false,
+        permissions: ["customers:view"]
+      })
+    ).toBe(true);
+    expect(
+      canShowNavItem(directory, {
+        isSuperAdmin: false,
+        permissions: ["requests:view"]
+      })
+    ).toBe(false);
+    expect(
+      canShowNavItem(settings, {
+        isSuperAdmin: false,
+        permissions: ["settings:view"]
+      })
+    ).toBe(true);
+    expect(
+      canShowNavItem(admin, {
+        isSuperAdmin: false,
+        permissions: ["settings:view"]
+      })
+    ).toBe(false);
+    expect(
+      canShowNavItem(admin, {
+        isSuperAdmin: true,
+        permissions: []
+      })
+    ).toBe(true);
   });
 
   it("activeStreamId maps every InboxStream value to a child id", () => {

@@ -15,8 +15,16 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "npm run test:e2e -w @petcura/web",
+    "test:e2e:smoke": "npm run test:e2e:smoke -w @petcura/web",
+    "test:e2e:db": "npm run test:e2e:db -w @petcura/web",
+    "test:e2e:live": "npm run test:e2e:live -w @petcura/web",
     "test:visual": "npm run test:visual -w @petcura/web",
-    "test:ai": "npm run test:ai -w @petcura/ai"
+    "test:a11y": "npm run test:a11y -w @petcura/web",
+    "test:ai": "npm run test:ai -w @petcura/ai",
+    "test:rls": "supabase test db --local",
+    "test:rls:linked": "supabase test db --linked",
+    "db:lint": "supabase db lint --local --schema public,private --fail-on error",
+    "db:lint:linked": "supabase db lint --linked --schema public,private --fail-on error"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

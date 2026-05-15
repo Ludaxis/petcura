@@ -16,8 +16,11 @@
 
 - Tenant-owned data includes `clinic_id`.
 - RLS/security changes have tests.
+- Supabase RLS tests are included in CI or explicitly called out with a blocker.
 - Webhook or background-job changes are idempotent.
+- Webhook changes have signed fixture coverage for valid, duplicate, and unknown-provider callbacks.
 - No secrets, credentials, or real PII are committed.
+- `/health` still returns readiness without leaking secret values.
 
 ## AI Safety
 
@@ -36,4 +39,5 @@
 
 - Relevant commands were run.
 - Failures are explained.
+- CI lanes affected by the change are listed: app, RLS, smoke, live, visual, accessibility, AI.
 - Risk and rollback notes are included.

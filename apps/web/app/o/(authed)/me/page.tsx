@@ -12,7 +12,14 @@ import { getRequestLocale } from "@/lib/locale";
 import { requireOwnerContext } from "@/lib/owner/auth";
 import { toOwnerProfile } from "@/lib/owner/data";
 import { createOwnerTranslator } from "@/lib/owner/i18n";
+import { getSignedProfileImageUrl } from "@/lib/profile-media";
 import { localeOptions } from "@petcura/shared";
+import {
+  ProfileEditorCard,
+  ProfileField,
+  profileInputClass
+} from "@/app/_components/profile/ProfileEditor";
+import { updateOwnerSelfProfile } from "../actions";
 import { signOutOwner } from "../../login/actions";
 
 export default async function MePage() {
@@ -20,6 +27,7 @@ export default async function MePage() {
   const context = await requireOwnerContext(locale, "/o/me");
   const t = createOwnerTranslator(locale);
   const owner = toOwnerProfile(context);
+  const ownerPhotoUrl = await getSignedProfileImageUrl(context.owner.photo_url);
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pt-10">
@@ -27,37 +35,62 @@ export default async function MePage() {
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">{t("me.title")}</h1>
       </header>
 
-      <section
-        aria-labelledby="profile-heading"
-        className="rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--paper)] p-5"
+      <ProfileEditorCard
+        action={updateOwnerSelfProfile}
+        description={<span>{t("me.profile.help")}</span>}
+        hiddenFields={<input name="lang" type="hidden" value={locale} />}
+        imageLabel={t("me.profile.photo")}
+        imageUrl={ownerPhotoUrl}
+        name={owner.name}
+        submitLabel={t("me.profile.save")}
+        title={t("me.profile.title")}
       >
-        <h2 id="profile-heading" className="mb-4 text-sm font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
-          {t("me.profile.title")}
-        </h2>
-        <dl className="flex flex-col gap-3 text-sm">
-          <ProfileRow label={t("me.profile.name")} value={owner.name} />
-          <ProfileRow label={t("me.profile.email")} value={owner.email ?? "—"} />
-          <ProfileRow label={t("me.profile.phone")} value={owner.phone} />
-          <div className="flex items-center justify-between border-t border-[var(--line)] pt-3">
-            <dt className="text-[var(--muted)]">{t("me.profile.language")}</dt>
-            <dd className="flex gap-1">
-              {localeOptions.map((opt) => (
-                <span
-                  key={opt.value}
-                  className={cn(
-                    "rounded-[var(--radius)] px-2.5 py-1 text-xs font-semibold",
-                    opt.value === owner.preferredLanguage
-                      ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
-                      : "bg-[var(--soft)] text-[var(--muted)]"
-                  )}
-                >
-                  {opt.shortLabel}
-                </span>
-              ))}
-            </dd>
-          </div>
-        </dl>
-      </section>
+        <ProfileField htmlFor="owner-self-name" label={t("me.profile.name")}>
+          <input
+            className={profileInputClass}
+            defaultValue={owner.name}
+            id="owner-self-name"
+            name="name"
+            required
+          />
+        </ProfileField>
+        <ProfileField htmlFor="owner-self-email" label={t("me.profile.email")}>
+          <input
+            className={profileInputClass}
+            defaultValue={owner.email ?? ""}
+            id="owner-self-email"
+            name="email"
+            type="email"
+          />
+        </ProfileField>
+        <ProfileField htmlFor="owner-self-phone" label={t("me.profile.phone")}>
+          <input
+            className={profileInputClass}
+            defaultValue={owner.phone}
+            disabled
+            id="owner-self-phone"
+            name="phone"
+            type="tel"
+          />
+        </ProfileField>
+        <ProfileField
+          htmlFor="owner-self-language"
+          label={t("me.profile.language")}
+        >
+          <select
+            className={profileInputClass}
+            defaultValue={owner.preferredLanguage}
+            id="owner-self-language"
+            name="preferredLanguage"
+          >
+            {localeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </ProfileField>
+      </ProfileEditorCard>
 
       <section
         aria-labelledby="notify-heading"
@@ -112,15 +145,6 @@ export default async function MePage() {
           {t("me.signout")}
         </Button>
       </form>
-    </div>
-  );
-}
-
-function ProfileRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-[var(--muted)]">{label}</dt>
-      <dd className="truncate text-right font-medium text-[var(--ink)]">{value}</dd>
     </div>
   );
 }

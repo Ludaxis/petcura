@@ -19,8 +19,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 function customersRedirect(
   locale: SupportedLocale,
   params: Record<string, string>,
-  ownerId?: string
+  ownerId?: string,
+  returnTo?: string
 ): never {
+  if (
+    returnTo &&
+    (returnTo.startsWith("/customers/") || returnTo.startsWith("/directory"))
+  ) {
+    const searchParams = new URLSearchParams({ lang: locale, ...params });
+    redirect(`${returnTo}?${searchParams.toString()}`);
+  }
+
   // Remap legacy customers_* keys onto the unified directory_* keys so the
   // new /directory route renders the same status/error surface.
   const directoryParams: Record<string, string> = {};
@@ -61,11 +70,12 @@ function nullable(value: string | undefined) {
 
 export async function updateCustomerProfile(formData: FormData) {
   const locale = normalizeLocale(formData.get("lang"));
+  const returnTo = getString(formData, "returnTo");
   const staffContext = await requireStaffContext(locale, "/customers");
   const actorRole = staffContext.membership.role as StaffRole;
 
   if (!hasClinicPermission(actorRole, "customers:manage")) {
-    customersRedirect(locale, { customers_error: "forbidden" });
+    customersRedirect(locale, { customers_error: "forbidden" }, undefined, returnTo);
   }
 
   const parsed = ownerProfileSchema.safeParse({
@@ -78,7 +88,7 @@ export async function updateCustomerProfile(formData: FormData) {
   });
 
   if (!parsed.success) {
-    customersRedirect(locale, { customers_error: "invalid_profile" });
+    customersRedirect(locale, { customers_error: "invalid_profile" }, undefined, returnTo);
   }
 
   const admin = createAdminClient();
@@ -90,7 +100,7 @@ export async function updateCustomerProfile(formData: FormData) {
     .maybeSingle();
 
   if (ownerError || !owner) {
-    customersRedirect(locale, { customers_error: "not_found" });
+    customersRedirect(locale, { customers_error: "not_found" }, undefined, returnTo);
   }
 
   const photo = getPhoto(formData);
@@ -105,7 +115,7 @@ export async function updateCustomerProfile(formData: FormData) {
         file: photo
       });
     } catch {
-      customersRedirect(locale, { customers_error: "photo_upload_failed" });
+      customersRedirect(locale, { customers_error: "photo_upload_failed" }, owner.id, returnTo);
     }
   }
 
@@ -123,7 +133,7 @@ export async function updateCustomerProfile(formData: FormData) {
     .eq("id", owner.id);
 
   if (error) {
-    customersRedirect(locale, { customers_error: "profile_update_failed" });
+    customersRedirect(locale, { customers_error: "profile_update_failed" }, owner.id, returnTo);
   }
 
   await admin.from("audit_logs").insert({
@@ -141,6 +151,7 @@ export async function updateCustomerProfile(formData: FormData) {
   });
 
   revalidatePath("/customers");
+  revalidatePath(`/customers/${owner.id}`);
   revalidatePath("/directory");
-  customersRedirect(locale, { customers_status: "saved" }, owner.id);
+  customersRedirect(locale, { customers_status: "saved" }, owner.id, returnTo);
 }

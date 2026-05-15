@@ -9,6 +9,7 @@ import { cn, ShimmerPill } from "@petcura/ui";
 import {
   createTranslator,
   withLocale,
+  type ClinicPermission,
   type SupportedLocale
 } from "@petcura/shared";
 import {
@@ -32,7 +33,8 @@ import {
   type NavCountSource,
   type NavCounts,
   type NavItem,
-  activeStreamId
+  activeStreamId,
+  canShowNavItem
 } from "@/lib/nav/sidebar-nav";
 import type { InboxStream } from "@/lib/inbox/queries";
 
@@ -68,6 +70,7 @@ export type AppSidebarProps = {
    * (notably the Admin row). When false, those entries are filtered out.
    */
   isSuperAdmin?: boolean;
+  permissions?: readonly ClinicPermission[];
   signOutAction: (formData: FormData) => void | Promise<void>;
   labels: AppSidebarLabels;
 };
@@ -214,6 +217,7 @@ export function AppSidebar({
   countsPromise,
   inboxStream,
   isSuperAdmin = false,
+  permissions = [],
   signOutAction,
   labels
 }: AppSidebarProps) {
@@ -275,6 +279,9 @@ export function AppSidebar({
   const renderTopLevel = (item: NavItem) => {
     const Icon = item.icon;
     const active = isActive(item);
+    const visibleChildren = item.children?.filter((child) =>
+      canShowNavItem(child, { isSuperAdmin, permissions })
+    );
 
     if (item.id === "search") {
       return (
@@ -299,9 +306,9 @@ export function AppSidebar({
       );
     }
 
-    const childrenJsx = item.children?.length ? (
+    const childrenJsx = visibleChildren?.length ? (
       <SidebarMenuSub>
-        {item.children.map((child) => {
+        {visibleChildren.map((child) => {
           const childActive = isActive(child, item);
           return (
             <SidebarMenuSubItem key={child.id}>
@@ -368,7 +375,7 @@ export function AppSidebar({
             data-nav-button="true"
             href={localizedHref(item.href, locale)}
             aria-current={
-              active && !item.children?.length ? "page" : undefined
+              active && !visibleChildren?.length ? "page" : undefined
             }
             // Shared View Transition name on the active top-level row so
             // route changes between siblings morph a single highlight
@@ -450,11 +457,9 @@ export function AppSidebar({
 
         <SidebarMenu className="px-1">
           {SIDEBAR_NAV.slice(1)
-            .filter((item) => {
-              if (!item.requires || item.requires === "staff") return true;
-              if (item.requires === "super_admin") return isSuperAdmin;
-              return false;
-            })
+            .filter((item) =>
+              canShowNavItem(item, { isSuperAdmin, permissions })
+            )
             .map(renderTopLevel)}
         </SidebarMenu>
       </SidebarContent>

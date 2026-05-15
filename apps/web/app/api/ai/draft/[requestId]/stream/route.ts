@@ -1,52 +1,9 @@
 /**
- * AI Draft SSE Stream — STUB
+ * AI Draft SSE Stream
  *
- * Contract (documented in /docs/contracts/ai-draft-stream.md):
- *
- *   GET /api/ai/draft/:requestId/stream?lang=<en|et|ru>
- *
- *   Response headers:
- *     Content-Type:  text/event-stream; charset=utf-8
- *     Cache-Control: no-store
- *     Connection:    keep-alive
- *     X-Accel-Buffering: no
- *
- *   Wire format (one SSE event per token, then a terminal `done` event):
- *
- *     data: <token-chunk>\n\n
- *     ...
- *     event: done
- *     data: {"draftId":"<uuid>","confidence":0.78}
- *
- *   Abort semantics:
- *     If the client closes the connection (`request.signal.aborted`) the
- *     stream stops emitting and closes the controller immediately. No
- *     side effects fire after abort.
- *
- *   Auth:
- *     401 if no authenticated Supabase user. Once Codex wires the real
- *     thing it must additionally scope by clinic_id from clinic_staff
- *     membership (RLS enforced).
- *
- * What this stub does NOT do:
- *   - Call an LLM
- *   - Read or write the database
- *   - Persist anything to `ai_outputs`
- *   - Verify the requestId belongs to the caller's clinic
- *
- * It exists so the client-side consumer (useAiDraftStream + AiDraftCard)
- * can be built, tested, and shipped while the real backend contract is
- * finalized.
- *
- * Where the real version lives:
- *   This same path. The route file stays here; Codex replaces the body
- *   with an actual provider-routed LLM call and ai_outputs persistence.
- *   The SSE event shape above must NOT change — clients are already wired
- *   to it.
- *
- * HANDOFF: Codex owns the real implementation. Replace the body with the
- * actual streaming LLM call + ai_outputs INSERT. The SSE event shape must
- * stay identical.
+ * This route streams the exact text already persisted in ai_outputs for a
+ * specific draft ID. Provider calls and ai_outputs writes happen before this
+ * route is opened, so aborting the stream never leaves a partial AI row.
  */
 
 import "server-only";
@@ -59,15 +16,23 @@ export const runtime = "nodejs";
 
 type Locale = "en" | "et" | "ru";
 
-const FILLER_BY_LOCALE: Record<Locale, string> = {
-  en: "Hi! Thanks for reaching out about your pet. We can fit you in tomorrow morning at 9:30 — does that work? If anything changes before then, please send us a quick update so we can adjust the schedule.",
-  et: "Tere! Aitäh kirjutamast oma lemmiklooma kohta. Saame teid vastu võtta homme hommikul kell 9.30 — kas see sobib? Kui midagi muutub, andke palun teada, et saaksime aja ümber tõsta.",
-  ru: "Здравствуйте! Спасибо, что написали о вашем питомце. Мы можем принять вас завтра утром в 9:30 — подойдёт? Если что-то изменится, дайте нам знать, чтобы мы скорректировали расписание."
-};
-
 function parseLocale(raw: string | null): Locale {
   if (raw === "et" || raw === "ru") return raw;
   return "en";
+}
+
+function isUuid(value: string | null): value is string {
+  return Boolean(
+    value?.match(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    )
+  );
+}
+
+function pickDraftText(value: unknown) {
+  if (!value || typeof value !== "object") return "";
+  const text = (value as Record<string, unknown>).text;
+  return typeof text === "string" ? text.trim() : "";
 }
 
 /** Split text into ~3–8 character "token" chunks, preserving UTF-8 grapheme
@@ -90,17 +55,6 @@ function tokenize(text: string): string[] {
     i += size;
   }
   return out;
-}
-
-/** Stable-ish UUID-v4 without pulling a dependency. */
-function pseudoUuid(): string {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  // RFC 4122 v4
-  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
-  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 function sseHeaders(): HeadersInit {
@@ -134,7 +88,7 @@ export async function GET(
   }
 
   const { requestId } = await context.params;
-  if (!requestId || typeof requestId !== "string") {
+  if (!isUuid(requestId)) {
     return new Response(JSON.stringify({ error: "invalid_request_id" }), {
       status: 400,
       headers: { "Content-Type": "application/json" }
@@ -142,9 +96,41 @@ export async function GET(
   }
 
   const url = new URL(request.url);
-  const locale = parseLocale(url.searchParams.get("lang"));
-  const tokens = tokenize(FILLER_BY_LOCALE[locale]);
-  const draftId = pseudoUuid();
+  parseLocale(url.searchParams.get("lang"));
+  const draftId = url.searchParams.get("draftId");
+  if (!isUuid(draftId)) {
+    return new Response(JSON.stringify({ error: "draft_stream_requires_draft_id" }), {
+      status: 409,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const { data: draft, error: draftError } = await supabase
+    .from("ai_outputs")
+    .select("id, output_json, confidence")
+    .eq("id", draftId)
+    .eq("request_id", requestId)
+    .eq("kind", "reply_draft")
+    .in("status", ["success", "fallback"])
+    .is("accepted", null)
+    .maybeSingle();
+
+  if (draftError) {
+    return new Response(JSON.stringify({ error: "draft_load_failed" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const draftText = pickDraftText(draft?.output_json);
+  if (!draft || draftText.length === 0) {
+    return new Response(JSON.stringify({ error: "draft_not_found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const tokens = tokenize(draftText);
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -183,7 +169,10 @@ export async function GET(
 
         // Terminal event. Clients listen for `event: done` to flip into the
         // "stream complete" state and reveal action buttons.
-        const donePayload = JSON.stringify({ draftId, confidence: 0.78 });
+        const donePayload = JSON.stringify({
+          draftId: draft.id,
+          confidence: draft.confidence
+        });
         controller.enqueue(
           encoder.encode(`event: done\ndata: ${donePayload}\n\n`)
         );

@@ -6,11 +6,11 @@ Default rule: owners cannot modify clinic-owned medical data. Every owner-writea
 
 | Table | Field | Owner write |
 |---|---|---|
-| `owners` | `name` | Set only while empty |
+| `owners` | `name` | Yes |
 | `owners` | `email` | Yes |
 | `owners` | `preferred_language` | EN/ET/RU only |
 | `owners` | `photo_url` | Yes |
-| `owners` | `gdpr_consent_at` | Set only, never clear |
+| `owners` | `gdpr_consent_at` | No self-service write in this slice |
 | `pets` | `photo_url` | Yes |
 | `pets` | `owner_notes` | Yes |
 | `pets` | `weight_kg` | No direct write; synchronized from `pet_weight_entries` |
@@ -40,33 +40,46 @@ Trigger keeps `pets.weight_kg` synced to the most-recent entry by `(measured_at,
 
 ## Audit
 
-Successful owner writes call `private.record_owner_profile_write(table_name, field, before, after)`.
+Successful owner writes must write `audit_logs` with the owner auth user as
+`actor_id` and the edited record as `entity_id`.
 
-- Open request exists → audit goes to `request_events(event_type='owner_profile_update')` with non-null `request_id`.
-- No open request → audit goes to `audit_logs`.
+Implemented v1 audit actions:
 
-Server actions must validate the same allowlist before issuing writes; database triggers are the final guardrail.
+- `owner_profile_self_updated` for `/o/me`
+- `owner_pet_self_updated` for `/o/pets/[petId]`
+- `owner_web_request_created` for `/o/chat/new`
+
+Server actions validate the same allowlist before issuing writes. In the
+current pilot implementation, owner profile/pet updates use an admin server
+client after `requireOwnerContext()` verifies ownership and clinic scope. The
+database also enforces the owner-session boundary with RLS update policies and
+write-guard triggers from
+`supabase/migrations/20260515144757_owner_self_service_write_policies.sql`.
+`pet_weight_entries` has owner insert RLS and remains the durable weight
+provenance table.
 
 ## Server Actions
 
-- `updateOwnerProfile({ name?, email?, preferred_language?, photo_url? })`
-- `updatePetPhoto(pet_id, file)`
-- `addPetWeightEntry(pet_id, weight_kg, measured_at)`
-- `setOwnerNotesOnPet(pet_id, owner_notes)`
+- `updateOwnerSelfProfile(formData)` updates owner name, email, preferred language, and photo.
+- `updateOwnerPetSelfService(formData)` updates pet photo, owner notes, and optional weight entry.
+- `startOwnerRequest(formData)` creates a new owner request + first message from `/o/chat/new`.
 
-All run with owner's Supabase session; RLS enforces row scope; server action additionally validates allowlist + writes audit in a single transaction.
+All actions resolve the owner by session, reject cross-owner pet/request ids,
+validate whitelisted fields, and write audit.
 
 ## UX acceptance
 
-- Editable fields show a small Edit affordance.
+- Editable fields show a clear profile editor affordance.
 - Non-editable medical fields are read-only with no edit control (not even disabled).
 - Photos route through existing `lib/profile-media.ts` for sizing + EXIF stripping.
-- Success: localized toast with optimistic update.
-- Failure: inline field-level error.
+- Success: server redirect back to the edited surface with localized page state.
+- Failure: server redirect or thrown route error depending on severity; field-level errors remain a follow-up polish item.
 
 ## Test plan
 
-- Field allowlist enforcement (forbidden writes return 403).
+- Field allowlist enforcement at server action and RLS/trigger layers
+  (`owner_forbidden_field_update` / `pet_forbidden_field_update` for forbidden
+  direct SQL writes).
 - Concurrent updates: staff edit beats owner edit on conflicting fields.
 - Every successful change writes an audit row.
 - Isolation: owner A cannot write to owner B's rows.
@@ -79,6 +92,7 @@ All run with owner's Supabase session; RLS enforces row scope; server action add
 
 ## Done when
 
-- Allowlist enforced by both RLS and server actions.
+- Allowlist enforced by server actions plus owner-specific RLS update policies
+  and triggers for `owners` and `pets`.
 - Every owner write produces an audit event.
 - UI shows edit controls only for whitelisted fields.

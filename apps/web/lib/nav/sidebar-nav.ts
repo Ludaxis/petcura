@@ -16,7 +16,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { CopyKey } from "@petcura/shared";
+import type { ClinicPermission, CopyKey } from "@petcura/shared";
 import type { InboxStream } from "@/lib/inbox/queries";
 
 /**
@@ -43,6 +43,7 @@ export type NavCountSource =
 export type NavBadgeTone = "neutral" | "primary" | "amber" | "red";
 
 export type NavRequirement = "staff" | "super_admin";
+export type NavPermissionMode = "all" | "any";
 
 export type NavItem = {
   /** Stable id used as key and for active-state matching. */
@@ -63,6 +64,9 @@ export type NavItem = {
   badgeTone?: NavBadgeTone;
   /** Gate visibility by role. Resolved at render time by the AppSidebar. */
   requires?: NavRequirement;
+  /** Gate visibility by clinic permissions. Defaults to requiring all. */
+  requiredPermissions?: readonly ClinicPermission[];
+  requiredPermissionMode?: NavPermissionMode;
   /** Optional sub-items, rendered indented under the parent row. */
   children?: NavItem[];
 };
@@ -128,6 +132,7 @@ export const SIDEBAR_NAV: NavItem[] = [
     href: "/inbox",
     icon: Inbox,
     countSource: "inboxTotal",
+    requiredPermissions: ["requests:view"],
     children: INBOX_CHILDREN
   },
   // Directory owns owner and pet records. The Customers/Pets friendly routes
@@ -137,14 +142,17 @@ export const SIDEBAR_NAV: NavItem[] = [
     id: "directory",
     labelKey: "nav.directory",
     href: "/directory",
-    icon: FolderOpen
+    icon: FolderOpen,
+    requiredPermissions: ["customers:view", "pets:view"],
+    requiredPermissionMode: "any"
   },
   {
     id: "reminders",
     labelKey: "nav.reminders",
     href: "/reminders",
     icon: Bell,
-    countSource: "remindersTotal"
+    countSource: "remindersTotal",
+    requiredPermissions: ["reminders:view"]
   },
   {
     id: "reports",
@@ -156,7 +164,8 @@ export const SIDEBAR_NAV: NavItem[] = [
     id: "settings",
     labelKey: "nav.settings",
     href: "/settings",
-    icon: Settings
+    icon: Settings,
+    requiredPermissions: ["settings:view"]
   },
   // /profile is intentionally NOT a top-level nav row. Staff reach it through
   // the identity card (UserMenu in the rail, MobileMeSheet on mobile) — that
@@ -195,6 +204,23 @@ export function activeStreamId(stream: InboxStream): string {
     default:
       return "stream-all";
   }
+}
+
+export function canShowNavItem(
+  item: NavItem,
+  options: {
+    isSuperAdmin: boolean;
+    permissions: readonly ClinicPermission[];
+  }
+) {
+  if (item.requires === "super_admin" && !options.isSuperAdmin) return false;
+
+  const required = item.requiredPermissions ?? [];
+  if (required.length === 0) return true;
+
+  return item.requiredPermissionMode === "any"
+    ? required.some((permission) => options.permissions.includes(permission))
+    : required.every((permission) => options.permissions.includes(permission));
 }
 
 // Re-export icons that AppSidebar uses inline (for the bottom identity card,

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { z } from "zod";
+import type { AiOutputStatus } from "@petcura/ai";
 
 const gatewayUrl = "https://ai-gateway.vercel.sh/v1/responses";
 const anthropicUrl = "https://api.anthropic.com/v1/messages";
@@ -23,9 +24,13 @@ export type GatewayJsonResult<T> =
     }
   | {
       ok: false;
+      status: Extract<AiOutputStatus, "schema_failure" | "provider_error">;
       reason: string;
       model: string;
       latencyMs: number;
+      tokensIn?: number | null;
+      tokensOut?: number | null;
+      rawText?: string;
     };
 
 type AiCredentialName =
@@ -168,8 +173,8 @@ export async function generateJsonWithGateway<T>({
   system: string;
   prompt: string;
   schema: z.ZodType<T>;
-  timeoutMs?: number;
-  maxOutputTokens?: number;
+  timeoutMs?: number | undefined;
+  maxOutputTokens?: number | undefined;
 }): Promise<GatewayJsonResult<T>> {
   const token = getAiGatewayToken();
   const anthropicApiKey = getAnthropicApiKey();
@@ -178,6 +183,7 @@ export async function generateJsonWithGateway<T>({
   if (!anthropicApiKey && !token) {
     return {
       ok: false,
+      status: "provider_error",
       reason: "ai_provider_not_configured",
       model,
       latencyMs: 0
@@ -213,6 +219,7 @@ export async function generateJsonWithGateway<T>({
       if (!response.ok) {
         return {
           ok: false,
+          status: "provider_error",
           reason: `anthropic_${response.status}`,
           model: anthropicModel,
           latencyMs
@@ -221,18 +228,38 @@ export async function generateJsonWithGateway<T>({
 
       const payload = await response.json();
       const rawText = extractResponseText(payload);
-      const parsed = schema.safeParse(parseJsonText(rawText));
+      const usage = extractUsage(payload);
+      let parsedJson: unknown;
+
+      try {
+        parsedJson = parseJsonText(rawText);
+      } catch (error) {
+        return {
+          ok: false,
+          status: "schema_failure",
+          reason: error instanceof Error ? error.message : "invalid_json_model_output",
+          model: anthropicModel,
+          latencyMs,
+          tokensIn: usage.tokensIn,
+          tokensOut: usage.tokensOut,
+          rawText
+        };
+      }
+
+      const parsed = schema.safeParse(parsedJson);
 
       if (!parsed.success) {
         return {
           ok: false,
+          status: "schema_failure",
           reason: schemaFailureReason(parsed.error),
           model: anthropicModel,
-          latencyMs
+          latencyMs,
+          tokensIn: usage.tokensIn,
+          tokensOut: usage.tokensOut,
+          rawText
         };
       }
-
-      const usage = extractUsage(payload);
 
       return {
         ok: true,
@@ -275,6 +302,7 @@ export async function generateJsonWithGateway<T>({
     if (!response.ok) {
       return {
         ok: false,
+        status: "provider_error",
         reason: `gateway_${response.status}`,
         model,
         latencyMs
@@ -283,18 +311,38 @@ export async function generateJsonWithGateway<T>({
 
     const payload = await response.json();
     const rawText = extractResponseText(payload);
-    const parsed = schema.safeParse(parseJsonText(rawText));
+    const usage = extractUsage(payload);
+    let parsedJson: unknown;
+
+    try {
+      parsedJson = parseJsonText(rawText);
+    } catch (error) {
+      return {
+        ok: false,
+        status: "schema_failure",
+        reason: error instanceof Error ? error.message : "invalid_json_model_output",
+        model,
+        latencyMs,
+        tokensIn: usage.tokensIn,
+        tokensOut: usage.tokensOut,
+        rawText
+      };
+    }
+
+    const parsed = schema.safeParse(parsedJson);
 
     if (!parsed.success) {
       return {
         ok: false,
+        status: "schema_failure",
         reason: schemaFailureReason(parsed.error),
         model,
-        latencyMs
+        latencyMs,
+        tokensIn: usage.tokensIn,
+        tokensOut: usage.tokensOut,
+        rawText
       };
     }
-
-    const usage = extractUsage(payload);
 
     return {
       ok: true,
@@ -308,6 +356,7 @@ export async function generateJsonWithGateway<T>({
   } catch (error) {
     return {
       ok: false,
+      status: "provider_error",
       reason: error instanceof Error ? error.message : "gateway_error",
       model,
       latencyMs: Date.now() - startedAt

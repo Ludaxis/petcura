@@ -28,12 +28,32 @@ type IntakeClinic = Awaited<ReturnType<typeof getClinicBySlug>>;
 type AdminClient = ReturnType<typeof createAdminClient>;
 type RequestEventInsert =
   Database["public"]["Tables"]["request_events"]["Insert"];
+type AttachmentInsert = Database["public"]["Tables"]["attachments"]["Insert"];
+
+type TwilioMediaIngestionJobInsert = {
+  attachment_id: string;
+  clinic_id: string;
+  provider_url: string;
+  provider_media_id: string | null;
+};
+
+type TwilioMediaJobClient = {
+  from(table: "twilio_media_ingestion_jobs"): {
+    insert(
+      rows: TwilioMediaIngestionJobInsert[]
+    ): PromiseLike<{ error: { message: string } | null }>;
+  };
+};
 
 type AppendableRequest = {
   id: string;
   pet_id: string | null;
   status: RequestStatus;
 };
+
+function twilioMediaJobClient(admin: AdminClient) {
+  return admin as unknown as TwilioMediaJobClient;
+}
 
 export type CreateOwnerRequestInput = {
   clinicSlug?: string | undefined;
@@ -54,7 +74,9 @@ export type CreateOwnerRequestAttachmentInput = {
   storagePath: string;
   mimeType: string;
   sizeBytes?: number | undefined;
+  provider?: "twilio" | undefined;
   providerUrl?: string | undefined;
+  providerMediaId?: string | undefined;
 };
 
 export type CreateOwnerRequestResult =
@@ -62,6 +84,7 @@ export type CreateOwnerRequestResult =
       ok: true;
       caseId: string;
       messageId?: string;
+      attachmentIds?: string[];
       deduped?: boolean;
     }
   | {
@@ -174,20 +197,54 @@ async function insertAttachments({
   const { data, error } = await admin
     .from("attachments")
     .insert(
-      attachments.map((attachment) => ({
-        request_id: requestId,
-        clinic_id: clinicId,
-        message_id: messageId,
-        storage_path: attachment.storagePath,
-        mime_type: attachment.mimeType,
-        size_bytes: attachment.sizeBytes ?? 0,
-        uploaded_by: ownerId
-      }))
+      attachments.map((attachment): AttachmentInsert => {
+        const provider =
+          attachment.provider ?? (attachment.providerUrl ? "twilio" : null);
+
+        return {
+          request_id: requestId,
+          clinic_id: clinicId,
+          message_id: messageId,
+          storage_path: attachment.storagePath,
+          mime_type: attachment.mimeType,
+          size_bytes: attachment.sizeBytes ?? 0,
+          uploaded_by: ownerId,
+          provider,
+          provider_media_id: attachment.providerMediaId ?? null,
+          ingestion_status: provider ? "queued" : "completed",
+          ingestion_queued_at: provider ? new Date().toISOString() : null
+        };
+      })
     )
     .select("id");
 
   if (error) {
     return { attachmentIds: [], error: error.message };
+  }
+
+  const twilioJobs = data.flatMap((attachment, index) => {
+    const source = attachments[index];
+
+    if (!source?.providerUrl) return [];
+
+    return [
+      {
+        attachment_id: attachment.id,
+        clinic_id: clinicId,
+        provider_url: source.providerUrl,
+        provider_media_id: source.providerMediaId ?? null
+      }
+    ];
+  });
+
+  if (twilioJobs.length > 0) {
+    const { error: jobError } = await twilioMediaJobClient(admin)
+      .from("twilio_media_ingestion_jobs")
+      .insert(twilioJobs);
+
+    if (jobError) {
+      return { attachmentIds: [], error: jobError.message };
+    }
   }
 
   return {
@@ -313,6 +370,7 @@ async function appendOwnerMessageToRequest({
           ok: true,
           caseId: existing.message.request_id,
           messageId: existing.message.id,
+          attachmentIds: [],
           deduped: true
         };
       }
@@ -419,7 +477,8 @@ async function appendOwnerMessageToRequest({
   return {
     ok: true,
     caseId: request.id,
-    messageId: message.id
+    messageId: message.id,
+    attachmentIds: insertedAttachments.attachmentIds
   };
 }
 
@@ -495,6 +554,7 @@ export async function createOwnerRequest(
         ok: true,
         caseId: existing.message.request_id,
         messageId: existing.message.id,
+        attachmentIds: [],
         deduped: true
       };
     }
@@ -719,6 +779,7 @@ export async function createOwnerRequest(
   return {
     ok: true,
     caseId: request.id,
-    messageId: message.id
+    messageId: message.id,
+    attachmentIds: insertedAttachments.attachmentIds
   };
 }

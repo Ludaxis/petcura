@@ -59,11 +59,12 @@ function parseEventBlock(raw: string): { event: string; data: string } | null {
 
 export function useAiDraftStream(
   requestId: string,
+  draftId: string,
   locale: string,
   options: UseAiDraftStreamOptions = {}
 ): AiDraftStreamState {
   const { enabled = true } = options;
-  const streamKey = enabled ? `${requestId}::${locale}` : "";
+  const streamKey = enabled ? `${requestId}::${draftId}::${locale}` : "";
   // Use a ref to accumulate text synchronously across event chunks before
   // we publish to React state. This avoids dropping tokens if multiple
   // events arrive in the same microtask.
@@ -93,11 +94,14 @@ export function useAiDraftStream(
     if (!streamKey) return;
     if (typeof window === "undefined") return;
 
-    // Recover both pieces from the composite key so the effect's only
+    // Recover the route pieces from the composite key so the effect's only
     // dependency stays `streamKey` (keeps exhaustive-deps happy).
     const sep = streamKey.indexOf("::");
     const effectRequestId = streamKey.slice(0, sep);
-    const effectLocale = streamKey.slice(sep + 2);
+    const rest = streamKey.slice(sep + 2);
+    const draftSep = rest.indexOf("::");
+    const effectDraftId = rest.slice(0, draftSep);
+    const effectLocale = rest.slice(draftSep + 2);
 
     accumulatedRef.current = "";
     const controller = new AbortController();
@@ -106,7 +110,7 @@ export function useAiDraftStream(
     const run = async () => {
       try {
         const response = await fetch(
-          `/api/ai/draft/${encodeURIComponent(effectRequestId)}/stream?lang=${encodeURIComponent(effectLocale)}`,
+          `/api/ai/draft/${encodeURIComponent(effectRequestId)}/stream?lang=${encodeURIComponent(effectLocale)}&draftId=${encodeURIComponent(effectDraftId)}`,
           {
             method: "GET",
             credentials: "same-origin",

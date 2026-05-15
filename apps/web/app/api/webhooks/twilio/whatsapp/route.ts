@@ -10,6 +10,7 @@ import {
   getTwilioWebhookUrl,
   parseTwilioWhatsAppPayload
 } from "@/lib/twilio/whatsapp";
+import { queueTwilioMediaIngestion } from "@/lib/twilio/media-ingestion";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,15 @@ function getTwilioMediaStoragePath(
 ) {
   const messageKey = messageSid?.replace(/[^a-zA-Z0-9_-]/g, "") || "unknown";
   return `twilio/${messageKey}/${index}`;
+}
+
+function getTwilioMediaId(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname.split("/").filter(Boolean).at(-1);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function POST(request: Request) {
@@ -94,7 +104,9 @@ export async function POST(request: Request) {
         storagePath: getTwilioMediaStoragePath(payload.messageSid, media.index),
         mimeType: media.contentType,
         sizeBytes: 0,
-        providerUrl: media.url
+        provider: "twilio",
+        providerUrl: media.url,
+        providerMediaId: getTwilioMediaId(media.url)
       }))
     },
     clinic
@@ -102,6 +114,15 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     return serverError(result.message);
+  }
+
+  if (result.messageId && result.attachmentIds?.length) {
+    await queueTwilioMediaIngestion({
+      clinicId: clinic.id,
+      requestId: result.caseId,
+      messageId: result.messageId,
+      attachmentIds: result.attachmentIds
+    });
   }
 
   return emptyTwimlResponse();

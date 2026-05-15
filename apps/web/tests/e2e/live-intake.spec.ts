@@ -121,9 +121,11 @@ test("owner intake appears in authenticated clinic inbox and detail", async ({
     );
 
     await page.goto(callbackUrl.toString());
-    await expect(
-      page.getByRole("heading", { level: 1, name: /^All/ })
-    ).toBeVisible();
+    const skipToInbox = page.getByRole("link", { name: /skip to inbox/i });
+    if (await skipToInbox.isVisible().catch(() => false)) {
+      await skipToInbox.click();
+      await page.waitForURL(/\/inbox/);
+    }
 
     const requestLink = page.getByRole("link", {
       name: new RegExp(`${escapeRegExp(petName)}.*${escapeRegExp(ownerName)}`)

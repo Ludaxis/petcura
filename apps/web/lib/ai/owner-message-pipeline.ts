@@ -1,7 +1,9 @@
 import "server-only";
 
 import {
+  aiPromptRegistry,
   formatSummaryForStaff,
+  summaryLocalizationOutputSchema,
   summaryOutputSchema,
   translationOutputSchema,
   type SummaryOutput
@@ -12,9 +14,14 @@ import {
   type SupportedLocale
 } from "@petcura/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateJsonWithGateway } from "./gateway";
 import {
-  generateAiSummaryLocalization,
+  generateAccountedJson,
+  type AiOutputSourceInput
+} from "./accountability";
+import {
+  buildSummaryLocalizationPrompt,
+  getSummaryTranslationModel,
+  summaryTranslationSystemPrompt,
   summaryTranslationPromptVersion,
   writeAiSummaryLocalization
 } from "./summary-localization";
@@ -26,8 +33,8 @@ import {
 } from "./memory";
 
 const supportedLocales = ["en", "et", "ru"] as const satisfies readonly SupportedLocale[];
-const summaryPromptVersion = "summary.v1.2026-05-11";
-const translationPromptVersion = "translation.v1.2026-05-11";
+const summaryPromptVersion = aiPromptRegistry.summary.version;
+const translationPromptVersion = aiPromptRegistry.translation.version;
 const defaultAnthropicHaikuModel = "anthropic/claude-haiku-4.5";
 const fallbackSummaryModel = "petcura/rules-fallback";
 
@@ -174,6 +181,13 @@ function buildTranslationPrompt({
   );
 }
 
+function messageSources(messages: MessageForAi[]): AiOutputSourceInput[] {
+  return messages.map((message) => ({
+    sourceType: "message",
+    sourceId: message.id
+  }));
+}
+
 async function loadRequestContext(
   admin: AdminClient,
   clinicId: string,
@@ -263,86 +277,84 @@ async function writeSummary({
       body: message.body
     }))
   };
-  const gatewayResult = await generateJsonWithGateway({
-    model,
-    system:
-      "You are PetCura's veterinary clinic operations assistant. You summarize communication for staff. You never diagnose, prescribe, or replace a veterinarian.",
-    prompt: buildSummaryPrompt({
-      request,
-      messages,
-      memoryItems: memoryContext.items
-    }),
-    schema: summaryOutputSchema,
-    timeoutMs: 8_000,
-    maxOutputTokens: 700
+  const system =
+    "You are PetCura's veterinary clinic operations assistant. You summarize communication for staff. You never diagnose, prescribe, or replace a veterinarian.";
+  const prompt = buildSummaryPrompt({
+    request,
+    messages,
+    memoryItems: memoryContext.items
   });
-  const summary =
-    gatewayResult.ok
-      ? gatewayResult.output
-      : buildFallbackSummary({ request, messages });
-  const summaryText = formatSummaryForStaff(summary);
-  const { data: aiOutput, error: aiError } = await admin
-    .from("ai_outputs")
-    .insert({
-      clinic_id: request.clinic_id,
-      request_id: request.id,
-      kind: "summary",
-      model: gatewayResult.ok ? gatewayResult.model : fallbackSummaryModel,
-      prompt_version: summaryPromptVersion,
-      input_json: toJson({
-        ...input,
-        fallback_reason: gatewayResult.ok ? null : gatewayResult.reason
-      }),
-      output_json: toJson(summary),
-      tokens_in: gatewayResult.ok ? gatewayResult.tokensIn : null,
-      tokens_out: gatewayResult.ok ? gatewayResult.tokensOut : null,
-      latency_ms: gatewayResult.latencyMs,
-      confidence: summary.confidence,
-      accepted: null
-    })
-    .select("id")
-    .single();
-
-  if (aiError) {
-    throw new Error(`Could not store AI summary: ${aiError.message}`);
+  const accounted = await generateAccountedJson({
+    db: admin,
+    clinicId: request.clinic_id,
+    requestId: request.id,
+    kind: "summary",
+    promptKey: aiPromptRegistry.summary.key,
+    promptVersion: summaryPromptVersion,
+    model,
+    system,
+    prompt,
+    schema: summaryOutputSchema,
+    inputJson: toJson(input),
+    sources: [
+      ...messageSources(messages),
+      {
+        sourceType: "ai_output",
+        sourceId: memoryContext.aiOutputId,
+        sourceLabel: "context_retrieval"
+      }
+    ],
+    timeoutMs: 8_000,
+    maxOutputTokens: 700,
+    fallback: {
+      output: buildFallbackSummary({ request, messages }),
+      model: fallbackSummaryModel
+    }
+  });
+  if (!accounted.ok) {
+    throw new Error(`Could not generate accountable AI summary: ${accounted.reason}`);
   }
+
+  const summary = accounted.output;
+  const summaryText = formatSummaryForStaff(summary);
 
   let aiSummaryTranslationsJson: Json = {};
   for (const targetLocale of ["et", "ru"] as const) {
-    const localizationResult = await generateAiSummaryLocalization({
-      summaryText,
-      riskFlags: summary.riskFlags,
-      targetLocale
+    const localizationInput = {
+      source_ai_output_id: accounted.aiOutputId,
+      source_locale: "en",
+      target_locale: targetLocale,
+      summary_text: summaryText,
+      risk_flags: summary.riskFlags
+    };
+    const localizationResult = await generateAccountedJson({
+      db: admin,
+      clinicId: request.clinic_id,
+      requestId: request.id,
+      kind: "summary_translation",
+      promptKey: aiPromptRegistry.summaryTranslation.key,
+      promptVersion: summaryTranslationPromptVersion,
+      model: getSummaryTranslationModel(),
+      system: summaryTranslationSystemPrompt,
+      prompt: buildSummaryLocalizationPrompt({
+        summaryText,
+        riskFlags: summary.riskFlags,
+        targetLocale
+      }),
+      schema: summaryLocalizationOutputSchema,
+      inputJson: toJson(localizationInput),
+      sources: [
+        {
+          sourceType: "ai_output",
+          sourceId: accounted.aiOutputId,
+          sourceLabel: "source_summary"
+        }
+      ],
+      timeoutMs: 8_000,
+      maxOutputTokens: 900
     });
 
     if (!localizationResult.ok) continue;
-
-    const { data: localizationOutput, error: localizationError } = await admin
-      .from("ai_outputs")
-      .insert({
-        clinic_id: request.clinic_id,
-        request_id: request.id,
-        kind: "summary_translation",
-        model: localizationResult.model,
-        prompt_version: summaryTranslationPromptVersion,
-        input_json: toJson({
-          source_ai_output_id: aiOutput.id,
-          source_locale: "en",
-          target_locale: targetLocale,
-          summary_text: summaryText,
-          risk_flags: summary.riskFlags
-        }),
-        output_json: toJson(localizationResult.output),
-        tokens_in: localizationResult.tokensIn,
-        tokens_out: localizationResult.tokensOut,
-        latency_ms: localizationResult.latencyMs,
-        confidence: localizationResult.output.confidence,
-        accepted: null
-      })
-      .select("id")
-      .single();
-
-    if (localizationError) continue;
 
     aiSummaryTranslationsJson = writeAiSummaryLocalization(
       aiSummaryTranslationsJson,
@@ -355,7 +367,7 @@ async function writeSummary({
         promptVersion: summaryTranslationPromptVersion,
         model: localizationResult.model,
         confidence: localizationResult.output.confidence,
-        aiOutputId: localizationOutput.id,
+        aiOutputId: localizationResult.aiOutputId,
         reviewedBy: null,
         edited: false,
         updatedAt: new Date().toISOString()
@@ -386,9 +398,9 @@ async function writeSummary({
     actor_id: null,
     event_type: "ai_summary_updated",
     payload_json: {
-      ai_output_id: aiOutput.id,
+      ai_output_id: accounted.aiOutputId,
       prompt_version: summaryPromptVersion,
-      fallback: !gatewayResult.ok,
+      fallback: accounted.status === "fallback",
       source_message_id: sourceMessageId
     }
   });
@@ -397,7 +409,7 @@ async function writeSummary({
     throw new Error(`Could not write AI summary event: ${eventError.message}`);
   }
 
-  return gatewayResult.ok ? "generated" : "fallback";
+  return accounted.status === "success" ? "generated" : "fallback";
 }
 
 async function writeTranslation({
@@ -414,49 +426,42 @@ async function writeTranslation({
   targetLocale: SupportedLocale;
 }) {
   const model = getTranslationModel();
-  const gatewayResult = await generateJsonWithGateway({
+  const system =
+    "You are PetCura's translation assistant. Translate exactly and neutrally for veterinary clinic staff. Do not add medical advice.";
+  const prompt = buildTranslationPrompt({
+    text: message.body,
+    sourceLocale,
+    targetLocale
+  });
+  const accounted = await generateAccountedJson({
+    db: admin,
+    clinicId: request.clinic_id,
+    requestId: request.id,
+    kind: "translation",
+    promptKey: aiPromptRegistry.translation.key,
+    promptVersion: translationPromptVersion,
     model,
-    system:
-      "You are PetCura's translation assistant. Translate exactly and neutrally for veterinary clinic staff. Do not add medical advice.",
-    prompt: buildTranslationPrompt({
-      text: message.body,
-      sourceLocale,
-      targetLocale
-    }),
+    system,
+    prompt,
     schema: translationOutputSchema,
+    inputJson: toJson({
+      source_message_id: message.id,
+      source_locale: sourceLocale,
+      target_locale: targetLocale,
+      text: message.body
+    }),
+    sources: [
+      {
+        sourceType: "message",
+        sourceId: message.id
+      }
+    ],
     timeoutMs: 8_000,
     maxOutputTokens: 900
   });
 
-  if (!gatewayResult.ok) {
+  if (!accounted.ok) {
     return false;
-  }
-
-  const { data: aiOutput, error: aiError } = await admin
-    .from("ai_outputs")
-    .insert({
-      clinic_id: request.clinic_id,
-      request_id: request.id,
-      kind: "translation",
-      model: gatewayResult.model,
-      prompt_version: translationPromptVersion,
-      input_json: toJson({
-        source_message_id: message.id,
-        source_locale: sourceLocale,
-        target_locale: targetLocale
-      }),
-      output_json: toJson(gatewayResult.output),
-      tokens_in: gatewayResult.tokensIn,
-      tokens_out: gatewayResult.tokensOut,
-      latency_ms: gatewayResult.latencyMs,
-      confidence: gatewayResult.output.confidence,
-      accepted: null
-    })
-    .select("id")
-    .single();
-
-  if (aiError) {
-    throw new Error(`Could not store AI translation: ${aiError.message}`);
   }
 
   const { error: translationError } = await admin
@@ -465,11 +470,11 @@ async function writeTranslation({
       {
         clinic_id: request.clinic_id,
         message_id: message.id,
-        ai_output_id: aiOutput.id,
+        ai_output_id: accounted.aiOutputId,
         source_locale: sourceLocale,
         target_locale: targetLocale,
-        translated_body: gatewayResult.output.translatedText,
-        model: gatewayResult.model,
+        translated_body: accounted.output.translatedText,
+        model: accounted.model,
         prompt_version: translationPromptVersion
       },
       { onConflict: "message_id,target_locale" }
@@ -483,7 +488,7 @@ async function writeTranslation({
     const { error: messageError } = await admin
       .from("messages")
       .update({
-        body_translated: gatewayResult.output.translatedText
+        body_translated: accounted.output.translatedText
       })
       .eq("clinic_id", request.clinic_id)
       .eq("id", message.id);
@@ -500,7 +505,7 @@ async function writeTranslation({
     actor_id: null,
     event_type: "ai_translation_cached",
     payload_json: {
-      ai_output_id: aiOutput.id,
+      ai_output_id: accounted.aiOutputId,
       message_id: message.id,
       source_locale: sourceLocale,
       target_locale: targetLocale

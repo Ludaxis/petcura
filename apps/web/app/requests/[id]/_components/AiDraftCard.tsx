@@ -118,7 +118,9 @@ export function AiDraftCard({
   });
 
   // Live SSE stream. Inert when the draft is not fresh.
-  const stream = useAiDraftStream(requestId, locale, { enabled: isFresh });
+  const stream = useAiDraftStream(requestId, draft.id, locale, {
+    enabled: isFresh
+  });
   // Once the stream has produced characters we trust its content. The
   // `draftText` mirror is still the canonical value used for edit, accept,
   // and final render — we sync stream text into it on completion or on

@@ -7,6 +7,7 @@ import {
   type Database,
   type RequestStatus
 } from "@petcura/shared";
+import { aiPromptRegistry, summaryLocalizationOutputSchema } from "@petcura/ai";
 import {
   aiDraftDecisionSchema,
   aiDraftEditSchema,
@@ -30,13 +31,15 @@ import {
   requireStaffPermission
 } from "@/lib/auth/permissions";
 import {
+  buildSummaryLocalizationPrompt,
   buildEditedAiSummaryLocalization,
-  generateAiSummaryLocalization,
+  getSummaryTranslationModel,
+  summaryTranslationSystemPrompt,
   summaryTranslationPromptVersion,
   writeAiSummaryLocalization
 } from "@/lib/ai/summary-localization";
-import { sendWhatsAppStaffMessage } from "@/lib/twilio/outbound";
-import { getTwilioDeliveryEventId } from "@/lib/twilio/whatsapp";
+import { generateAccountedJson } from "@/lib/ai/accountability";
+import { enqueueOutboundMessage } from "@/lib/twilio/outbox";
 import { generateReplyDraftForRequest } from "@/lib/ai/memory";
 import {
   sendPetCuraInngestEvent,
@@ -149,25 +152,12 @@ export async function sendStaffReply(formData: FormData) {
     redirectToRequest(requestId, locale, { action_error: "not_found" });
   }
 
-  let delivery:
-    | Awaited<ReturnType<typeof sendWhatsAppStaffMessage>>
-    | null = null;
+  let ownerPhone: string | null = null;
 
   if (request.channel === "whatsapp") {
-    const ownerPhone = request.owners?.phone;
+    ownerPhone = request.owners?.phone ?? null;
 
     if (!ownerPhone) {
-      redirectToRequest(requestId, locale, { action_error: "delivery" });
-    }
-
-    try {
-      delivery = await sendWhatsAppStaffMessage({
-        supabase: staffContext.supabase,
-        clinicId: staffContext.clinic.id,
-        toPhone: ownerPhone,
-        body
-      });
-    } catch {
       redirectToRequest(requestId, locale, { action_error: "delivery" });
     }
   }
@@ -181,7 +171,7 @@ export async function sendStaffReply(formData: FormData) {
       sender_id: staffContext.user.id,
       body,
       source_locale: locale,
-      external_id: delivery?.sid ?? null
+      external_id: null
     })
     .select("id")
     .single();
@@ -204,29 +194,26 @@ export async function sendStaffReply(formData: FormData) {
     throw new Error(`Could not update request after reply: ${updateError.message}`);
   }
 
-  if (delivery) {
-    const { error: deliveryError } = await staffContext.supabase
-      .from("message_delivery_events")
-      .insert({
-        message_id: message.id,
-        clinic_id: staffContext.clinic.id,
-        channel: "whatsapp",
-        status: delivery.status,
-        provider: "twilio",
-        external_event_id: getTwilioDeliveryEventId(
-          delivery.sid,
-          delivery.rawStatus
-        ),
-        payload_json: {
-          provider_status: delivery.rawStatus
-        }
-      });
+  let outboundMessageId: string | null = null;
+  let deliveryStatus: "queued" | null = null;
 
-    if (deliveryError) {
-      throw new Error(
-        `Could not record WhatsApp delivery event: ${deliveryError.message}`
-      );
-    }
+  if (request.channel === "whatsapp" && ownerPhone) {
+    const outbound = await enqueueOutboundMessage({
+      supabase: staffContext.supabase as never,
+      clinicId: staffContext.clinic.id,
+      requestId,
+      messageId: message.id,
+      ownerId: request.owner_id,
+      createdBy: staffContext.user.id,
+      source: "staff_reply",
+      channel: "whatsapp",
+      toPhone: ownerPhone,
+      body,
+      idempotencyKey: `staff-reply:${message.id}`
+    });
+
+    outboundMessageId = outbound.id;
+    deliveryStatus = "queued";
   }
 
   const events: RequestEventInsert[] = [
@@ -240,8 +227,9 @@ export async function sendStaffReply(formData: FormData) {
         message_id: message.id,
         staff_id: staffContext.membership.id,
         channel: request.channel,
-        external_id: delivery?.sid ?? null,
-        delivery_status: delivery?.status ?? null
+        outbound_message_id: outboundMessageId,
+        external_id: null,
+        delivery_status: deliveryStatus
       }
     }
   ];
@@ -721,45 +709,41 @@ export async function translateAiSummary(formData: FormData) {
   }
 
   const sourceRiskFlags = pickRiskFlags(request.risk_flags_json);
-  const translation = await generateAiSummaryLocalization({
-    summaryText,
-    riskFlags: sourceRiskFlags,
-    targetLocale
+  const translation = await generateAccountedJson({
+    db: ctx.supabase,
+    clinicId: ctx.clinic.id,
+    requestId,
+    kind: "summary_translation",
+    promptKey: aiPromptRegistry.summaryTranslation.key,
+    promptVersion: summaryTranslationPromptVersion,
+    model: getSummaryTranslationModel(),
+    system: summaryTranslationSystemPrompt,
+    prompt: buildSummaryLocalizationPrompt({
+      summaryText,
+      riskFlags: sourceRiskFlags,
+      targetLocale
+    }),
+    schema: summaryLocalizationOutputSchema,
+    inputJson: toAiOutputJson({
+      source_locale: "en",
+      target_locale: targetLocale,
+      summary_text: summaryText,
+      risk_flags: sourceRiskFlags,
+      staff_id: ctx.membership.id
+    }),
+    sources: [
+      {
+        sourceType: "request",
+        sourceId: requestId,
+        sourceLabel: "source_summary"
+      }
+    ],
+    timeoutMs: 8_000,
+    maxOutputTokens: 900
   });
 
   if (!translation.ok) {
     redirectToRequest(requestId, locale, { action_error: "summary_translate" });
-  }
-
-  const { data: aiOutput, error: aiOutputError } = await ctx.supabase
-    .from("ai_outputs")
-    .insert({
-      clinic_id: ctx.clinic.id,
-      request_id: requestId,
-      kind: "summary_translation",
-      model: translation.model,
-      prompt_version: summaryTranslationPromptVersion,
-      input_json: toAiOutputJson({
-        source_locale: "en",
-        target_locale: targetLocale,
-        summary_text: summaryText,
-        risk_flags: sourceRiskFlags,
-        staff_id: ctx.membership.id
-      }),
-      output_json: toAiOutputJson(translation.output),
-      tokens_in: translation.tokensIn,
-      tokens_out: translation.tokensOut,
-      latency_ms: translation.latencyMs,
-      confidence: translation.output.confidence,
-      accepted: null
-    })
-    .select("id")
-    .single();
-
-  if (aiOutputError) {
-    throw new Error(
-      `Could not store AI summary translation: ${aiOutputError.message}`
-    );
   }
 
   const nextTranslations = writeAiSummaryLocalization(
@@ -773,7 +757,7 @@ export async function translateAiSummary(formData: FormData) {
       promptVersion: summaryTranslationPromptVersion,
       model: translation.model,
       confidence: translation.output.confidence,
-      aiOutputId: aiOutput.id,
+      aiOutputId: translation.aiOutputId,
       reviewedBy: null,
       edited: false,
       updatedAt: new Date().toISOString()
@@ -801,7 +785,7 @@ export async function translateAiSummary(formData: FormData) {
       actor_id: ctx.user.id,
       event_type: "ai_summary_translated",
       payload_json: {
-        ai_output_id: aiOutput.id,
+        ai_output_id: translation.aiOutputId,
         staff_id: ctx.membership.id,
         target_locale: targetLocale
       }
@@ -964,7 +948,12 @@ export async function acceptAiDraft(input: {
 
   const { error: updateError } = await ctx.supabase
     .from("ai_outputs")
-    .update({ accepted: true, reviewed_by: ctx.user.id })
+    .update({
+      accepted: true,
+      reviewed_by: ctx.user.id,
+      reviewed_at: new Date().toISOString(),
+      review_status: "accepted"
+    })
     .eq("clinic_id", ctx.clinic.id)
     .eq("id", aiOutputId);
 
@@ -1024,10 +1013,17 @@ export async function editAiDraft(input: {
   // saveOnly = false → write edit, set accepted=true, log ai_draft_accepted_with_edits.
   const updatePayload: Database["public"]["Tables"]["ai_outputs"]["Update"] =
     saveOnly
-      ? { edited_output_json: { text: editedText } }
+      ? {
+          edited_output_json: { text: editedText },
+          reviewed_by: ctx.user.id,
+          reviewed_at: new Date().toISOString(),
+          review_status: "edited"
+        }
       : {
           accepted: true,
           reviewed_by: ctx.user.id,
+          reviewed_at: new Date().toISOString(),
+          review_status: "accepted_with_edits",
           edited_output_json: { text: editedText }
         };
 
@@ -1091,7 +1087,12 @@ export async function rejectAiDraft(input: {
 
   const { error: updateError } = await ctx.supabase
     .from("ai_outputs")
-    .update({ accepted: false, reviewed_by: ctx.user.id })
+    .update({
+      accepted: false,
+      reviewed_by: ctx.user.id,
+      reviewed_at: new Date().toISOString(),
+      review_status: "rejected"
+    })
     .eq("clinic_id", ctx.clinic.id)
     .eq("id", aiOutputId);
 
