@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   Activity,
   Archive,
@@ -39,6 +38,7 @@ import {
   updateClinicTeamMemberRole,
   updateClinicTeamMemberStatus
 } from "./actions";
+import { SettingsTabs } from "./_components/SettingsTabs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -150,18 +150,16 @@ export default async function SettingsPage({ searchParams }: Props) {
   const tabs: Array<{
     id: SettingsTab;
     label: string;
-    icon: typeof Users;
     count?: number;
   }> = [
-    { id: "team", label: t("settings.tabs.team"), icon: Users, count: activeTeam.length },
+    { id: "team", label: t("settings.tabs.team"), count: activeTeam.length },
     {
       id: "archived",
       label: t("settings.tabs.archived"),
-      icon: Archive,
       count: archivedTeam.length
     },
-    { id: "activity", label: t("settings.tabs.activity"), icon: Activity },
-    { id: "clinic", label: t("settings.tabs.clinic"), icon: Building2 }
+    { id: "activity", label: t("settings.tabs.activity") },
+    { id: "clinic", label: t("settings.tabs.clinic") }
   ];
 
   return (
@@ -210,37 +208,15 @@ export default async function SettingsPage({ searchParams }: Props) {
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--soft)] p-3 sm:p-4">
           <div className="mx-auto grid max-w-6xl gap-4">
-            <nav
-              aria-label={t("settings.tabs.ariaLabel")}
-              className="flex flex-wrap gap-2 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-2 shadow-sm"
-            >
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <Link
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      "inline-flex min-h-10 items-center gap-2 rounded-[var(--radius)] px-3 text-sm font-semibold transition",
-                      isActive
-                        ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
-                        : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]"
-                    )}
-                    href={withLocale(`/settings?tab=${tab.id}`, locale)}
-                    key={tab.id}
-                    prefetch={false}
-                  >
-                    <Icon aria-hidden="true" size={16} />
-                    {tab.label}
-                    {typeof tab.count === "number" ? (
-                      <span className="rounded-full bg-[var(--surface-soft)] px-2 py-0.5 font-mono text-[10.5px]">
-                        {tab.count}
-                      </span>
-                    ) : null}
-                  </Link>
-                );
-              })}
-            </nav>
+            <SettingsTabs
+              activeTab={activeTab}
+              ariaLabel={t("settings.tabs.ariaLabel")}
+              loadingLabel="Loading settings"
+              tabs={tabs.map((tab) => ({
+                ...tab,
+                href: withLocale(`/settings?tab=${tab.id}`, locale)
+              }))}
+            />
 
             {activeTab === "team" ? (
               <>

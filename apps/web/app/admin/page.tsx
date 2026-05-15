@@ -1,15 +1,12 @@
 import Link from "next/link";
 import type { InputHTMLAttributes } from "react";
 import {
-  Activity,
   Building2,
   ExternalLink,
-  Inbox,
   Search,
   ShieldCheck,
   ShieldOff,
   UserPlus,
-  Users,
   X
 } from "lucide-react";
 import { Badge, Button, Panel, cn } from "@petcura/ui";
@@ -33,6 +30,7 @@ import { getSuperAdminResult } from "@/lib/auth/super-admin";
 import { requirePublicEnv } from "@/lib/env";
 import { AppShell } from "@/app/_components/AppShell";
 import { AdminLeadTable } from "./_components/AdminLeadTable";
+import { AdminTabs } from "./_components/AdminTabs";
 import {
   addClinicStaff,
   createClinic,
@@ -286,59 +284,24 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
         ) : null}
 
-        <nav
-          aria-label={t("admin.tabs.ariaLabel")}
-          className="flex flex-wrap gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-1"
-        >
-          {adminTabs.map((tab) => {
-            const active = activeTab === tab;
-            const Icon =
-              tab === "leads"
-                ? Inbox
-                : tab === "clinics"
-                  ? Building2
-                  : tab === "staff"
-                    ? Users
-                    : Activity;
-            const count =
+        <AdminTabs
+          activeTab={activeTab}
+          ariaLabel={t("admin.tabs.ariaLabel")}
+          loadingLabel="Loading admin"
+          tabs={adminTabs.map((tab) => ({
+            id: tab,
+            href: adminHref(locale, tab),
+            label: t(`admin.tabs.${tab}` as CopyKey),
+            count:
               tab === "leads"
                 ? marketingLeadList.statusCounts.all
                 : tab === "clinics"
                   ? clinics.length
                   : tab === "staff"
                     ? staffCount
-                    : activity.length;
-
-            return (
-              <Button
-                asChild
-                className={cn("min-w-[8rem]", active && "shadow-sm")}
-                key={tab}
-                size="sm"
-                variant={active ? "primary" : "ghost"}
-              >
-                <Link
-                  href={adminHref(locale, tab)}
-                  prefetch={false}
-                  aria-current={active ? "page" : undefined}
-                >
-                  <Icon aria-hidden="true" size={15} />
-                  {t(`admin.tabs.${tab}` as CopyKey)}
-                  <span
-                    className={cn(
-                      "rounded-full px-1.5 py-0.5 text-[10px]",
-                      active
-                        ? "bg-white/20 text-[var(--paper)]"
-                        : "bg-[var(--soft)] text-[var(--muted)]"
-                    )}
-                  >
-                    {count}
-                  </span>
-                </Link>
-              </Button>
-            );
-          })}
-        </nav>
+                    : activity.length
+          }))}
+        />
 
         {activeTab === "leads" ? (
           <section className="grid gap-3">

@@ -34,7 +34,142 @@ async function findAuthUserByEmail(
   return null;
 }
 
+async function ensureSuperAdminStaff(admin: ReturnType<typeof adminClient>) {
+  if (!superAdminEmail) {
+    throw new Error("Missing super-admin email.");
+  }
+
+  const { data: clinic } = await admin
+    .from("clinics")
+    .select("id")
+    .eq("slug", defaultClinicSlug)
+    .single();
+
+  const existingUser = await findAuthUserByEmail(admin, superAdminEmail);
+  const userId = existingUser
+    ? existingUser.id
+    : (
+        await admin.auth.admin.createUser({
+          email: superAdminEmail,
+          email_confirm: true
+        })
+      ).data.user!.id;
+
+  await admin.from("clinic_staff").upsert(
+    {
+      clinic_id: clinic!.id,
+      user_id: userId,
+      role: "admin",
+      is_active: true
+    },
+    { onConflict: "clinic_id,user_id" }
+  );
+
+  return { email: superAdminEmail, userId };
+}
+
+async function authenticateAs(
+  admin: ReturnType<typeof adminClient>,
+  page: import("@playwright/test").Page,
+  baseURL: string | undefined,
+  email: string,
+  next: string
+) {
+  const { data: link } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { redirectTo: `${baseURL}/auth/callback?next=${next}&lang=en` }
+  });
+  const callbackUrl = new URL("/auth/callback", baseURL);
+  callbackUrl.searchParams.set("next", next);
+  callbackUrl.searchParams.set("lang", "en");
+  callbackUrl.searchParams.set("token_hash", link.properties!.hashed_token);
+  callbackUrl.searchParams.set(
+    "type",
+    link.properties!.verification_type ?? "magiclink"
+  );
+  await page.goto(callbackUrl.toString());
+}
+
+async function delayTabNavigation(
+  page: import("@playwright/test").Page,
+  pathname: string,
+  tab: string
+) {
+  let delayed = false;
+  await page.route(
+    (url) =>
+      !delayed &&
+      url.pathname === pathname &&
+      url.searchParams.get("tab") === tab,
+    async (route) => {
+      delayed = true;
+      await new Promise((resolve) => setTimeout(resolve, 750));
+      await route.continue();
+    }
+  );
+}
+
 test.describe("Super-admin console", () => {
+  test("shows immediate pending feedback on settings and admin tab switches", async ({
+    page,
+    baseURL
+  }, testInfo) => {
+    test.skip(
+      !supabaseUrl || !secretKey || !superAdminEmail,
+      "Supabase env and a configured super-admin email are required."
+    );
+
+    const admin = adminClient();
+    const { email } = await ensureSuperAdminStaff(admin);
+
+    await authenticateAs(admin, page, baseURL, email, "/settings?tab=team");
+    await expect(
+      page.getByRole("heading", { name: "Clinic settings" })
+    ).toBeVisible();
+
+    await delayTabNavigation(page, "/settings", "activity");
+    const settingsTabs = page.getByRole("navigation", {
+      name: "Settings sections"
+    });
+    await page
+      .getByRole("link", { name: /Activity/ })
+      .click({ noWaitAfter: true });
+    await expect(settingsTabs).toHaveAttribute("aria-busy", "true");
+    await expect(settingsTabs.getByText("Loading settings").first()).toHaveText(
+      "Loading settings"
+    );
+    await page.waitForURL(
+      (url) =>
+        url.pathname === "/settings" && url.searchParams.get("tab") === "activity"
+    );
+    await expect(
+      page.getByRole("heading", { name: "Team activity" })
+    ).toBeVisible();
+
+    await page.goto("/admin?tab=leads&lang=en");
+    await expect(
+      page.getByRole("heading", { name: "Admin console" })
+    ).toBeVisible();
+
+    await delayTabNavigation(page, "/admin", "clinics");
+    const adminTabsNav = page.getByRole("navigation", {
+      name: "Admin sections"
+    });
+    await page
+      .getByRole("link", { name: /Clinics/ })
+      .click({ noWaitAfter: true });
+    await expect(adminTabsNav).toHaveAttribute("aria-busy", "true");
+    await expect(adminTabsNav.getByText("Loading admin").first()).toHaveText(
+      "Loading admin"
+    );
+    await page.waitForURL(
+      (url) =>
+        url.pathname === "/admin" && url.searchParams.get("tab") === "clinics"
+    );
+    await expect(page.getByRole("heading", { name: "Clinics" })).toBeVisible();
+  });
+
   test("manages demo leads with bulk status and archive actions", async ({
     page,
     baseURL
