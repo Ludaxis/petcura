@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Montserrat } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getRequestLocale } from "@/lib/locale";
 import { getResolvedThemeForSSR } from "@/lib/theme";
+import { AnalyticsConsent } from "./_components/AnalyticsConsent";
 import { ThemeBootstrap } from "./_components/ThemeBootstrap";
-import { WebVitalsReporter } from "./_components/WebVitalsReporter";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -52,9 +50,7 @@ export default async function RootLayout({
       </head>
       <body>
         <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
-        <WebVitalsReporter />
-        <Analytics />
-        <SpeedInsights />
+        <AnalyticsConsent />
       </body>
     </html>
   );

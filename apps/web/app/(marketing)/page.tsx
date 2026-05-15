@@ -56,6 +56,9 @@ export default async function MarketingPage({
   );
   const sandboxHref = withLocale(marketingRoutes.sandbox, locale);
   const trustHref = withLocale(marketingRoutes.trust, locale);
+  const privacyHref = marketingRoutes.privacy;
+  const cookiesHref = marketingRoutes.cookies;
+  const subprocessorsHref = marketingRoutes.subprocessors;
   const intakeHref = withLocale(marketingRoutes.ownerIntake, locale);
   const ownersHref = withLocale(marketingRoutes.owners, locale);
   const ownerSignInHref = withLocale(marketingRoutes.ownerLogin, locale);
@@ -303,6 +306,9 @@ export default async function MarketingPage({
         ownersHref={ownersHref}
         ownerSignInHref={ownerSignInHref}
         signInHref={clinicSignInHref}
+        privacyHref={privacyHref}
+        cookiesHref={cookiesHref}
+        subprocessorsHref={subprocessorsHref}
         t={t}
         trustHref={trustHref}
       />
@@ -416,6 +422,9 @@ function Footer({
   ownersHref,
   ownerSignInHref,
   signInHref,
+  privacyHref,
+  cookiesHref,
+  subprocessorsHref,
   trustHref
 }: {
   demoHref: string;
@@ -424,6 +433,9 @@ function Footer({
   ownersHref: string;
   ownerSignInHref: string;
   signInHref: string;
+  privacyHref: string;
+  cookiesHref: string;
+  subprocessorsHref: string;
   trustHref: string;
 }) {
   const columns = [
@@ -445,6 +457,15 @@ function Footer({
         { href: trustHref, label: t("landing.footer.trust") },
         { href: "#how-it-works", label: t("landing.footer.manifesto") },
         { href: demoHref, label: t("landing.footer.contact") }
+      ]
+    },
+    {
+      heading: t("landing.footer.legalHeading"),
+      links: [
+        { href: privacyHref, label: t("landing.footer.privacy") },
+        { href: cookiesHref, label: t("landing.footer.cookies") },
+        { href: subprocessorsHref, label: t("landing.footer.subprocessors") },
+        { href: trustHref, label: t("landing.footer.trust") }
       ]
     },
     {
@@ -477,7 +498,7 @@ function Footer({
             {t("landing.hero.eyebrow")}
           </p>
         </div>
-        <nav aria-label="Footer" className="grid gap-8 sm:grid-cols-3">
+        <nav aria-label="Footer" className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {columns.map((column) => (
             <div className="flex flex-col gap-3" key={column.heading}>
               <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">

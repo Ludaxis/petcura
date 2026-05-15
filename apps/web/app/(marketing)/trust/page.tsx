@@ -4,8 +4,11 @@ import {
   ArrowLeft,
   ArrowRight,
   ClipboardCheck,
+  Cookie,
   Database,
   FileCheck2,
+  FileText,
+  Network,
   ShieldCheck,
   Sparkles
 } from "lucide-react";
@@ -37,6 +40,9 @@ export default async function TrustPage({ searchParams }: TrustPageProps) {
   const t = createTranslator(locale);
   const homeHref = withLocale(marketingRoutes.home, locale);
   const demoHref = withLocale(demoHrefBySource(leadSources.trust), locale);
+  const privacyHref = marketingRoutes.privacy;
+  const cookiesHref = marketingRoutes.cookies;
+  const subprocessorsHref = marketingRoutes.subprocessors;
 
   const sections = [
     {
@@ -56,6 +62,26 @@ export default async function TrustPage({ searchParams }: TrustPageProps) {
       title: t("trust.audit.title"),
       body: t("trust.audit.body"),
       claims: trustClaims.auditability
+    }
+  ];
+  const legalDocs = [
+    {
+      icon: <FileText aria-hidden="true" size={18} />,
+      title: t("landing.footer.privacy"),
+      body: t("trust.docs.privacy.body"),
+      href: privacyHref
+    },
+    {
+      icon: <Cookie aria-hidden="true" size={18} />,
+      title: t("landing.footer.cookies"),
+      body: t("trust.docs.cookies.body"),
+      href: cookiesHref
+    },
+    {
+      icon: <Network aria-hidden="true" size={18} />,
+      title: t("landing.footer.subprocessors"),
+      body: t("trust.docs.subprocessors.body"),
+      href: subprocessorsHref
     }
   ];
 
@@ -188,6 +214,38 @@ export default async function TrustPage({ searchParams }: TrustPageProps) {
                 </ul>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="border-b border-[var(--line)]">
+          <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+            <div>
+              <Badge tone="teal">{t("trust.docs.badge")}</Badge>
+              <h2 className="mt-4 text-2xl font-semibold text-[var(--foreground)]">
+                {t("trust.docs.title")}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                {t("trust.docs.body")}
+              </p>
+            </div>
+            <ul className="grid gap-3 sm:grid-cols-3" role="list">
+              {legalDocs.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    className="flex h-full flex-col gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-4 text-sm leading-6 text-[var(--muted)] transition hover:border-[var(--primary-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                    href={item.href}
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary-strong)]">
+                      {item.icon}
+                    </span>
+                    <span className="font-semibold text-[var(--foreground)]">
+                      {item.title}
+                    </span>
+                    <span>{item.body}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

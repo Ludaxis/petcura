@@ -5,6 +5,11 @@ const localeCookie = "petcura_locale";
 const clinicHosts = new Set(["app.petcura.app"]);
 const ownerHost = "my.petcura.app";
 const ownerHosts = new Set([ownerHost]);
+const scannerPaths = new Set([
+  "/wp-admin/install.php",
+  "/wp-login.php",
+  "/xmlrpc.php"
+]);
 
 function isOwnerHost(host: string | null) {
   if (!host) {
@@ -26,7 +31,20 @@ function isOwnerAppPath(pathname: string) {
   return pathname === "/o" || pathname.startsWith("/o/");
 }
 
+function isScannerPath(pathname: string) {
+  return scannerPaths.has(pathname.toLowerCase());
+}
+
 export function proxy(request: NextRequest) {
+  if (isScannerPath(request.nextUrl.pathname)) {
+    return new NextResponse(null, {
+      status: 404,
+      headers: {
+        "Cache-Control": "no-store"
+      }
+    });
+  }
+
   const explicitLocale = request.nextUrl.searchParams.get("lang");
   const cookieLocale = request.cookies.get(localeCookie)?.value;
   const acceptLanguage = request.headers.get("accept-language");

@@ -454,9 +454,13 @@ export const uiCopy = {
     "landing.footer.compliance": "Security",
     "landing.footer.pricing": "Pricing",
     "landing.footer.company": "Company",
+    "landing.footer.legalHeading": "Legal",
     "landing.footer.changelog": "Changelog",
     "landing.footer.status": "Status",
     "landing.footer.trust": "Trust Center",
+    "landing.footer.privacy": "Privacy",
+    "landing.footer.cookies": "Cookies",
+    "landing.footer.subprocessors": "Subprocessors",
     "landing.footer.manifesto": "Manifesto",
     "landing.footer.contact": "Contact",
     "landing.footer.owners": "For pet owners",
@@ -617,6 +621,16 @@ export const uiCopy = {
     "trust.snapshot.title": "Current posture",
     "trust.snapshot.body":
       "EU hosting design, GDPR processor/controller framing, staff-approved AI, audit trails, SOC 2 in progress, and ISO 27001 planned.",
+    "trust.docs.badge": "Data protection",
+    "trust.docs.title": "Review the public trust documents",
+    "trust.docs.body":
+      "Privacy, cookie, and subprocessor pages keep buyer diligence separate from marketing claims.",
+    "trust.docs.privacy.body":
+      "How PetCura handles website, clinic, owner, messaging, and AI accountability data.",
+    "trust.docs.cookies.body":
+      "Which cookies and analytics signals are essential, optional, or not used in the pilot.",
+    "trust.docs.subprocessors.body":
+      "Service providers used for hosting, messaging, observability, jobs, analytics, and AI assistance.",
     "trust.residency.title": "Residency and roles",
     "trust.residency.body":
       "PetCura keeps communication data separate from the PMS record and documents controller/processor responsibilities.",
@@ -1544,9 +1558,13 @@ export const uiCopy = {
     "landing.footer.compliance": "Turve",
     "landing.footer.pricing": "Hinnad",
     "landing.footer.company": "Ettevõte",
+    "landing.footer.legalHeading": "Õigusinfo",
     "landing.footer.changelog": "Muudatuste logi",
     "landing.footer.status": "Olek",
     "landing.footer.trust": "Usalduskeskus",
+    "landing.footer.privacy": "Privaatsus",
+    "landing.footer.cookies": "Küpsised",
+    "landing.footer.subprocessors": "Alamtöötlejad",
     "landing.footer.manifesto": "Manifest",
     "landing.footer.contact": "Kontakt",
     "landing.footer.owners": "Lemmikloomade omanikele",
@@ -1707,6 +1725,16 @@ export const uiCopy = {
     "trust.snapshot.title": "Praegune seis",
     "trust.snapshot.body":
       "EU majutuse disain, GDPR töötleja/vastutava töötleja raam, töötaja kinnitatud AI, auditijäljed, SOC 2 töös ja ISO 27001 plaanis.",
+    "trust.docs.badge": "Andmekaitse",
+    "trust.docs.title": "Vaata avalikke usaldusdokumente",
+    "trust.docs.body":
+      "Privaatsuse, küpsiste ja alamtöötlejate lehed hoiavad ostja due diligence'i eraldi turundusväidetest.",
+    "trust.docs.privacy.body":
+      "Kuidas PetCura käsitleb veebisaidi, kliiniku, omaniku, sõnumite ja AI vastutuse andmeid.",
+    "trust.docs.cookies.body":
+      "Millised küpsised ja analüütikasignaalid on hädavajalikud, valikulised või piloodis kasutamata.",
+    "trust.docs.subprocessors.body":
+      "Teenusepakkujad majutuse, sõnumivahetuse, vaadeldavuse, tööde, analüütika ja AI abi jaoks.",
     "trust.residency.title": "Andmeasukoht ja rollid",
     "trust.residency.body":
       "PetCura hoiab suhtlusandmed PMS-i meditsiinikaardist eraldi ning dokumenteerib vastutusrollid.",
@@ -2642,9 +2670,13 @@ export const uiCopy = {
     "landing.footer.compliance": "Защита",
     "landing.footer.pricing": "Цены",
     "landing.footer.company": "Компания",
+    "landing.footer.legalHeading": "Правовая информация",
     "landing.footer.changelog": "Журнал изменений",
     "landing.footer.status": "Статус",
     "landing.footer.trust": "Trust Center",
+    "landing.footer.privacy": "Приватность",
+    "landing.footer.cookies": "Файлы cookie",
+    "landing.footer.subprocessors": "Субпроцессоры",
     "landing.footer.manifesto": "Манифест",
     "landing.footer.contact": "Контакты",
     "landing.footer.owners": "Для владельцев",
@@ -2805,6 +2837,16 @@ export const uiCopy = {
     "trust.snapshot.title": "Текущая позиция",
     "trust.snapshot.body":
       "Дизайн хостинга в ЕС, рамка GDPR обработчик/контролер, AI с подтверждением сотрудника, аудит, SOC 2 в процессе и ISO 27001 в плане.",
+    "trust.docs.badge": "Защита данных",
+    "trust.docs.title": "Публичные документы доверия",
+    "trust.docs.body":
+      "Страницы о приватности, cookies и субпроцессорах отделяют проверку покупателя от маркетинговых заявлений.",
+    "trust.docs.privacy.body":
+      "Как PetCura обрабатывает данные сайта, клиники, владельца, сообщений и отчетности AI.",
+    "trust.docs.cookies.body":
+      "Какие cookies и аналитические сигналы являются обязательными, опциональными или не используются в пилоте.",
+    "trust.docs.subprocessors.body":
+      "Поставщики для хостинга, сообщений, мониторинга, фоновых задач, аналитики и AI-помощи.",
     "trust.residency.title": "Хранение и роли",
     "trust.residency.body":
       "PetCura держит коммуникационные данные отдельно от медицинской записи PMS и документирует роли ответственности.",

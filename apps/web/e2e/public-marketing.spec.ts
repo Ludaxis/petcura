@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const publicRoutes = ["/", "/owners", "/demo", "/sandbox", "/trust"] as const;
+const publicRoutes = [
+  "/",
+  "/owners",
+  "/demo",
+  "/sandbox",
+  "/trust",
+  "/privacy",
+  "/cookies",
+  "/subprocessors"
+] as const;
 
 test.describe("Public marketing experience", () => {
   for (const route of publicRoutes) {
@@ -23,7 +32,15 @@ test.describe("Public marketing experience", () => {
     expect(hrefs).not.toContain("/sandbox#walkthrough");
     expect(hrefs.some((href) => href.startsWith("mailto:"))).toBe(false);
 
-    for (const route of ["/demo", "/sandbox", "/trust", "/owners"] as const) {
+    for (const route of [
+      "/demo",
+      "/sandbox",
+      "/trust",
+      "/owners",
+      "/privacy",
+      "/cookies",
+      "/subprocessors"
+    ] as const) {
       expect(hrefs.some((href) => href.startsWith(route))).toBe(true);
       const response = await request.get(route);
       expect(response.status(), route).toBeLessThan(400);
@@ -80,9 +97,50 @@ test.describe("Public marketing experience", () => {
     expect(bodyText).toContain("In progress");
     expect(bodyText).toContain("ISO 27001");
     expect(bodyText).toContain("Planned");
+    expect(bodyText).toContain("Privacy");
+    expect(bodyText).toContain("Cookies");
+    expect(bodyText).toContain("Subprocessors");
     expect(bodyText).not.toContain("EU AI Act conformant");
     expect(bodyText).not.toMatch(/completed\s+SOC\s*2/i);
     expect(bodyText).not.toMatch(/completed\s+ISO\s*27001/i);
+  });
+
+  test("legal pages publish conservative data-protection wording", async ({
+    page
+  }) => {
+    test.skip(
+      test.info().project.name.includes("mobile"),
+      "Content assertions are shared; desktop run keeps the suite fast."
+    );
+
+    await page.goto("/privacy");
+    await expect(page.getByRole("heading", { name: "Privacy Notice" })).toBeVisible();
+    await expect(page.getByText("Clinic-controlled data")).toBeVisible();
+    await expect(page.getByText("does not sell owner data")).toBeVisible();
+
+    await page.goto("/cookies");
+    await expect(page.getByRole("heading", { name: "Cookie Notice" })).toBeVisible();
+    await expect(page.getByText("No ad cookies in pilot")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Reject optional", exact: true })
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Reject optional", exact: true })
+      .click();
+    await expect(
+      page.getByText("optional analytics rejected")
+    ).toBeVisible();
+
+    await page.goto("/subprocessors");
+    await expect(page.getByRole("heading", { name: "Subprocessors" })).toBeVisible();
+    await expect(page.getByText("AI inference provider routes")).toBeVisible();
+    await expect(
+      page.getByText("PetCura does not sell owner data.", { exact: true })
+    ).toBeVisible();
+
+    const bodyText = await page.locator("body").innerText();
+    expect(bodyText).not.toMatch(/SOC\s*2\s+(certified|compliant|completed)/i);
+    expect(bodyText).not.toMatch(/ISO\s*27001\s+(certified|compliant|completed)/i);
   });
 });
 
