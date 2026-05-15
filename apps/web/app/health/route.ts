@@ -33,12 +33,15 @@ function getRuntimeRegion() {
   );
 }
 
-async function checkSupabaseAuthHealth(supabaseUrl: string) {
+async function checkSupabaseAuthHealth(supabaseUrl: string, publishableKey: string) {
   const startedAt = Date.now();
   try {
     const url = new URL("/auth/v1/health", supabaseUrl);
     const response = await fetch(url, {
       cache: "no-store",
+      headers: {
+        apikey: publishableKey
+      },
       signal: AbortSignal.timeout(2500)
     });
 
@@ -64,7 +67,10 @@ export async function GET(request: NextRequest) {
     : env.error.issues.map((issue) => issue.path.join(".")).filter(Boolean);
   const missingServer = REQUIRED_SERVER_ENV.filter((key) => !process.env[key]);
   const supabase = publicEnv
-    ? await checkSupabaseAuthHealth(publicEnv.NEXT_PUBLIC_SUPABASE_URL)
+    ? await checkSupabaseAuthHealth(
+        publicEnv.NEXT_PUBLIC_SUPABASE_URL,
+        publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+      )
     : { ok: false, status: 0, latencyMs: 0 };
   const strict = request.nextUrl.searchParams.get("strict") === "1";
   const envReady = missingPublic.length === 0;
