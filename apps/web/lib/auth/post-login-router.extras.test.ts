@@ -3,7 +3,8 @@
  *
  * The original suite covers the 12 main branches per merged plan §3.1.
  * These tests add:
- *   - precedence ordering (firstRun > next > lastVisited > default)
+ *   - precedence ordering (next > lastVisited > default for staff while
+ *     onboarding is disabled)
  *   - unsafe `next` rejection on the owner branch
  *   - lastVisited cookie precedence on the owner branch (intentionally
  *     ignored today — owner cookie is not consulted; assert that and
@@ -43,24 +44,24 @@ function owner(overrides: Partial<RouterInput["actor"]> = {}): RouterInput["acto
 }
 
 describe("post-login-router precedence (staff)", () => {
-  it("first-run admin beats any next param", () => {
+  it("staff first-run does not beat a safe next param while onboarding is disabled", () => {
     const r = resolvePostLoginDestination({
       actor: staff({ firstRun: true, role: "admin" }),
       nextParam: "/settings/billing",
       lastVisitedCookie: "/inbox"
     });
-    expect(r.destination).toBe("/onboarding/clinic");
-    expect(r.reason).toBe("clinic_first_run");
+    expect(r.destination).toBe("/settings/billing");
+    expect(r.reason).toBe("next_param");
   });
 
-  it("first-run non-admin beats any next param", () => {
+  it("staff first-run falls through to last visited when next is absent", () => {
     const r = resolvePostLoginDestination({
       actor: staff({ firstRun: true, role: "vet" }),
-      nextParam: "/inbox",
+      nextParam: null,
       lastVisitedCookie: "/inbox?q=mine"
     });
-    expect(r.destination).toBe("/onboarding/staff");
-    expect(r.reason).toBe("staff_first_run");
+    expect(r.destination).toBe("/inbox?q=mine");
+    expect(r.reason).toBe("last_visited");
   });
 
   it("safe next beats last-visited cookie", () => {

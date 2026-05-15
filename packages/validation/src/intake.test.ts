@@ -6,7 +6,13 @@ import {
   createReminderSchema,
   intakeRequestSchema,
   internalNoteSchema,
+  marketingLeadAdminNoteSchema,
+  marketingLeadArchiveSchema,
+  marketingLeadBulkIdsSchema,
+  marketingLeadReplyHandoffSchema,
   marketingLeadSchema,
+  marketingLeadStatusSchema,
+  marketingLeadStatusUpdateSchema,
   ownerProfileSchema,
   petProfileSchema,
   reminderStatusActionSchema,
@@ -22,6 +28,7 @@ import {
 
 const requestId = "11111111-1111-4111-8111-111111111111";
 const staffMemberId = "22222222-2222-4222-8222-222222222222";
+const leadId = "33333333-3333-4333-8333-333333333333";
 
 describe("intakeRequestSchema", () => {
   it("accepts a complete multilingual owner intake", () => {
@@ -139,6 +146,48 @@ describe("marketingLeadSchema", () => {
         workEmail: "not-email",
         country: "E",
         consentGiven: "false"
+      }).success
+    ).toBe(false);
+  });
+
+  it("validates super-admin lead workflow inputs", () => {
+    expect(marketingLeadStatusSchema.parse("qualified")).toBe("qualified");
+    expect(
+      marketingLeadStatusUpdateSchema.parse({
+        leadIds: [leadId],
+        status: "contacted"
+      })
+    ).toMatchObject({ status: "contacted" });
+    expect(marketingLeadArchiveSchema.parse({ leadIds: [leadId] })).toMatchObject({
+      leadIds: [leadId]
+    });
+    expect(marketingLeadReplyHandoffSchema.parse({ leadId })).toMatchObject({
+      leadId
+    });
+    expect(
+      marketingLeadAdminNoteSchema.parse({
+        leadId,
+        adminNote: "  Follow up next week. "
+      })
+    ).toMatchObject({ adminNote: "Follow up next week." });
+  });
+
+  it("keeps archive as a separate transition and bounds bulk changes", () => {
+    expect(
+      marketingLeadStatusUpdateSchema.safeParse({
+        leadIds: [leadId],
+        status: "archived"
+      }).success
+    ).toBe(false);
+    expect(marketingLeadBulkIdsSchema.safeParse([]).success).toBe(false);
+    expect(
+      marketingLeadBulkIdsSchema.safeParse(Array.from({ length: 101 }, () => leadId))
+        .success
+    ).toBe(false);
+    expect(
+      marketingLeadAdminNoteSchema.safeParse({
+        leadId,
+        adminNote: "x".repeat(1201)
       }).success
     ).toBe(false);
   });

@@ -157,7 +157,7 @@ function WorkflowDemoFrame({
   const copy = frameCopy[kind];
 
   return (
-    <article className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--paper)] shadow-[0_28px_80px_-48px_rgba(28,40,28,0.45)]">
+    <article className="flex h-full min-h-[500px] flex-col overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--paper)] shadow-[0_28px_80px_-48px_rgba(28,40,28,0.45)]">
       <div className="flex items-center justify-between border-b border-[var(--line)] px-4 py-3">
         <div className="flex items-center gap-2">
           <span
@@ -181,7 +181,7 @@ function WorkflowDemoFrame({
         </span>
       </div>
 
-      <div className="grid flex-1 gap-0 lg:grid-cols-[0.78fr_1.22fr]">
+      <div className="grid flex-1 gap-0 lg:grid-cols-[0.7fr_1.3fr]">
         <aside className="flex flex-col justify-between border-b border-[var(--line)] bg-[var(--surface-soft)] p-5 lg:border-b-0 lg:border-r">
           <div>
             <span
@@ -191,7 +191,7 @@ function WorkflowDemoFrame({
               {icon}
               {copy.label}
             </span>
-            <p className="mt-4 text-2xl font-semibold leading-tight text-[var(--foreground)]">
+            <p className="mt-4 text-xl font-semibold leading-tight text-[var(--foreground)]">
               {copy.title}
             </p>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
@@ -314,8 +314,9 @@ function StructuredRequestFrame() {
 
       <div className="grid flex-1 gap-4 lg:grid-cols-[1fr_0.95fr]">
         <WorkflowPanel title="AI summary">
-          <p className="text-base leading-7 text-[var(--foreground)]">
-            {sandboxInbox.request.summary}
+          <p className="text-sm leading-6 text-[var(--foreground)]">
+            Luna has not eaten for 24h and is hiding. Staff should review
+            promptly and decide the next step.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {["No appetite 24h", "Hiding", "Staff review"].map((label) => (
@@ -349,8 +350,10 @@ function HumanReviewFrame() {
     <div className="grid h-full gap-4 lg:grid-cols-[1fr_0.9fr]">
       <WorkflowPanel title={sandboxInbox.aiDraft.label}>
         <div className="rounded-[16px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
-          <p className="text-sm leading-7 text-[var(--foreground)]">
-            {sandboxInbox.aiDraft.body}
+          <p className="text-sm leading-6 text-[var(--foreground)]">
+            Thanks for the details. A team member will review Luna now. If she
+            struggles to breathe, collapses, or becomes very weak, call the
+            clinic emergency number immediately.
           </p>
         </div>
         <div className="mt-4 flex items-start gap-3 rounded-[14px] bg-[#FFF2DF] p-3 text-sm leading-6 text-[#7A4B16]">
@@ -369,8 +372,9 @@ function HumanReviewFrame() {
           <DemoFact label="Decision" value={sandboxInbox.staffAction.decision} />
         </WorkflowPanel>
         <WorkflowPanel title="Reply sent">
-          <p className="rounded-[16px] bg-[var(--primary)] p-4 text-sm leading-7 text-[var(--paper)]">
-            {sandboxInbox.staffAction.ownerReply}
+          <p className="rounded-[16px] bg-[var(--primary)] p-4 text-sm leading-6 text-[var(--paper)]">
+            We can see Luna today at 14:00. Please bring her in a covered
+            carrier.
           </p>
           <div className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary-strong)]">
             <Send aria-hidden="true" size={14} />

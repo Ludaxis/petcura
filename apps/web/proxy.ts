@@ -3,6 +3,7 @@ import { normalizeLocale } from "@petcura/shared";
 
 const localeCookie = "petcura_locale";
 const clinicHosts = new Set(["app.petcura.app"]);
+const marketingHosts = new Set(["petcura.app", "www.petcura.app"]);
 const ownerHost = "my.petcura.app";
 const ownerHosts = new Set([ownerHost]);
 const scannerPaths = new Set([
@@ -27,8 +28,20 @@ function isClinicHost(host: string | null) {
   return clinicHosts.has(host.split(":")[0]?.toLowerCase() ?? "");
 }
 
+function isMarketingHost(host: string | null) {
+  if (!host) {
+    return false;
+  }
+
+  return marketingHosts.has(host.split(":")[0]?.toLowerCase() ?? "");
+}
+
 function isOwnerAppPath(pathname: string) {
   return pathname === "/o" || pathname.startsWith("/o/");
+}
+
+function isStaffAuthPath(pathname: string) {
+  return pathname === "/login" || pathname.startsWith("/login/") || pathname === "/auth/callback";
 }
 
 function isScannerPath(pathname: string) {
@@ -53,6 +66,15 @@ export function proxy(request: NextRequest) {
     request.headers.get("x-forwarded-host") ??
     request.headers.get("host") ??
     request.nextUrl.host;
+
+  if (isMarketingHost(host) && isStaffAuthPath(request.nextUrl.pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+
+    redirectUrl.hostname = "app.petcura.app";
+    redirectUrl.port = "";
+
+    return NextResponse.redirect(redirectUrl);
+  }
 
   if (isClinicHost(host) && isOwnerAppPath(request.nextUrl.pathname)) {
     const redirectUrl = request.nextUrl.clone();

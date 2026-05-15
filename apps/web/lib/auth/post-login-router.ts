@@ -16,6 +16,8 @@ import {
   sanitizeStaffNextPath
 } from "./sanitize-next-path";
 
+const staffOnboardingEnabled = false;
+
 /**
  * Subset of `staff_role` (database enum: owner|admin|vet|tech|reception|viewer)
  * collapsed for routing purposes. `owner` and `admin` both map to admin.
@@ -86,10 +88,10 @@ export function resolvePostLoginDestination(input: RouterInput): RouterOutput {
   const { actor, nextParam, lastVisitedCookie } = input;
 
   if (actor.kind === "clinic_staff") {
-    if (actor.firstRun && actor.role === "admin") {
+    if (staffOnboardingEnabled && actor.firstRun && actor.role === "admin") {
       return { destination: "/onboarding/clinic", reason: "clinic_first_run" };
     }
-    if (actor.firstRun) {
+    if (staffOnboardingEnabled && actor.firstRun) {
       return { destination: "/onboarding/staff", reason: "staff_first_run" };
     }
     const nextSanitized = nextParam ? sanitizeStaffNextPath(nextParam, "") : "";

@@ -1,43 +1,71 @@
 import Link from "next/link";
+import type { InputHTMLAttributes } from "react";
 import {
+  Activity,
   Building2,
   ExternalLink,
   Inbox,
+  Search,
   ShieldCheck,
   ShieldOff,
-  UserPlus
+  UserPlus,
+  Users,
+  X
 } from "lucide-react";
-import { Badge, Button, Panel } from "@petcura/ui";
+import { Badge, Button, Panel, cn } from "@petcura/ui";
 import {
   createTranslator,
   staffRoles,
   supportedLocales,
   type CopyKey,
+  type SupportedLocale,
   withLocale
 } from "@petcura/shared";
+import type { MarketingLeadStatus } from "@petcura/validation";
 import { getRequestLocale } from "@/lib/locale";
 import {
+  listAdminActivity,
   listAdminClinics,
-  listAdminMarketingLeads
+  listAdminMarketingLeads,
+  type AdminActivityItem
 } from "@/lib/admin/bootstrap";
 import { getSuperAdminResult } from "@/lib/auth/super-admin";
 import { requirePublicEnv } from "@/lib/env";
 import { AppShell } from "@/app/_components/AppShell";
+import { AdminLeadTable } from "./_components/AdminLeadTable";
 import {
   addClinicStaff,
   createClinic,
   updateClinicStaffStatus
 } from "./actions";
 
+type AdminTab = "leads" | "clinics" | "staff" | "activity";
+
 type AdminPageProps = {
   searchParams?: Promise<{
     admin_error?: string | string[];
     admin_status?: string | string[];
+    country?: string | string[];
     lang?: string | string[];
+    prefillClinicName?: string | string[];
+    prefillCountry?: string | string[];
+    q?: string | string[];
+    source?: string | string[];
+    status?: string | string[];
+    tab?: string | string[];
   }>;
 };
 
 const roleOptions = staffRoles;
+const adminTabs: AdminTab[] = ["leads", "clinics", "staff", "activity"];
+const leadStatuses = [
+  "all",
+  "new",
+  "contacted",
+  "qualified",
+  "converted",
+  "archived"
+] as const;
 const leadSourceLabels: Record<string, string> = {
   hero: "Hero",
   owner_path: "Owner path",
@@ -52,6 +80,18 @@ const leadSourceLabels: Record<string, string> = {
 
 function getSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getAdminTab(value: string | string[] | undefined): AdminTab {
+  const tab = getSearchParam(value);
+  return adminTabs.includes(tab as AdminTab) ? (tab as AdminTab) : "leads";
+}
+
+function getLeadStatus(value: string | string[] | undefined) {
+  const status = getSearchParam(value);
+  return leadStatuses.includes(status as (typeof leadStatuses)[number])
+    ? (status as MarketingLeadStatus | "all")
+    : "all";
 }
 
 function getStatusCopy(status: string | undefined): CopyKey | null {
@@ -70,22 +110,63 @@ function getStatusCopy(status: string | undefined): CopyKey | null {
   return null;
 }
 
-function formatLeadValue(value: string | null | undefined, fallback: string) {
-  if (!value) return fallback;
-  return leadSourceLabels[value] ?? value.replaceAll("_", " ");
+function adminHref(
+  locale: SupportedLocale,
+  tab: AdminTab,
+  params: Record<string, string | undefined> = {}
+) {
+  const searchParams = new URLSearchParams({ lang: locale, tab });
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) searchParams.set(key, value);
+  }
+
+  return `/admin?${searchParams.toString()}`;
+}
+
+function slugifyClinicName(value: string | undefined) {
+  if (!value) return "";
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 80);
+}
+
+function guessCountryCode(country: string | undefined) {
+  if (!country) return "";
+  const normalized = country.trim().toLowerCase();
+  if (normalized === "estonia" || normalized === "ee") return "EE";
+  if (normalized.length === 2) return normalized.toUpperCase();
+  return "";
+}
+
+function renderPayload(payload: AdminActivityItem["payload"]) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return "";
+  }
+
+  return Object.entries(payload)
+    .slice(0, 6)
+    .map(([key, value]) => `${key}: ${String(value)}`)
+    .join(" · ");
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const params = await searchParams;
   const locale = await getRequestLocale(params?.lang);
   const t = createTranslator(locale);
-  // getSuperAdminResult runs the auth gate (redirects unauthenticated
-  // visitors) but returns a discriminated "forbidden" result for
-  // authenticated non-super-admins. The old requireSuperAdminContext
-  // called notFound() — which collapsed "you lack permission" into the
-  // generic 404 page, leaving non-admin staff convinced the feature was
-  // missing or broken. AppShell still calls requireStaffContext (cached),
-  // which is fine — super-admins are seeded as clinic staff too.
+  const activeTab = getAdminTab(params?.tab);
+  const leadStatus = getLeadStatus(params?.status);
+  const q = getSearchParam(params?.q)?.trim() ?? "";
+  const source = getSearchParam(params?.source) ?? "";
+  const country = getSearchParam(params?.country) ?? "";
+  const prefillClinicName = getSearchParam(params?.prefillClinicName) ?? "";
+  const prefillCountry = getSearchParam(params?.prefillCountry) ?? "";
+
   const superAdmin = await getSuperAdminResult(locale);
   if (superAdmin.kind === "forbidden") {
     return (
@@ -139,9 +220,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </AppShell>
     );
   }
-  const [clinics, marketingLeadList] = await Promise.all([
+
+  const [clinics, marketingLeadList, activity] = await Promise.all([
     listAdminClinics(),
-    listAdminMarketingLeads()
+    listAdminMarketingLeads({
+      status: leadStatus,
+      query: q,
+      source,
+      country,
+      includeArchived: leadStatus === "archived"
+    }),
+    listAdminActivity()
   ]);
   const env = requirePublicEnv();
   const statusKey = getStatusCopy(getSearchParam(params?.admin_status));
@@ -153,6 +242,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const compactDateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium"
   });
+  const staffCount = clinics.reduce((count, clinic) => count + clinic.staff.length, 0);
 
   return (
     <AppShell
@@ -161,418 +251,623 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       pageTitle={t("admin.title")}
     >
       <div className="mx-auto flex w-full min-h-0 max-w-7xl flex-1 flex-col gap-5 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
-        {/*
-          The persistent sidebar carries identity (and a Super-admin entry
-          for users who qualify), so the page header collapses to just the
-          page title with the super-admin badge inline as a "you're in
-          admin mode" cue.
-        */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold text-[var(--ink)]">
-              {t("admin.title")}
-            </h1>
-            <Badge tone="teal">
-              <ShieldCheck aria-hidden="true" size={13} />
-              {t("admin.superAdmin")}
-            </Badge>
-          </div>
-        </div>
-
-        <p className="max-w-3xl text-sm leading-6 text-[var(--muted)]">
-          {t("admin.description")}
-        </p>
-
-      {statusKey ? (
-        <div
-          role="status"
-          className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]"
-        >
-          {t(statusKey)}
-        </div>
-      ) : null}
-
-      {hasError ? (
-        <div
-          role="alert"
-          className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm font-medium text-[var(--red)]"
-        >
-          {t("admin.error")}
-        </div>
-      ) : null}
-
-      <section className="grid gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--line)] pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <Inbox
-                aria-hidden="true"
-                className="text-[var(--primary)]"
-                size={18}
-              />
-              <h2 className="text-xl font-semibold">
-                {t("admin.demoLeads")}
-              </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold text-[var(--ink)]">
+                {t("admin.title")}
+              </h1>
+              <Badge tone="teal">
+                <ShieldCheck aria-hidden="true" size={13} />
+                {t("admin.superAdmin")}
+              </Badge>
             </div>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-              {t("admin.demoLeadsDescription")}
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+              {t("admin.description")}
             </p>
           </div>
-          <Badge tone="neutral">
-            {t("admin.demoLeadsCount", {
-              count: marketingLeadList.total
-            })}
-          </Badge>
         </div>
 
-        <Panel className="overflow-hidden p-0">
-          {marketingLeadList.leads.length === 0 ? (
-            <div className="p-5 text-sm leading-6 text-[var(--muted)]">
-              {t("admin.demoLeadsEmpty")}
-            </div>
-          ) : (
-            <div className="divide-y divide-[var(--line)]">
-              {marketingLeadList.leads.map((lead) => (
-                <article className="grid gap-4 p-5" key={lead.id}>
-                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="break-words text-base font-semibold text-[var(--ink)]">
-                          {lead.clinic_name}
-                        </h3>
-                        <Badge tone="teal">
-                          {formatLeadValue(lead.source, "")}
-                        </Badge>
-                        <Badge tone="neutral">
-                          {lead.locale.toUpperCase()}
-                        </Badge>
-                      </div>
-                      <p className="mt-2 break-words text-sm leading-6 text-[var(--muted)]">
-                        {lead.contact_name} ·{" "}
-                        <a
-                          className="font-medium text-[var(--primary)] hover:underline"
-                          href={`mailto:${lead.work_email}`}
-                        >
-                          {lead.work_email}
-                        </a>
-                      </p>
-                    </div>
-                    <time className="text-sm text-[var(--muted)]">
-                      {dateFormatter.format(new Date(lead.created_at))}
-                    </time>
-                  </div>
-
-                  <dl className="grid gap-3 text-sm sm:grid-cols-3">
-                    <div>
-                      <dt className="font-medium text-[var(--muted)]">
-                        {t("admin.country")}
-                      </dt>
-                      <dd className="mt-1 break-words text-[var(--ink)]">
-                        {lead.country}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-[var(--muted)]">
-                        {t("admin.demoLeadsPms")}
-                      </dt>
-                      <dd className="mt-1 break-words text-[var(--ink)]">
-                        {formatLeadValue(
-                          lead.pms_system,
-                          t("admin.demoLeadsNotProvided")
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-[var(--muted)]">
-                        {t("admin.demoLeadsVolume")}
-                      </dt>
-                      <dd className="mt-1 break-words text-[var(--ink)]">
-                        {formatLeadValue(
-                          lead.monthly_request_volume,
-                          t("admin.demoLeadsNotProvided")
-                        )}
-                      </dd>
-                    </div>
-                  </dl>
-
-                  {lead.message ? (
-                    <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3">
-                      <p className="text-xs font-medium uppercase tracking-[0.06em] text-[var(--muted-2)]">
-                        {t("admin.demoLeadsMessage")}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--ink)]">
-                        {lead.message}
-                      </p>
-                    </div>
-                  ) : null}
-
-                  <p className="text-xs leading-5 text-[var(--muted-2)]">
-                    {t("admin.demoLeadsConsent")} ·{" "}
-                    {compactDateFormatter.format(new Date(lead.created_at))}
-                  </p>
-                </article>
-              ))}
-            </div>
-          )}
-        </Panel>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <Panel className="p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <Building2
-              aria-hidden="true"
-              className="text-[var(--primary)]"
-              size={18}
-            />
-            <h2 className="font-semibold">{t("admin.createClinic")}</h2>
+        {statusKey ? (
+          <div
+            role="status"
+            className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]"
+          >
+            {t(statusKey)}
           </div>
-          <form action={createClinic} className="grid gap-4">
-            <input name="lang" type="hidden" value={locale} />
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="clinic-name">
-                  {t("admin.name")}
-                </label>
-                <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                  id="clinic-name"
-                  name="name"
-                  placeholder="Alex Veterinary Clinic"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="clinic-slug">
-                  {t("admin.slug")}
-                </label>
-                <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                  id="clinic-slug"
-                  name="slug"
-                  placeholder="alex-vet-demo"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="country">
-                  {t("admin.country")}
-                </label>
-                <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                  defaultValue="EE"
-                  id="country"
-                  maxLength={2}
-                  name="country"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="timezone">
-                  {t("admin.timezone")}
-                </label>
-                <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                  defaultValue="Europe/Tallinn"
-                  id="timezone"
-                  name="timezone"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="clinic-locale">
-                  {t("admin.locale")}
-                </label>
-                <select
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                  defaultValue="en"
-                  id="clinic-locale"
-                  name="clinicLocale"
-                >
-                  {supportedLocales.map((option) => (
-                    <option key={option} value={option}>
-                      {option.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <Button className="w-full sm:w-auto" type="submit">
-              <Building2 aria-hidden="true" size={16} />
-              {t("admin.create")}
-            </Button>
-          </form>
-        </Panel>
+        ) : null}
 
-        <Panel className="p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <UserPlus
-              aria-hidden="true"
-              className="text-[var(--primary)]"
-              size={18}
-            />
-            <h2 className="font-semibold">{t("admin.addStaff")}</h2>
+        {hasError ? (
+          <div
+            role="alert"
+            className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm font-medium text-[var(--red)]"
+          >
+            {t("admin.error")}
           </div>
-          <form action={addClinicStaff} className="grid gap-4">
-            <input name="lang" type="hidden" value={locale} />
-            <div className="grid gap-2">
-              <label className="text-sm font-medium" htmlFor="clinic-id">
-                {t("admin.clinic")}
-              </label>
-              <select
-                className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                disabled={clinics.length === 0}
-                id="clinic-id"
-                name="clinicId"
-                required
+        ) : null}
+
+        <nav
+          aria-label={t("admin.tabs.ariaLabel")}
+          className="flex flex-wrap gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-1"
+        >
+          {adminTabs.map((tab) => {
+            const active = activeTab === tab;
+            const Icon =
+              tab === "leads"
+                ? Inbox
+                : tab === "clinics"
+                  ? Building2
+                  : tab === "staff"
+                    ? Users
+                    : Activity;
+            const count =
+              tab === "leads"
+                ? marketingLeadList.statusCounts.all
+                : tab === "clinics"
+                  ? clinics.length
+                  : tab === "staff"
+                    ? staffCount
+                    : activity.length;
+
+            return (
+              <Button
+                asChild
+                className={cn("min-w-[8rem]", active && "shadow-sm")}
+                key={tab}
+                size="sm"
+                variant={active ? "primary" : "ghost"}
               >
-                {clinics.map((clinic) => (
-                  <option key={clinic.id} value={clinic.id}>
-                    {clinic.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem]">
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="staff-email">
-                  {t("admin.email")}
-                </label>
-                <input
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                  id="staff-email"
-                  name="email"
-                  placeholder="name@clinic.ee"
-                  required
-                  type="email"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="staff-role">
-                  {t("admin.role")}
-                </label>
-                <select
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
-                  defaultValue="reception"
-                  id="staff-role"
-                  name="role"
+                <Link
+                  href={adminHref(locale, tab)}
+                  prefetch={false}
+                  aria-current={active ? "page" : undefined}
                 >
-                  {roleOptions.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <Button
-              className="w-full sm:w-auto"
-              disabled={clinics.length === 0}
-              type="submit"
-            >
-              <UserPlus aria-hidden="true" size={16} />
-              {t("admin.addStaffButton")}
-            </Button>
-          </form>
-        </Panel>
-      </section>
+                  <Icon aria-hidden="true" size={15} />
+                  {t(`admin.tabs.${tab}` as CopyKey)}
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[10px]",
+                      active
+                        ? "bg-white/20 text-[var(--paper)]"
+                        : "bg-[var(--soft)] text-[var(--muted)]"
+                    )}
+                  >
+                    {count}
+                  </span>
+                </Link>
+              </Button>
+            );
+          })}
+        </nav>
 
-      <section className="grid gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">{t("admin.clinics")}</h2>
-          <Badge tone="neutral">{clinics.length}</Badge>
-        </div>
-
-        {clinics.map((clinic) => {
-          const intakePath = `/intake?clinic=${clinic.slug}`;
-          const intakeUrl = new URL(intakePath, env.NEXT_PUBLIC_APP_URL);
-
-          return (
-            <Panel className="min-w-0 p-5" key={clinic.id}>
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-semibold">{clinic.name}</h3>
-                    <Badge tone="teal">{clinic.slug}</Badge>
-                    <Badge tone="neutral">{clinic.country}</Badge>
-                    <Badge tone="neutral">
-                      {clinic.locale.toUpperCase()} · {clinic.timezone}
-                    </Badge>
-                  </div>
-                  <div className="mt-4 grid gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm">
-                    <span className="font-medium">{t("admin.intakeUrl")}</span>
-                    <Link
-                      className="inline-flex min-w-0 items-center gap-2 break-all text-[var(--primary)] hover:underline"
-                      href={withLocale(intakePath, locale)}
-                    >
-                      {intakeUrl.toString()}
-                      <ExternalLink
-                        aria-hidden="true"
-                        className="shrink-0"
-                        size={14}
-                      />
-                    </Link>
-                  </div>
-                  <p className="mt-3 text-xs text-[var(--muted)]">
-                    {dateFormatter.format(new Date(clinic.created_at))}
-                  </p>
+        {activeTab === "leads" ? (
+          <section className="grid gap-3">
+            <LeadFilters
+              country={country}
+              countries={marketingLeadList.countries}
+              locale={locale}
+              q={q}
+              source={source}
+              status={leadStatus}
+              t={t}
+            />
+            <Panel className="overflow-hidden p-0">
+              {marketingLeadList.leads.length === 0 ? (
+                <div className="p-6 text-sm leading-6 text-[var(--muted)]">
+                  {t("admin.demoLeadsEmpty")}
                 </div>
-
-                <div className="min-w-0">
-                  <h4 className="font-semibold">{t("admin.staff")}</h4>
-                  <div className="mt-3 grid gap-2">
-                    {clinic.staff.map((member) => (
-                      <div
-                        className="grid gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
-                        key={member.id}
-                      >
-                        <div className="min-w-0">
-                          <p className="break-words text-sm font-semibold">
-                            {member.email}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <Badge tone="neutral">{member.role}</Badge>
-                            <Badge tone={member.is_active ? "teal" : "neutral"}>
-                              {member.is_active
-                                ? t("admin.active")
-                                : t("admin.inactive")}
-                            </Badge>
-                          </div>
-                        </div>
-                        <form action={updateClinicStaffStatus}>
-                          <input name="lang" type="hidden" value={locale} />
-                          <input
-                            name="membershipId"
-                            type="hidden"
-                            value={member.id}
-                          />
-                          <input
-                            name="isActive"
-                            type="hidden"
-                            value={member.is_active ? "false" : "true"}
-                          />
-                          <Button
-                            className="w-full sm:w-auto"
-                            type="submit"
-                            variant="secondary"
-                          >
-                            {member.is_active
-                              ? t("admin.deactivate")
-                              : t("admin.activate")}
-                          </Button>
-                        </form>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              ) : (
+                <AdminLeadTable
+                  labels={{
+                    selected: t("admin.leads.selected"),
+                    reply: t("admin.leads.reply"),
+                    details: t("admin.leads.details"),
+                    markContacted: t("admin.leads.markContacted"),
+                    markQualified: t("admin.leads.markQualified"),
+                    archive: t("admin.leads.archive"),
+                    copyEmails: t("admin.leads.copyEmails"),
+                    convert: t("admin.leads.convert"),
+                    adminNote: t("admin.leads.adminNote"),
+                    saveNote: t("admin.leads.saveNote"),
+                    events: t("admin.leads.events"),
+                    noEvents: t("admin.leads.noEvents"),
+                    updated: t("admin.leads.updated"),
+                    status: t("admin.leads.status"),
+                    source: t("admin.leads.source"),
+                    country: t("admin.country"),
+                    contact: t("admin.leads.contact"),
+                    pms: t("admin.demoLeadsPms"),
+                    volume: t("admin.demoLeadsVolume"),
+                    message: t("admin.demoLeadsMessage"),
+                    consent: t("admin.demoLeadsConsent"),
+                    notProvided: t("admin.demoLeadsNotProvided"),
+                    actionDone: t("admin.leads.actionDone"),
+                    actionFailed: t("admin.leads.actionFailed"),
+                    emailsCopied: t("admin.leads.emailsCopied"),
+                    archiveConfirm: t("admin.leads.archiveConfirm"),
+                    statusNew: t("admin.leads.status.new"),
+                    statusContacted: t("admin.leads.status.contacted"),
+                    statusQualified: t("admin.leads.status.qualified"),
+                    statusConverted: t("admin.leads.status.converted"),
+                    statusArchived: t("admin.leads.status.archived")
+                  }}
+                  leads={marketingLeadList.leads}
+                  locale={locale}
+                />
+              )}
             </Panel>
-          );
-        })}
-        </section>
+          </section>
+        ) : null}
+
+        {activeTab === "clinics" ? (
+          <ClinicsTab
+            compactDateFormatter={compactDateFormatter}
+            defaultCountry={guessCountryCode(prefillCountry) || "EE"}
+            defaultName={prefillClinicName}
+            defaultSlug={slugifyClinicName(prefillClinicName)}
+            envAppUrl={env.NEXT_PUBLIC_APP_URL}
+            locale={locale}
+            t={t}
+            clinics={clinics}
+          />
+        ) : null}
+
+        {activeTab === "staff" ? (
+          <StaffTab
+            compactDateFormatter={compactDateFormatter}
+            locale={locale}
+            t={t}
+            clinics={clinics}
+          />
+        ) : null}
+
+        {activeTab === "activity" ? (
+          <ActivityTab
+            activity={activity}
+            dateFormatter={dateFormatter}
+            t={t}
+          />
+        ) : null}
       </div>
     </AppShell>
+  );
+}
+
+function LeadFilters({
+  country,
+  countries,
+  locale,
+  q,
+  source,
+  status,
+  t
+}: {
+  country: string;
+  countries: string[];
+  locale: SupportedLocale;
+  q: string;
+  source: string;
+  status: MarketingLeadStatus | "all";
+  t: ReturnType<typeof createTranslator>;
+}) {
+  return (
+    <Panel className="p-3">
+      <form className="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_180px_180px_180px_auto]">
+        <input name="lang" type="hidden" value={locale} />
+        <input name="tab" type="hidden" value="leads" />
+        <label className="grid gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--muted-2)]">
+            {t("admin.leads.search")}
+          </span>
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-2)]"
+              size={15}
+            />
+            <input
+              className="h-10 w-full rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] pl-9 pr-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-soft)]"
+              defaultValue={q}
+              name="q"
+              placeholder={t("admin.leads.searchPlaceholder")}
+            />
+          </div>
+        </label>
+        <AdminSelect
+          label={t("admin.leads.status")}
+          name="status"
+          options={[
+            { value: "all", label: t("admin.leads.allStatuses") },
+            { value: "new", label: t("admin.leads.status.new") },
+            { value: "contacted", label: t("admin.leads.status.contacted") },
+            { value: "qualified", label: t("admin.leads.status.qualified") },
+            { value: "converted", label: t("admin.leads.status.converted") },
+            { value: "archived", label: t("admin.leads.viewArchived") }
+          ]}
+          value={status}
+        />
+        <AdminSelect
+          label={t("admin.leads.source")}
+          name="source"
+          options={[
+            { value: "", label: t("admin.leads.allSources") },
+            ...Object.entries(leadSourceLabels).map(([value, label]) => ({
+              value,
+              label
+            }))
+          ]}
+          value={source}
+        />
+        <AdminSelect
+          label={t("admin.country")}
+          name="country"
+          options={[
+            { value: "", label: t("admin.leads.allCountries") },
+            ...countries.map((item) => ({ value: item, label: item }))
+          ]}
+          value={country}
+        />
+        <div className="flex items-end gap-2">
+          <Button className="h-10" type="submit">
+            {t("admin.leads.applyFilters")}
+          </Button>
+          <Button asChild className="h-10" type="button" variant="ghost">
+            <Link href={adminHref(locale, "leads")}>
+              <X aria-hidden="true" size={14} />
+              {t("admin.leads.clearFilters")}
+            </Link>
+          </Button>
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
+function AdminSelect({
+  label,
+  name,
+  options,
+  value
+}: {
+  label: string;
+  name: string;
+  options: Array<{ value: string; label: string }>;
+  value: string;
+}) {
+  return (
+    <label className="grid gap-1.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--muted-2)]">
+        {label}
+      </span>
+      <select
+        className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-soft)]"
+        defaultValue={value}
+        name={name}
+      >
+        {options.map((option) => (
+          <option key={option.value || "all"} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ClinicsTab({
+  clinics,
+  compactDateFormatter,
+  defaultCountry,
+  defaultName,
+  defaultSlug,
+  envAppUrl,
+  locale,
+  t
+}: {
+  clinics: Awaited<ReturnType<typeof listAdminClinics>>;
+  compactDateFormatter: Intl.DateTimeFormat;
+  defaultCountry: string;
+  defaultName: string;
+  defaultSlug: string;
+  envAppUrl: string;
+  locale: SupportedLocale;
+  t: ReturnType<typeof createTranslator>;
+}) {
+  return (
+    <section className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <Panel className="p-4">
+        <div className="flex items-center gap-2">
+          <Building2 aria-hidden="true" className="text-[var(--primary)]" size={18} />
+          <h2 className="font-semibold">{t("admin.createClinic")}</h2>
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+          {t("admin.clinicsDescription")}
+        </p>
+        <form action={createClinic} className="mt-4 grid gap-3">
+          <input name="lang" type="hidden" value={locale} />
+          <AdminInput
+            defaultValue={defaultName}
+            label={t("admin.name")}
+            name="name"
+            required
+          />
+          <AdminInput
+            defaultValue={defaultSlug}
+            label={t("admin.slug")}
+            name="slug"
+            required
+          />
+          <AdminInput
+            defaultValue={defaultCountry}
+            label={t("admin.country")}
+            maxLength={2}
+            name="country"
+            required
+          />
+          <AdminInput
+            defaultValue="Europe/Tallinn"
+            label={t("admin.timezone")}
+            name="timezone"
+            required
+          />
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium">{t("admin.locale")}</span>
+            <select
+              className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+              defaultValue={locale}
+              name="clinicLocale"
+            >
+              {supportedLocales.map((item) => (
+                <option key={item} value={item}>
+                  {item.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button type="submit">{t("admin.create")}</Button>
+        </form>
+      </Panel>
+
+      <Panel className="overflow-hidden p-0">
+        <div className="border-b border-[var(--line)] p-4">
+          <h2 className="text-lg font-semibold">{t("admin.clinics")}</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="text-[11px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+              <tr>
+                <th className="px-4 py-3">{t("admin.clinic")}</th>
+                <th className="px-3 py-3">{t("admin.country")}</th>
+                <th className="px-3 py-3">{t("admin.locale")}</th>
+                <th className="px-3 py-3">{t("admin.staff")}</th>
+                <th className="px-3 py-3">{t("admin.intakeUrl")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clinics.map((clinic) => {
+                const intakeUrl = `${envAppUrl}/intake/${clinic.slug}?lang=${clinic.locale}`;
+                return (
+                  <tr key={clinic.id} className="border-t border-[var(--line)]">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-[var(--ink)]">
+                        {clinic.name}
+                      </div>
+                      <div className="text-xs text-[var(--muted)]">
+                        {clinic.slug} · {compactDateFormatter.format(new Date(clinic.created_at))}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)]">
+                      {clinic.country}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)]">
+                      {clinic.locale.toUpperCase()}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)]">
+                      {clinic.staff.length}
+                    </td>
+                    <td className="px-3 py-3">
+                      <a
+                        className="inline-flex items-center gap-1 break-all text-[var(--primary)] hover:underline"
+                        href={intakeUrl}
+                      >
+                        {intakeUrl}
+                        <ExternalLink aria-hidden="true" size={13} />
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </section>
+  );
+}
+
+function StaffTab({
+  clinics,
+  compactDateFormatter,
+  locale,
+  t
+}: {
+  clinics: Awaited<ReturnType<typeof listAdminClinics>>;
+  compactDateFormatter: Intl.DateTimeFormat;
+  locale: SupportedLocale;
+  t: ReturnType<typeof createTranslator>;
+}) {
+  return (
+    <section className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <Panel className="p-4">
+        <div className="flex items-center gap-2">
+          <UserPlus aria-hidden="true" className="text-[var(--primary)]" size={18} />
+          <h2 className="font-semibold">{t("admin.addStaff")}</h2>
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+          {t("admin.staffDescription")}
+        </p>
+        <form action={addClinicStaff} className="mt-4 grid gap-3">
+          <input name="lang" type="hidden" value={locale} />
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium">{t("admin.clinic")}</span>
+            <select
+              className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+              name="clinicId"
+              required
+            >
+              {clinics.map((clinic) => (
+                <option key={clinic.id} value={clinic.id}>
+                  {clinic.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <AdminInput label={t("admin.email")} name="email" required type="email" />
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium">{t("admin.role")}</span>
+            <select
+              className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+              defaultValue="reception"
+              name="role"
+            >
+              {roleOptions.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button type="submit">{t("admin.addStaffButton")}</Button>
+        </form>
+      </Panel>
+
+      <Panel className="overflow-hidden p-0">
+        <div className="border-b border-[var(--line)] p-4">
+          <h2 className="text-lg font-semibold">{t("admin.staff")}</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="text-[11px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+              <tr>
+                <th className="px-4 py-3">{t("admin.email")}</th>
+                <th className="px-3 py-3">{t("admin.clinic")}</th>
+                <th className="px-3 py-3">{t("admin.role")}</th>
+                <th className="px-3 py-3">{t("admin.leads.status")}</th>
+                <th className="px-3 py-3 text-right">{t("admin.activate")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clinics.flatMap((clinic) =>
+                clinic.staff.map((member) => (
+                  <tr key={member.id} className="border-t border-[var(--line)]">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-[var(--ink)]">
+                        {member.email}
+                      </div>
+                      <div className="text-xs text-[var(--muted)]">
+                        {compactDateFormatter.format(new Date(member.created_at))}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)]">
+                      {clinic.name}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)]">
+                      {member.role}
+                    </td>
+                    <td className="px-3 py-3">
+                      <Badge tone={member.is_active ? "teal" : "neutral"}>
+                        {member.is_active ? t("admin.active") : t("admin.inactive")}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <form action={updateClinicStaffStatus}>
+                        <input name="lang" type="hidden" value={locale} />
+                        <input name="membershipId" type="hidden" value={member.id} />
+                        <input
+                          name="isActive"
+                          type="hidden"
+                          value={member.is_active ? "false" : "true"}
+                        />
+                        <Button size="sm" type="submit" variant="secondary">
+                          {member.is_active
+                            ? t("admin.deactivate")
+                            : t("admin.activate")}
+                        </Button>
+                      </form>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </section>
+  );
+}
+
+function AdminInput({
+  label,
+  ...props
+}: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="grid gap-1.5">
+      <span className="text-sm font-medium">{label}</span>
+      <input
+        className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-soft)]"
+        {...props}
+      />
+    </label>
+  );
+}
+
+function ActivityTab({
+  activity,
+  dateFormatter,
+  t
+}: {
+  activity: AdminActivityItem[];
+  dateFormatter: Intl.DateTimeFormat;
+  t: ReturnType<typeof createTranslator>;
+}) {
+  return (
+    <Panel className="overflow-hidden p-0">
+      {activity.length === 0 ? (
+        <div className="p-6 text-sm text-[var(--muted)]">
+          {t("admin.activity.empty")}
+        </div>
+      ) : (
+        <div className="divide-y divide-[var(--line)]">
+          {activity.map((item) => (
+            <article className="grid gap-2 p-4" key={item.id}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Badge tone={item.entityType === "marketing_lead" ? "teal" : "neutral"}>
+                    {item.entityType.replace("_", " ")}
+                  </Badge>
+                  <h3 className="truncate font-semibold capitalize text-[var(--ink)]">
+                    {item.action.replaceAll("_", " ")}
+                  </h3>
+                </div>
+                <time className="text-sm text-[var(--muted)]">
+                  {dateFormatter.format(new Date(item.createdAt))}
+                </time>
+              </div>
+              <p className="break-words text-sm text-[var(--muted)]">
+                {item.entityLabel}
+              </p>
+              <p className="text-xs text-[var(--muted-2)]">
+                {item.actorEmail ?? item.actorId ?? "system"}
+              </p>
+              {renderPayload(item.payload) ? (
+                <p className="rounded-[var(--radius)] bg-[var(--soft)] px-3 py-2 text-xs text-[var(--muted)]">
+                  {t("admin.activity.payload")}: {renderPayload(item.payload)}
+                </p>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      )}
+    </Panel>
   );
 }

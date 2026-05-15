@@ -75,6 +75,30 @@ describe("proxy", () => {
     expect(response.headers.get("x-middleware-rewrite")).toBeNull();
   });
 
+  it("redirects staff auth from the marketing apex to the canonical app host", () => {
+    const response = proxy(
+      new NextRequest("https://petcura.app/login?lang=en&next=%2Finbox")
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://app.petcura.app/login?lang=en&next=%2Finbox"
+    );
+  });
+
+  it("redirects staff auth callbacks from the marketing apex to the canonical app host", () => {
+    const response = proxy(
+      new NextRequest(
+        "https://petcura.app/auth/callback?code=abc&next=%2Finbox&lang=en"
+      )
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://app.petcura.app/auth/callback?code=abc&next=%2Finbox&lang=en"
+    );
+  });
+
   it("continues to forward and persist explicit locales on normal routes", () => {
     const response = proxy(new NextRequest("https://app.petcura.app/inbox?lang=et"));
 

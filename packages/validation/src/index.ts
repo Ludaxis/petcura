@@ -129,6 +129,36 @@ export type MarketingLeadInput = z.infer<typeof marketingLeadSchema>;
 export type MarketingLeadSource = z.infer<typeof marketingLeadSourceSchema>;
 export type MonthlyRequestVolume = z.infer<typeof monthlyRequestVolumeSchema>;
 
+export const marketingLeadStatusSchema = z.enum([
+  "new",
+  "contacted",
+  "qualified",
+  "converted",
+  "archived"
+]);
+
+export const marketingLeadBulkIdsSchema = z.array(uuidSchema).min(1).max(100);
+
+export const marketingLeadStatusUpdateSchema = z.object({
+  leadIds: marketingLeadBulkIdsSchema,
+  status: z.enum(["new", "contacted", "qualified", "converted"])
+});
+
+export const marketingLeadArchiveSchema = z.object({
+  leadIds: marketingLeadBulkIdsSchema
+});
+
+export const marketingLeadAdminNoteSchema = z.object({
+  leadId: uuidSchema,
+  adminNote: optionalTrimmedString(1200)
+});
+
+export const marketingLeadReplyHandoffSchema = z.object({
+  leadId: uuidSchema
+});
+
+export type MarketingLeadStatus = z.infer<typeof marketingLeadStatusSchema>;
+
 export const webIntakeStartSchema = intakeRequestSchema.extend({
   consent: booleanConsentSchema.pipe(z.literal(true)),
   idempotencyKey: optionalIdempotencyKeySchema

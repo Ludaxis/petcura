@@ -38,22 +38,22 @@ function ownerInput(overrides: Partial<RouterInput["actor"]> = {}, rest: Partial
 }
 
 describe("resolvePostLoginDestination — clinic staff", () => {
-  it("routes a first-run admin to /onboarding/clinic", () => {
+  it("does not block first-run admins on disabled onboarding", () => {
     const r = resolvePostLoginDestination(
-      staffInput({ firstRun: true, role: "admin" })
+      staffInput({ firstRun: true, role: "admin" }, { nextParam: "/inbox" })
     );
     expect(r).toEqual({
-      destination: "/onboarding/clinic",
-      reason: "clinic_first_run"
+      destination: "/inbox",
+      reason: "next_param"
     });
   });
 
-  it("routes a first-run reception staff to /onboarding/staff", () => {
+  it("falls through to defaults for first-run staff while onboarding is disabled", () => {
     const r = resolvePostLoginDestination(
       staffInput({ firstRun: true, role: "reception" })
     );
-    expect(r.destination).toBe("/onboarding/staff");
-    expect(r.reason).toBe("staff_first_run");
+    expect(r.destination).toBe(roleDefaultDestination("reception"));
+    expect(r.reason).toBe("role_default");
   });
 
   it("honors a safe next param for returning staff", () => {

@@ -3,6 +3,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { normalizeLocale, type SupportedLocale } from "@petcura/shared";
+import { sanitizeStaffNextPath } from "@/lib/auth/sanitize-next-path";
+import { resolveStaffMagicLinkOrigin } from "@/lib/auth/staff-auth-origin";
 import { createClient } from "@/lib/supabase/server";
 
 function getAuthErrorCode(error: unknown) {
@@ -51,7 +53,7 @@ function loginRedirect(
 
 export async function signInWithMagicLink(formData: FormData) {
   const locale = normalizeLocale(formData.get("lang"));
-  const nextPath = String(formData.get("next") ?? "/inbox");
+  const nextPath = sanitizeStaffNextPath(String(formData.get("next") ?? "/inbox"));
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -61,8 +63,10 @@ export async function signInWithMagicLink(formData: FormData) {
   }
 
   const requestHeaders = await headers();
-  const origin =
-    requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const origin = resolveStaffMagicLinkOrigin({
+    appUrl: process.env.NEXT_PUBLIC_APP_URL,
+    requestOrigin: requestHeaders.get("origin")
+  });
   const callbackUrl = new URL("/auth/callback", origin);
 
   callbackUrl.searchParams.set("next", nextPath);

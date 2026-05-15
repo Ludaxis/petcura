@@ -1021,51 +1021,110 @@ export type Database = {
       }
       marketing_leads: {
         Row: {
+          admin_note: string | null
+          archived_at: string | null
+          archived_by: string | null
           clinic_name: string
           consent_given: boolean
           contact_name: string
           country: string
           created_at: string
           id: string
+          last_contacted_at: string | null
+          last_contacted_by: string | null
           locale: string
           message: string | null
           monthly_request_volume: string | null
           pms_system: string | null
           source: string
+          status: string
+          updated_at: string
           user_agent_hash: string | null
           work_email: string
         }
         Insert: {
+          admin_note?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           clinic_name: string
           consent_given?: boolean
           contact_name: string
           country: string
           created_at?: string
           id?: string
+          last_contacted_at?: string | null
+          last_contacted_by?: string | null
           locale?: string
           message?: string | null
           monthly_request_volume?: string | null
           pms_system?: string | null
           source?: string
+          status?: string
+          updated_at?: string
           user_agent_hash?: string | null
           work_email: string
         }
         Update: {
+          admin_note?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           clinic_name?: string
           consent_given?: boolean
           contact_name?: string
           country?: string
           created_at?: string
           id?: string
+          last_contacted_at?: string | null
+          last_contacted_by?: string | null
           locale?: string
           message?: string | null
           monthly_request_volume?: string | null
           pms_system?: string | null
           source?: string
+          status?: string
+          updated_at?: string
           user_agent_hash?: string | null
           work_email?: string
         }
         Relationships: []
+      }
+      marketing_lead_events: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          payload_json: Json
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          payload_json?: Json
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          payload_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_lead_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       twilio_media_ingestion_jobs: {
         Row: {

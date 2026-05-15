@@ -29,6 +29,18 @@ Do not store owner PII, pet medical details, phone numbers, clinic credentials, 
 - `service_role` may manage rows for internal operations.
 - Public clients must use the Supabase publishable key under RLS. Secret keys are never exposed to client code.
 
+## Super-Admin Workflow
+
+Super-admin lead management is internal and server-only. It may update:
+
+- `status`: one of `new`, `contacted`, `qualified`, `converted`, or `archived`.
+- `admin_note`: optional internal follow-up context, capped at 1200 characters.
+- `last_contacted_at` / `last_contacted_by`: recorded when a reply handoff or contacted action occurs.
+- `archived_at` / `archived_by`: the v1 "delete" mechanism; rows remain recoverable and auditable.
+- `updated_at`: maintained by the database trigger.
+
+Every status, reply-handoff, note, archive, or conversion action must insert a `marketing_lead_events` row with actor id/email, action, payload, and timestamp. Do not store outbound email bodies unless a future email-sending contract explicitly introduces delivery storage.
+
 ## Validation
 
 Server-side validation is mandatory before insert:

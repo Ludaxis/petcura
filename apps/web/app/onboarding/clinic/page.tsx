@@ -25,6 +25,7 @@ const STEP_DEEP_LINKS: Record<ClinicOwnerStep, string> = {
   quiet_hours: "/settings/messaging?from=onboarding",
   test_request: "/inbox?demo=1&from=onboarding"
 };
+const onboardingEnabled = false;
 
 type OnboardingClinicPageProps = {
   searchParams?: Promise<{
@@ -41,6 +42,11 @@ export default async function OnboardingClinicPage({
 }: OnboardingClinicPageProps) {
   const params = await searchParams;
   const locale = await getRequestLocale(getSearchParam(params?.lang));
+
+  if (!onboardingEnabled) {
+    redirect(withLocale("/inbox", locale));
+  }
+
   const ctx = await requireStaffContext(locale, "/onboarding/clinic");
   const t = createTranslator(locale);
 

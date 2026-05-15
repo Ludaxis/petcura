@@ -1,5 +1,6 @@
+import { redirect } from "next/navigation";
 import { PawPrint } from "@phosphor-icons/react/dist/ssr";
-import { createTranslator } from "@petcura/shared";
+import { createTranslator, withLocale } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -15,9 +16,16 @@ function getSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+const onboardingEnabled = false;
+
 export default async function OnboardingStaffPage({ searchParams }: Props) {
   const params = await searchParams;
   const locale = await getRequestLocale(getSearchParam(params?.lang));
+
+  if (!onboardingEnabled) {
+    redirect(withLocale("/inbox", locale));
+  }
+
   const ctx = await requireStaffContext(locale, "/onboarding/staff");
   const t = createTranslator(locale);
   const initialName =
