@@ -23,8 +23,8 @@
     "test:ai": "npm run test:ai -w @petcura/ai",
     "test:rls": "supabase test db --local",
     "test:rls:linked": "supabase test db --linked",
-    "db:lint": "supabase db lint --local --fail-on error",
-    "db:lint:linked": "supabase db lint --linked --fail-on error"
+    "db:lint": "supabase db lint --local --schema public,private --fail-on error",
+    "db:lint:linked": "supabase db lint --linked --schema public,private --fail-on error"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
