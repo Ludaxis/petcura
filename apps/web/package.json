@@ -10,7 +10,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test --project=chromium --project=mobile-chrome",
+    "test:e2e:smoke": "playwright test --project=smoke",
+    "test:e2e:db": "playwright test --project=db",
+    "test:e2e:live": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test --project=live",
     "test:visual": "playwright test --project=visual --grep-invert @full-matrix",
+    "test:a11y": "playwright test --project=accessibility",
     "check:bundle": "next build && node --experimental-strip-types scripts/check-bundle.ts"
   },
   "dependencies": {

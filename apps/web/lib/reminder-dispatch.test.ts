@@ -8,7 +8,7 @@ type ReminderRow = Database["public"]["Tables"]["reminders"]["Row"] & {
   pets: { name: string };
   requests: {
     id: string;
-    owners: { phone: string; preferred_language: string };
+    owners: { id: string; phone: string; preferred_language: string };
   };
 };
 
@@ -38,7 +38,11 @@ function makeDueReminder(): ReminderRow {
     pets: { name: "Lumi" },
     requests: {
       id: "request-1",
-      owners: { phone: "+37258046666", preferred_language: "en" }
+      owners: {
+        id: "owner-1",
+        phone: "+37258046666",
+        preferred_language: "en"
+      }
     }
   };
 }
@@ -132,15 +136,14 @@ describe("dispatchDueReminders", () => {
     const { dispatchDueReminders } = await import("./reminder-dispatch");
     const reminder = makeDueReminder();
     const fakeSupabase = makeFakeSupabase(reminder);
-    const sendWhatsApp = vi.fn(async () => ({
-      sid: "SMreminder",
-      rawStatus: "queued",
-      status: "queued" as const
+    const enqueueOutbound = vi.fn(async () => ({
+      id: "outbound-1",
+      status: "queued"
     }));
 
     const firstPass = await dispatchDueReminders({
       supabase: fakeSupabase as never,
-      sendWhatsApp,
+      enqueueOutbound: enqueueOutbound as never,
       now: new Date("2026-05-11T12:00:00.000Z")
     });
 
@@ -150,20 +153,31 @@ describe("dispatchDueReminders", () => {
       sent: 1,
       failed: 0
     });
-    expect(sendWhatsApp).toHaveBeenCalledOnce();
+    expect(enqueueOutbound).toHaveBeenCalledOnce();
+    expect(enqueueOutbound).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clinicId: "clinic-1",
+        requestId: "request-1",
+        messageId: "message-1",
+        reminderId: "reminder-1",
+        ownerId: "owner-1",
+        source: "reminder",
+        channel: "whatsapp",
+        toPhone: "+37258046666"
+      })
+    );
     expect(reminder.status).toBe("sent");
     expect(reminder.last_delivery_message_id).toBe("message-1");
     expect(fakeSupabase.inserts.messages).toHaveLength(1);
-    expect(fakeSupabase.inserts.message_delivery_events).toHaveLength(1);
     expect(fakeSupabase.inserts.request_events).toHaveLength(1);
 
     const secondPass = await dispatchDueReminders({
       supabase: fakeSupabase as never,
-      sendWhatsApp,
+      enqueueOutbound: enqueueOutbound as never,
       now: new Date("2026-05-11T12:05:00.000Z")
     });
 
     expect(secondPass.scanned).toBe(0);
-    expect(sendWhatsApp).toHaveBeenCalledOnce();
+    expect(enqueueOutbound).toHaveBeenCalledOnce();
   });
 });

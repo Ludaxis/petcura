@@ -19,8 +19,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 function petsRedirect(
   locale: SupportedLocale,
   params: Record<string, string>,
-  petId?: string
+  petId?: string,
+  returnTo?: string
 ): never {
+  if (returnTo && (returnTo.startsWith("/pets/") || returnTo.startsWith("/directory"))) {
+    const searchParams = new URLSearchParams({ lang: locale, ...params });
+    redirect(`${returnTo}?${searchParams.toString()}`);
+  }
+
   const directoryParams: Record<string, string> = {};
   for (const [key, value] of Object.entries(params)) {
     if (key === "pets_status") {
@@ -59,11 +65,12 @@ function nullable(value: string | undefined) {
 
 export async function updatePetProfile(formData: FormData) {
   const locale = normalizeLocale(formData.get("lang"));
+  const returnTo = getString(formData, "returnTo");
   const staffContext = await requireStaffContext(locale, "/pets");
   const actorRole = staffContext.membership.role as StaffRole;
 
   if (!hasClinicPermission(actorRole, "pets:manage")) {
-    petsRedirect(locale, { pets_error: "forbidden" });
+    petsRedirect(locale, { pets_error: "forbidden" }, undefined, returnTo);
   }
 
   const parsed = petProfileSchema.safeParse({
@@ -79,7 +86,7 @@ export async function updatePetProfile(formData: FormData) {
   });
 
   if (!parsed.success) {
-    petsRedirect(locale, { pets_error: "invalid_profile" });
+    petsRedirect(locale, { pets_error: "invalid_profile" }, undefined, returnTo);
   }
 
   const admin = createAdminClient();
@@ -91,7 +98,7 @@ export async function updatePetProfile(formData: FormData) {
     .maybeSingle();
 
   if (petError || !pet) {
-    petsRedirect(locale, { pets_error: "not_found" });
+    petsRedirect(locale, { pets_error: "not_found" }, undefined, returnTo);
   }
 
   const photo = getPhoto(formData);
@@ -106,7 +113,7 @@ export async function updatePetProfile(formData: FormData) {
         file: photo
       });
     } catch {
-      petsRedirect(locale, { pets_error: "photo_upload_failed" });
+      petsRedirect(locale, { pets_error: "photo_upload_failed" }, pet.id, returnTo);
     }
   }
 
@@ -132,7 +139,7 @@ export async function updatePetProfile(formData: FormData) {
     .eq("id", pet.id);
 
   if (error) {
-    petsRedirect(locale, { pets_error: "profile_update_failed" });
+    petsRedirect(locale, { pets_error: "profile_update_failed" }, pet.id, returnTo);
   }
 
   await admin.from("audit_logs").insert({
@@ -149,6 +156,7 @@ export async function updatePetProfile(formData: FormData) {
   });
 
   revalidatePath("/pets");
+  revalidatePath(`/pets/${pet.id}`);
   revalidatePath("/directory");
-  petsRedirect(locale, { pets_status: "saved" }, pet.id);
+  petsRedirect(locale, { pets_status: "saved" }, pet.id, returnTo);
 }

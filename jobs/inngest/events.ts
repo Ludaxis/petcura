@@ -5,6 +5,10 @@ export const AI_MEMORY_EXTRACTION_REQUESTED_EVENT =
   "ai.memory_extraction.requested" as const;
 export const AI_REPLY_DRAFT_REQUESTED_EVENT =
   "ai.reply_draft.requested" as const;
+export const OUTBOUND_MESSAGE_QUEUED_EVENT =
+  "outbound.message.queued" as const;
+export const TWILIO_MEDIA_INGESTION_REQUESTED_EVENT =
+  "twilio.media_ingestion.requested" as const;
 
 export const PETCURA_AI_EVENT_NAMES = [
   OWNER_MESSAGE_CREATED_EVENT,
@@ -14,7 +18,14 @@ export const PETCURA_AI_EVENT_NAMES = [
   AI_REPLY_DRAFT_REQUESTED_EVENT
 ] as const;
 
-export type PetCuraInngestEventName = (typeof PETCURA_AI_EVENT_NAMES)[number];
+export const PETCURA_INNGEST_EVENT_NAMES = [
+  ...PETCURA_AI_EVENT_NAMES,
+  OUTBOUND_MESSAGE_QUEUED_EVENT,
+  TWILIO_MEDIA_INGESTION_REQUESTED_EVENT
+] as const;
+
+export type PetCuraInngestEventName =
+  (typeof PETCURA_INNGEST_EVENT_NAMES)[number];
 
 export type UuidString = string;
 export type IsoDateTimeString = string;
@@ -70,6 +81,21 @@ export type AiReplyDraftRequestedEventData = PetCuraAiRequestedEventData & {
   targetLocale?: PetCuraSupportedLocale;
 };
 
+export type OutboundMessageQueuedEventData = {
+  clinicId: UuidString;
+  outboundMessageId: UuidString;
+  messageId?: UuidString;
+  requestId?: UuidString;
+  channel: Extract<PetCuraRequestChannel, "whatsapp" | "sms">;
+  queuedAt: IsoDateTimeString;
+};
+
+export type TwilioMediaIngestionRequestedEventData = PetCuraRequestReference & {
+  attachmentId: UuidString;
+  messageId: UuidString;
+  queuedAt: IsoDateTimeString;
+};
+
 export type PetCuraInngestEventRecord = {
   [OWNER_MESSAGE_CREATED_EVENT]: {
     data: OwnerMessageCreatedEventData;
@@ -85,6 +111,12 @@ export type PetCuraInngestEventRecord = {
   };
   [AI_REPLY_DRAFT_REQUESTED_EVENT]: {
     data: AiReplyDraftRequestedEventData;
+  };
+  [OUTBOUND_MESSAGE_QUEUED_EVENT]: {
+    data: OutboundMessageQueuedEventData;
+  };
+  [TWILIO_MEDIA_INGESTION_REQUESTED_EVENT]: {
+    data: TwilioMediaIngestionRequestedEventData;
   };
 };
 

@@ -1,7 +1,7 @@
 # AI Draft Stream — SSE Contract
 
-**Status:** stub shipped by Claude; production implementation owned by Codex.
-**Date:** 2026-05-12
+**Status:** persisted-output stream implemented by Codex.
+**Date:** 2026-05-15
 
 The clinic Request Detail view shows AI-drafted replies. When a fresh draft
 exists (created in the last 30 s) the `AiDraftCard` opens a Server-Sent
@@ -14,7 +14,7 @@ backend (Codex-owned).
 ## Endpoint
 
 ```
-GET /api/ai/draft/:requestId/stream?lang=<locale>
+GET /api/ai/draft/:requestId/stream?lang=<locale>&draftId=<ai_output_id>
 ```
 
 | Element     | Value                                                       |
@@ -22,6 +22,7 @@ GET /api/ai/draft/:requestId/stream?lang=<locale>
 | Method      | `GET` only                                                  |
 | `requestId` | UUID of the request whose draft is being streamed           |
 | `lang`      | `en` \| `et` \| `ru` (defaults to `en` when missing/invalid)|
+| `draftId`   | UUID of the persisted `ai_outputs.kind = reply_draft` row   |
 | Cookies     | Supabase auth cookies on the same origin                    |
 
 ### Auth
@@ -35,6 +36,11 @@ GET /api/ai/draft/:requestId/stream?lang=<locale>
 
 - 400 JSON `{ "error": "invalid_request_id" }` when `requestId` is missing
   or malformed.
+- 409 JSON `{ "error": "draft_stream_requires_draft_id" }` when `draftId`
+  is missing or malformed. Clients must fall back to the static persisted
+  draft text in this case.
+- 404 JSON `{ "error": "draft_not_found" }` when the draft row is missing,
+  already reviewed, unsafe/non-successful, or hidden by RLS.
 
 ---
 
@@ -99,9 +105,9 @@ data: Hi! Th\n\ndata: anks fo\n\nevent: done\ndata: {"draftId":"01HZK...","confi
 
 The route honors `request.signal`. If the client closes the underlying
 fetch (component unmount, navigation away, manual cancel) the route stops
-emitting and closes the controller within one event tick. The real
-implementation **must not** persist a partial `ai_outputs` row on abort —
-either persist the full draft on completion or roll back.
+emitting and closes the controller within one event tick. Draft generation
+and `ai_outputs` persistence happen before this route opens; the stream
+never writes partial rows.
 
 ---
 
@@ -122,28 +128,18 @@ assume a single attempt per draft per page load.
 
 ---
 
-## Stub → real handoff
+## Implementation Notes
 
-The current handler in `apps/web/app/api/ai/draft/[requestId]/stream/route.ts`
-is a **stub**: it generates 80–120 characters of locale-aware filler text,
-emits it as fake tokens with a ~40 ms gap, and returns a synthetic
-`draftId`. It does not call any LLM and does not touch the database.
+The handler in `apps/web/app/api/ai/draft/[requestId]/stream/route.ts`
+does not call an AI provider. It loads the exact pending `reply_draft`
+row named by `draftId`, verifies request scoping through Supabase RLS, and
+streams `output_json.text`. Missing `draftId` is intentionally a safe
+disable path: the client falls back to the already-loaded persisted text
+instead of showing text that cannot be accepted against the same row.
 
-When Codex replaces it the route file stays at the same path. Only the
-**body** changes:
-
-1. Look up the request, verify clinic scoping.
-2. Pull the latest queued `ai_outputs` row (or generate one) for this request.
-3. Stream tokens from the provider-routed model layer (with the prompt
-   version + model id stamped onto the `ai_outputs` row).
-4. On success: finalize the `ai_outputs` row (model, prompt version,
-   input, output, confidence, tokens, latency, review status = pending).
-5. Emit the `done` event with the real `draftId` and confidence.
-6. On client abort: do not persist a partial draft.
-
-The **SSE event shape above is frozen**. The client is wired to it.
-Changing the event names, the order, or the `done` payload shape requires
-a coordinated client change in the same PR.
+The **SSE event shape above is frozen**. Changing the event names, the
+order, or the `done` payload shape requires a coordinated client change in
+the same PR.
 
 ---
 

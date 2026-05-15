@@ -77,6 +77,40 @@ export type PetListResult = {
   total: number;
 };
 
+export type ClinicRequestSummary = {
+  id: string;
+  ownerId: string;
+  petId: string | null;
+  petName: string | null;
+  category: string;
+  status: string;
+  urgency: string;
+  createdAt: string;
+  updatedAt: string;
+  latestMessage: string | null;
+};
+
+export type ClinicEntityActivity = {
+  id: string;
+  actorId: string | null;
+  action: string;
+  entityType: string;
+  entityId: string;
+  createdAt: string;
+};
+
+export type CustomerDetail = CustomerListItem & {
+  pets: PetListItem[];
+  requests: ClinicRequestSummary[];
+  activity: ClinicEntityActivity[];
+};
+
+export type PetDetail = PetListItem & {
+  owner: CustomerListItem | null;
+  requests: ClinicRequestSummary[];
+  activity: ClinicEntityActivity[];
+};
+
 const OPEN_REQUEST_STATUSES = ["new", "waiting_staff", "waiting_owner"] as const;
 
 function withinRecentWindow(iso: string | null, recentDays: number | undefined) {
@@ -382,4 +416,122 @@ export async function listClinicSpecies(
     if (pet.species) set.add(pet.species);
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+async function listClinicRequestsForEntity(
+  supabase: SupabaseClient,
+  clinicId: string,
+  filter: { ownerId?: string; petId?: string }
+): Promise<ClinicRequestSummary[]> {
+  let query = supabase
+    .from("requests")
+    .select(
+      "id, owner_id, pet_id, category, status, urgency, created_at, updated_at, messages(body, created_at), pets(name)"
+    )
+    .eq("clinic_id", clinicId)
+    .order("updated_at", { ascending: false })
+    .limit(40);
+
+  if (filter.ownerId) query = query.eq("owner_id", filter.ownerId);
+  if (filter.petId) query = query.eq("pet_id", filter.petId);
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Could not load request summaries: ${error.message}`);
+  }
+
+  return (data ?? []).map((request) => {
+    const messages = Array.isArray(request.messages)
+      ? request.messages.slice().sort((a, b) =>
+          String(b.created_at).localeCompare(String(a.created_at))
+        )
+      : [];
+    const pet = Array.isArray(request.pets) ? request.pets[0] : request.pets;
+
+    return {
+      id: request.id,
+      ownerId: request.owner_id,
+      petId: request.pet_id,
+      petName: pet?.name ?? null,
+      category: request.category,
+      status: request.status,
+      urgency: request.urgency,
+      createdAt: request.created_at,
+      updatedAt: request.updated_at,
+      latestMessage: messages[0]?.body ?? null
+    };
+  });
+}
+
+async function listClinicEntityActivity(
+  supabase: SupabaseClient,
+  clinicId: string,
+  entityType: "owners" | "pets",
+  entityId: string
+): Promise<ClinicEntityActivity[]> {
+  const { data, error } = await supabase
+    .from("audit_logs")
+    .select("id, actor_id, action, entity_type, entity_id, created_at")
+    .eq("clinic_id", clinicId)
+    .eq("entity_type", entityType)
+    .eq("entity_id", entityId)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  if (error) {
+    throw new Error(`Could not load activity: ${error.message}`);
+  }
+
+  return (data ?? []).map((event) => ({
+    id: event.id,
+    actorId: event.actor_id,
+    action: event.action,
+    entityType: event.entity_type,
+    entityId: event.entity_id,
+    createdAt: event.created_at
+  }));
+}
+
+export async function getClinicCustomerDetail(
+  supabase: SupabaseClient,
+  clinicId: string,
+  ownerId: string
+): Promise<CustomerDetail | null> {
+  const [customers, pets, requests, activity] = await Promise.all([
+    listClinicCustomers(supabase, clinicId),
+    listClinicPets(supabase, clinicId),
+    listClinicRequestsForEntity(supabase, clinicId, { ownerId }),
+    listClinicEntityActivity(supabase, clinicId, "owners", ownerId)
+  ]);
+  const owner = customers.rows.find((row) => row.id === ownerId);
+  if (!owner) return null;
+
+  return {
+    ...owner,
+    pets: pets.rows.filter((pet) => pet.ownerId === ownerId),
+    requests,
+    activity
+  };
+}
+
+export async function getClinicPetDetail(
+  supabase: SupabaseClient,
+  clinicId: string,
+  petId: string
+): Promise<PetDetail | null> {
+  const [pets, customers, requests, activity] = await Promise.all([
+    listClinicPets(supabase, clinicId),
+    listClinicCustomers(supabase, clinicId),
+    listClinicRequestsForEntity(supabase, clinicId, { petId }),
+    listClinicEntityActivity(supabase, clinicId, "pets", petId)
+  ]);
+  const pet = pets.rows.find((row) => row.id === petId);
+  if (!pet) return null;
+
+  return {
+    ...pet,
+    owner: customers.rows.find((owner) => owner.id === pet.ownerId) ?? null,
+    requests,
+    activity
+  };
 }

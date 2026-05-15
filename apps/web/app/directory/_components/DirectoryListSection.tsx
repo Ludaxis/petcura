@@ -101,7 +101,7 @@ export async function DirectoryListSection({
             locale={locale}
             selected={selectedId === owner.id}
             density="comfortable"
-            href={`/directory?tab=owners&id=${encodeURIComponent(owner.id)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+            href={`/customers/${encodeURIComponent(owner.id)}`}
             latestRequestLabel={
               owner.latestRequestAt
                 ? formatRelative(owner.latestRequestAt)
@@ -145,7 +145,7 @@ export async function DirectoryListSection({
           locale={locale}
           selected={selectedId === pet.id}
           density="comfortable"
-          href={`/directory?tab=pets&id=${encodeURIComponent(pet.id)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+          href={`/pets/${encodeURIComponent(pet.id)}`}
           latestRequestLabel={
             pet.latestRequestAt
               ? formatRelative(pet.latestRequestAt)

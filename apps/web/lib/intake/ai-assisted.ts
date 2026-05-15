@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 import {
+  aiPromptRegistry,
   intakeQuestionOutputSchema,
   type IntakeQuestionOutput,
   type IntakeRoutingSuggestion,
@@ -20,7 +21,7 @@ import type {
   WebIntakeMessageInput,
   WebIntakeStartInput
 } from "@petcura/validation";
-import { generateJsonWithGateway } from "@/lib/ai/gateway";
+import { generateAccountedJson } from "@/lib/ai/accountability";
 import {
   createOwnerRequest,
   runOwnerMessageAi
@@ -44,7 +45,7 @@ import {
   getIntakeClinic
 } from "@/lib/supabase/admin";
 
-const intakePromptVersion = "intake-question-v1.0.0";
+const intakePromptVersion = aiPromptRegistry.intakeQuestion.version;
 const rulesFallbackModel = "petcura/rules-fallback";
 const defaultIntakeModel = "anthropic/claude-haiku-4.5";
 
@@ -432,60 +433,63 @@ async function generateAndPersistIntakeOutput({
       serviceIntent
     }
   };
-  let output = fallback;
-  let model = rulesFallbackModel;
-  let latencyMs: number | null = null;
-  let tokensIn: number | null = null;
-  let tokensOut: number | null = null;
-  let fallbackReason: string | null = context.config.aiEnabled
-    ? null
-    : "ai_disabled_for_clinic";
-
-  if (context.config.aiEnabled) {
-    const requestedModel =
-      process.env.PETCURA_AI_INTAKE_MODEL?.trim() || defaultIntakeModel;
-    const generated = await generateJsonWithGateway({
-      model: requestedModel,
-      system: buildSystemPrompt(),
-      prompt: JSON.stringify(promptInput, null, 2),
-      schema: intakeQuestionOutputSchema,
-      timeoutMs: 8_000,
-      maxOutputTokens: 900
-    });
-
-    if (generated.ok) {
-      output = mergeRuleSafety(generated.output, fallback, emergency, serviceIntent);
-      model = generated.model;
-      latencyMs = generated.latencyMs;
-      tokensIn = generated.tokensIn;
-      tokensOut = generated.tokensOut;
-    } else {
-      fallbackReason = generated.reason;
-    }
-  }
-
-  const { data: aiOutput, error: aiError } = await admin
-    .from("ai_outputs")
-    .insert({
-      clinic_id: clinic.id,
-      request_id: request.id,
-      kind: "intake_question",
-      model,
+  const requestedModel =
+    process.env.PETCURA_AI_INTAKE_MODEL?.trim() || defaultIntakeModel;
+  const system = buildSystemPrompt();
+  const prompt = JSON.stringify(promptInput, null, 2);
+  const accounted = await generateAccountedJson({
+    db: admin,
+    clinicId: clinic.id,
+    requestId: request.id,
+    kind: "intake_question",
+    promptKey: aiPromptRegistry.intakeQuestion.key,
+    promptVersion: intakePromptVersion,
+    model: requestedModel,
+    system,
+    prompt,
+    schema: intakeQuestionOutputSchema,
+    inputJson: {
+      ...promptInput,
       prompt_version: intakePromptVersion,
-      input_json: promptInput as Json,
-      output_json: output as unknown as Json,
-      confidence: output.confidence,
-      tokens_in: tokensIn,
-      tokens_out: tokensOut,
-      latency_ms: latencyMs,
-      accepted: null
-    })
-    .select("id")
-    .single();
+      session_id: sessionId,
+      source_message_id: sourceMessageId
+    } as unknown as Json,
+    sources: [
+      {
+        sourceType: "request",
+        sourceId: request.id
+      },
+      {
+        sourceType: "web_intake_session",
+        sourceId: sessionId
+      },
+      ...messages.map((message) => ({
+        sourceType: "message" as const,
+        sourceId: message.id
+      }))
+    ],
+    ownerFacing: true,
+    timeoutMs: 8_000,
+    maxOutputTokens: 900,
+    fallback: {
+      output: fallback,
+      model: rulesFallbackModel
+    },
+    transformOutput: (generated) =>
+      mergeRuleSafety(generated, fallback, emergency, serviceIntent),
+    skipProviderReason: context.config.aiEnabled ? null : "ai_disabled_for_clinic"
+  });
 
-  if (aiError) {
-    throw new WebIntakeError(500, "ai_output_write_failed", aiError.message);
+  if (!accounted.ok) {
+    throw new WebIntakeError(
+      500,
+      "ai_output_write_failed",
+      `AI intake could not produce a safe accountable output: ${accounted.reason}`
+    );
   }
+
+  const output = accounted.output;
+  const fallbackReason = accounted.fallbackReason;
 
   const { error: requestUpdateError } = await admin
     .from("requests")
@@ -494,7 +498,7 @@ async function generateAndPersistIntakeOutput({
       risk_flags_json: output.riskFlags as unknown as Json,
       routing_suggestion: output.routingSuggestion,
       service_intent: output.serviceIntent,
-      intake_ai_output_id: aiOutput.id,
+      intake_ai_output_id: accounted.aiOutputId,
       web_intake_session_id: sessionId
     })
     .eq("clinic_id", clinic.id)
@@ -516,7 +520,7 @@ async function generateAndPersistIntakeOutput({
       actor_id: null,
       event_type: "ai_intake_suggestion_created",
       payload_json: {
-        ai_output_id: aiOutput.id,
+        ai_output_id: accounted.aiOutputId,
         session_id: sessionId,
         source_message_id: sourceMessageId,
         routing_suggestion: output.routingSuggestion,
@@ -531,8 +535,8 @@ async function generateAndPersistIntakeOutput({
 
   return {
     output,
-    aiOutputId: aiOutput.id,
-    model,
+    aiOutputId: accounted.aiOutputId,
+    model: accounted.model,
     promptVersion: intakePromptVersion,
     fallbackReason
   };

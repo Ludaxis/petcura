@@ -1,6 +1,7 @@
 import "server-only";
 
 import { normalizeLocale, type Database, type SupportedLocale } from "@petcura/shared";
+import { getSignedProfileImageUrls } from "@/lib/profile-media";
 import type { OwnerContext } from "@/lib/owner/auth";
 import type {
   Appointment,
@@ -272,7 +273,18 @@ export async function listOwnerPets(context: OwnerContext): Promise<Pet[]> {
     throw new Error(`Could not load owner pets: ${error.message}`);
   }
 
-  return ((data ?? []) as PetRow[]).map(toPet);
+  const rows = (data ?? []) as PetRow[];
+  const photoUrls = await getSignedProfileImageUrls(
+    rows.map((pet) => pet.photo_url)
+  );
+
+  return rows.map((row) => {
+    const pet = toPet(row);
+    return {
+      ...pet,
+      photoUrl: row.photo_url ? photoUrls.get(row.photo_url) ?? null : null
+    };
+  });
 }
 
 export async function listOwnerVaccinations(

@@ -1,6 +1,6 @@
 # Security and Compliance
 
-Last updated: 2026-05-12.
+Last updated: 2026-05-15.
 
 ## Posture
 
@@ -13,12 +13,14 @@ Primary application data is hosted in EU regions. Subprocessors, transfer mechan
 - Supabase Auth for staff.
 - Magic-link auth by default; 2FA for clinic admins when supported.
 - RLS on all domain tables, enforced by active `clinic_staff` membership.
+- RLS SQL tests are promotion blockers and must run in CI through `supabase test db --local`.
 - Anonymous users must not read domain tables; public intake uses server-side `sb_secret_...` writes only.
 - No Supabase secret key in client-side code. Browser and SSR clients use `sb_publishable_...`.
 - Webhook signatures verified for Twilio inbound events.
 - Webhook handlers are idempotent.
 - Secrets are stored only in platform secret stores.
 - Audit staff/system actions in `audit_logs`.
+- Health/readiness output may expose which configuration keys are missing, but must never expose values, bearer tokens, cookies, service keys, or raw provider responses.
 
 ## AI Memory V1
 
@@ -39,6 +41,16 @@ Primary application data is hosted in EU regions. Subprocessors, transfer mechan
 - Right-to-erasure flow.
 - Retention policy for resolved requests.
 - Breach notification playbook with 72-hour SLA.
+
+## Pilot Gate Policy
+
+Before Alex or any second clinic uses staging for real workflow testing:
+
+- CI app, RLS, smoke, and accessibility lanes must be green.
+- `/health?strict=1` must be checked on `app.petcura.app` and `my.petcura.app`.
+- Twilio webhook fixtures must cover valid signature, duplicate callback, and unknown SID regressions before outbound changes promote.
+- Accessibility scans must show zero serious/critical issues for public auth, owner, and clinic entry points. Until `@axe-core/playwright` is installed, the custom Playwright accessibility lane is the minimum gate and axe is a documented follow-up.
+- Any failing RLS, auth, webhook signature, or health gate blocks promotion.
 
 ## Do Not Store
 

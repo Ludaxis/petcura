@@ -2,6 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, PawPrint } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@petcura/ui";
+import {
+  ProfileEditorCard,
+  ProfileField,
+  profileInputClass,
+  profileTextareaClass
+} from "@/app/_components/profile/ProfileEditor";
 import { getRequestLocale } from "@/lib/locale";
 import { requireOwnerContext } from "@/lib/owner/auth";
 import {
@@ -13,6 +19,7 @@ import { createOwnerTranslator } from "@/lib/owner/i18n";
 import { formatDate, petAgeLabel } from "@/lib/owner/format";
 import { VaccinationTimeline } from "../../_components/VaccinationTimeline";
 import { PetTabs } from "../../_components/PetTabs";
+import { updateOwnerPetSelfService } from "../../actions";
 
 type Props = {
   params: Promise<{ petId: string }>;
@@ -145,6 +152,62 @@ export default async function PetDetailPage({ params }: Props) {
         </div>
       </header>
       <div className="px-4 pb-12 pt-2 sm:px-6 lg:px-10">
+        <div className="mb-5">
+          <ProfileEditorCard
+            action={updateOwnerPetSelfService}
+            description={<span>{t("pet.selfService.body")}</span>}
+            hiddenFields={
+              <>
+                <input name="lang" type="hidden" value={locale} />
+                <input name="petId" type="hidden" value={pet.id} />
+              </>
+            }
+            imageLabel={t("pet.selfService.photo")}
+            imageUrl={pet.photoUrl}
+            name={pet.name}
+            submitLabel={t("pet.selfService.save")}
+            title={t("pet.selfService.title")}
+          >
+            <ProfileField
+              htmlFor={`owner-notes-${pet.id}`}
+              label={t("pet.selfService.ownerNotes")}
+            >
+              <textarea
+                className={profileTextareaClass}
+                defaultValue={pet.ownerNotes ?? ""}
+                id={`owner-notes-${pet.id}`}
+                name="ownerNotes"
+                rows={4}
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`weight-${pet.id}`}
+              label={t("pet.selfService.weight")}
+            >
+              <input
+                className={profileInputClass}
+                id={`weight-${pet.id}`}
+                min="0.1"
+                name="weightKg"
+                placeholder={pet.weightKg ? String(pet.weightKg) : "0.0"}
+                step="0.1"
+                type="number"
+              />
+            </ProfileField>
+            <ProfileField
+              htmlFor={`measured-at-${pet.id}`}
+              label={t("pet.selfService.measuredAt")}
+            >
+              <input
+                className={profileInputClass}
+                defaultValue={new Date().toISOString().slice(0, 10)}
+                id={`measured-at-${pet.id}`}
+                name="measuredAt"
+                type="date"
+              />
+            </ProfileField>
+          </ProfileEditorCard>
+        </div>
         <PetTabs tabs={tabs} ariaLabel={pet.name} />
       </div>
     </div>

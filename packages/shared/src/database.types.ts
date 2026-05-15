@@ -131,58 +131,139 @@ export type Database = {
           },
         ]
       }
+      ai_output_sources: {
+        Row: {
+          ai_output_id: string
+          clinic_id: string
+          created_at: string
+          id: string
+          metadata_json: Json
+          source_id: string
+          source_label: string | null
+          source_type: string
+        }
+        Insert: {
+          ai_output_id: string
+          clinic_id: string
+          created_at?: string
+          id?: string
+          metadata_json?: Json
+          source_id: string
+          source_label?: string | null
+          source_type: string
+        }
+        Update: {
+          ai_output_id?: string
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          metadata_json?: Json
+          source_id?: string
+          source_label?: string | null
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_output_sources_ai_output_id_fkey"
+            columns: ["ai_output_id"]
+            isOneToOne: false
+            referencedRelation: "ai_outputs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_output_sources_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_outputs: {
         Row: {
           accepted: boolean | null
+          blocked_reason: string | null
           clinic_id: string
           confidence: number | null
           created_at: string
           edited_output_json: Json | null
+          failure_reason: string | null
           id: string
           input_json: Json
           kind: string
           latency_ms: number | null
           model: string
           output_json: Json
+          prompt_hash: string | null
+          prompt_key: string | null
           prompt_version: string
+          provenance_json: Json
+          provider: string | null
+          raw_output_text: string | null
           request_id: string | null
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
           reviewed_by: string | null
+          status: string
           tokens_in: number | null
           tokens_out: number | null
         }
         Insert: {
           accepted?: boolean | null
+          blocked_reason?: string | null
           clinic_id: string
           confidence?: number | null
           created_at?: string
           edited_output_json?: Json | null
+          failure_reason?: string | null
           id?: string
           input_json: Json
           kind: string
           latency_ms?: number | null
           model: string
           output_json: Json
+          prompt_hash?: string | null
+          prompt_key?: string | null
           prompt_version: string
+          provenance_json?: Json
+          provider?: string | null
+          raw_output_text?: string | null
           request_id?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
           reviewed_by?: string | null
+          status?: string
           tokens_in?: number | null
           tokens_out?: number | null
         }
         Update: {
           accepted?: boolean | null
+          blocked_reason?: string | null
           clinic_id?: string
           confidence?: number | null
           created_at?: string
           edited_output_json?: Json | null
+          failure_reason?: string | null
           id?: string
           input_json?: Json
           kind?: string
           latency_ms?: number | null
           model?: string
           output_json?: Json
+          prompt_hash?: string | null
+          prompt_key?: string | null
           prompt_version?: string
+          provenance_json?: Json
+          provider?: string | null
+          raw_output_text?: string | null
           request_id?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
           reviewed_by?: string | null
+          status?: string
           tokens_in?: number | null
           tokens_out?: number | null
         }
@@ -308,8 +389,15 @@ export type Database = {
           clinic_id: string
           created_at: string
           id: string
+          ingestion_attempts: number
+          ingestion_completed_at: string | null
+          ingestion_error: string | null
+          ingestion_queued_at: string | null
+          ingestion_status: string
           message_id: string | null
           mime_type: string
+          provider: string | null
+          provider_media_id: string | null
           request_id: string
           size_bytes: number
           storage_path: string
@@ -319,8 +407,15 @@ export type Database = {
           clinic_id: string
           created_at?: string
           id?: string
+          ingestion_attempts?: number
+          ingestion_completed_at?: string | null
+          ingestion_error?: string | null
+          ingestion_queued_at?: string | null
+          ingestion_status?: string
           message_id?: string | null
           mime_type: string
+          provider?: string | null
+          provider_media_id?: string | null
           request_id: string
           size_bytes: number
           storage_path: string
@@ -330,8 +425,15 @@ export type Database = {
           clinic_id?: string
           created_at?: string
           id?: string
+          ingestion_attempts?: number
+          ingestion_completed_at?: string | null
+          ingestion_error?: string | null
+          ingestion_queued_at?: string | null
+          ingestion_status?: string
           message_id?: string | null
           mime_type?: string
+          provider?: string | null
+          provider_media_id?: string | null
           request_id?: string
           size_bytes?: number
           storage_path?: string
@@ -777,6 +879,95 @@ export type Database = {
           },
         ]
       }
+      message_delivery_attempts: {
+        Row: {
+          attempt_number: number
+          channel: Database["public"]["Enums"]["owner_channel"]
+          clinic_id: string
+          completed_at: string | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          message_id: string | null
+          outbound_message_id: string
+          payload_json: Json
+          provider: string
+          provider_message_sid: string | null
+          provider_status: string | null
+          request_id: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempt_number: number
+          channel: Database["public"]["Enums"]["owner_channel"]
+          clinic_id: string
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          outbound_message_id: string
+          payload_json?: Json
+          provider?: string
+          provider_message_sid?: string | null
+          provider_status?: string | null
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempt_number?: number
+          channel?: Database["public"]["Enums"]["owner_channel"]
+          clinic_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          outbound_message_id?: string
+          payload_json?: Json
+          provider?: string
+          provider_message_sid?: string | null
+          provider_status?: string | null
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_delivery_attempts_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_delivery_attempts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_delivery_attempts_outbound_message_id_fkey"
+            columns: ["outbound_message_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_delivery_attempts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_delivery_events: {
         Row: {
           channel: Database["public"]["Enums"]["owner_channel"]
@@ -824,6 +1015,175 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      twilio_media_ingestion_jobs: {
+        Row: {
+          attachment_id: string
+          clinic_id: string
+          provider_url: string
+          provider_media_id: string | null
+          status: string
+          attempts: number
+          last_error: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_id: string
+          clinic_id: string
+          provider_url: string
+          provider_media_id?: string | null
+          status?: string
+          attempts?: number
+          last_error?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_id?: string
+          clinic_id?: string
+          provider_url?: string
+          provider_media_id?: string | null
+          status?: string
+          attempts?: number
+          last_error?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "twilio_media_ingestion_jobs_attachment_id_fkey"
+            columns: ["attachment_id"]
+            isOneToOne: true
+            referencedRelation: "attachments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twilio_media_ingestion_jobs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outbound_messages: {
+        Row: {
+          attempt_count: number
+          body: string
+          channel: Database["public"]["Enums"]["owner_channel"]
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          fallback_of_outbound_message_id: string | null
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          max_attempts: number
+          message_id: string | null
+          metadata_json: Json
+          next_attempt_at: string
+          owner_id: string | null
+          provider: string
+          recipient_phone: string
+          reminder_id: string | null
+          request_id: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          body: string
+          channel: Database["public"]["Enums"]["owner_channel"]
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          fallback_of_outbound_message_id?: string | null
+          id?: string
+          idempotency_key: string
+          last_error?: string | null
+          max_attempts?: number
+          message_id?: string | null
+          metadata_json?: Json
+          next_attempt_at?: string
+          owner_id?: string | null
+          provider?: string
+          recipient_phone: string
+          reminder_id?: string | null
+          request_id?: string | null
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          body?: string
+          channel?: Database["public"]["Enums"]["owner_channel"]
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          fallback_of_outbound_message_id?: string | null
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          max_attempts?: number
+          message_id?: string | null
+          metadata_json?: Json
+          next_attempt_at?: string
+          owner_id?: string | null
+          provider?: string
+          recipient_phone?: string
+          reminder_id?: string | null
+          request_id?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbound_messages_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_messages_fallback_of_outbound_message_id_fkey"
+            columns: ["fallback_of_outbound_message_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_messages_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_messages_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_messages_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_messages_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
             referencedColumns: ["id"]
           },
         ]

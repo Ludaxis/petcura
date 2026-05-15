@@ -192,6 +192,7 @@ export async function updateClinicTeamMemberStatus(formData: FormData) {
     membershipId: getString(formData, "membershipId"),
     isActive: getString(formData, "isActive")
   });
+  const archiveReason = nullable(getString(formData, "archiveReason"));
 
   if (!parsed.success) {
     settingsRedirect(locale, { settings_error: "invalid_status" });
@@ -233,7 +234,21 @@ export async function updateClinicTeamMemberStatus(formData: FormData) {
 
   const { error } = await admin
     .from("clinic_staff")
-    .update({ is_active: parsed.data.isActive })
+    .update(
+      (parsed.data.isActive
+        ? {
+            is_active: true,
+            archived_at: null,
+            archived_by: null,
+            archive_reason: null
+          }
+        : {
+            is_active: false,
+            archived_at: new Date().toISOString(),
+            archived_by: staffContext.user.id,
+            archive_reason: archiveReason ?? "Archived from clinic settings"
+          }) as never
+    )
     .eq("clinic_id", staffContext.clinic.id)
     .eq("id", parsed.data.membershipId);
 
@@ -245,19 +260,23 @@ export async function updateClinicTeamMemberStatus(formData: FormData) {
     clinic_id: staffContext.clinic.id,
     actor_id: staffContext.user.id,
     action: parsed.data.isActive
-      ? "clinic_staff_activated"
-      : "clinic_staff_deactivated",
+      ? "clinic_staff_reinstated"
+      : "clinic_staff_archived",
     entity_type: "clinic_staff",
     entity_id: target.id,
     payload_json: {
       user_id: target.user_id,
       role: targetRole,
+      reason: archiveReason,
       source: "clinic_settings"
     }
   });
 
   revalidatePath("/settings");
-  settingsRedirect(locale, { settings_status: "staff_updated" });
+  settingsRedirect(locale, {
+    tab: parsed.data.isActive ? "archived" : "team",
+    settings_status: "staff_updated"
+  });
 }
 
 export async function updateClinicTeamMemberProfile(formData: FormData) {

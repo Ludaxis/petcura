@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability/logger";
 
 /**
  * Web Vitals beacon endpoint.
@@ -78,16 +79,13 @@ export async function POST(request: Request) {
 
   // Stand-in for the future PostHog/Sentry hand-off. Kept as a structured
   // log so it is grep-able in Vercel logs while the real sink is wired up.
-  console.log(
-    JSON.stringify({
-      kind: "web-vitals",
-      name: payload.name,
-      value: payload.value,
-      rating: payload.rating,
-      id: payload.id,
-      navigationType: payload.navigationType
-    })
-  );
+  logger.info("web-vitals", {
+    name: payload.name,
+    value: payload.value,
+    rating: payload.rating,
+    id: payload.id,
+    navigationType: payload.navigationType
+  });
 
   return new NextResponse(null, { status: 204 });
 }

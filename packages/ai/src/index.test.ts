@@ -1,16 +1,36 @@
 import { describe, expect, it } from "vitest";
 import {
+  aiOutputStatusSchema,
+  aiPromptRegistry,
+  aiSafetyEvalFixtures,
   contextRetrievalOutputSchema,
+  findAiPromptRegistryEntry,
   formatSummaryForStaff,
   intakeQuestionOutputSchema,
   memoryExtractionOutputSchema,
   replyDraftOutputSchema,
   summaryLocalizationOutputSchema,
   summaryOutputSchema,
-  translationOutputSchema
+  translationOutputSchema,
+  validateAiOutputSafety
 } from "./index";
 
 describe("AI output contracts", () => {
+  it("defines accountability statuses and registered prompt versions", () => {
+    expect(aiOutputStatusSchema.options).toEqual([
+      "success",
+      "fallback",
+      "schema_failure",
+      "provider_error",
+      "blocked"
+    ]);
+    expect(findAiPromptRegistryEntry("reply_draft.v1")).toMatchObject({
+      kind: "reply_draft",
+      version: "reply_draft.v1.2026-05-12"
+    });
+    expect(aiPromptRegistry.intakeQuestion.ownerFacing).toBe(true);
+  });
+
   it("validates advisory web intake output without final medical decisions", () => {
     const output = intakeQuestionOutputSchema.parse({
       categorySuggestion: "medical_question",
@@ -140,5 +160,35 @@ describe("AI output contracts", () => {
 
     expect(draft.usedMemoryIds).toEqual(context.selectedMemoryIds);
     expect(draft.safetyNotes).toContain("staff_review_required");
+  });
+
+  it("runs the EN/ET/RU safety fixture baseline", () => {
+    for (const fixture of aiSafetyEvalFixtures) {
+      const result = validateAiOutputSafety({
+        kind: fixture.kind,
+        ownerFacing: fixture.ownerFacing,
+        output: fixture.output
+      });
+      expect(result.ok, fixture.id).toBe(fixture.expected === "pass");
+    }
+  });
+
+  it("blocks owner-facing drafts that prescribe or decide final urgency", () => {
+    const prescription = validateAiOutputSafety({
+      kind: "reply_draft",
+      ownerFacing: true,
+      output: {
+        text: "Give one aspirin now and there is no need to see a vet.",
+        confidence: 0.91,
+        usedMemoryIds: [],
+        safetyNotes: []
+      }
+    });
+
+    expect(prescription.ok).toBe(false);
+    if (!prescription.ok) {
+      expect(prescription.reason).toContain("prescription_instruction");
+      expect(prescription.reason).toContain("final_urgency_decision");
+    }
   });
 });
