@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Activity,
   Archive,
@@ -217,7 +218,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (
-                  <a
+                  <Link
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
                       "inline-flex min-h-10 items-center gap-2 rounded-[var(--radius)] px-3 text-sm font-semibold transition",
@@ -227,6 +228,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                     )}
                     href={withLocale(`/settings?tab=${tab.id}`, locale)}
                     key={tab.id}
+                    prefetch={false}
                   >
                     <Icon aria-hidden="true" size={16} />
                     {tab.label}
@@ -235,7 +237,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                         {tab.count}
                       </span>
                     ) : null}
-                  </a>
+                  </Link>
                 );
               })}
             </nav>

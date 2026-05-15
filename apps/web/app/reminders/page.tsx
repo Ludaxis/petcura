@@ -1,23 +1,24 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { Bell } from "lucide-react";
 import {
   createTranslator,
   withLocale,
-  type ReminderStatus
+  type SupportedLocale
 } from "@petcura/shared";
-import { Badge, cn } from "@petcura/ui";
+import { Badge, Shimmer, SkeletonList, cn } from "@petcura/ui";
 import { AppShell } from "@/app/_components/AppShell";
 import { LazyRealtimeRefresh as RealtimeRefresh } from "@/app/_components/LazyRealtimeRefresh";
 import { getRequestLocale } from "@/lib/locale";
 import { requireStaffContext } from "@/lib/auth/staff";
 import {
   isReminderFilter,
-  listReminders,
+  listReminderCounts,
   reminderFilterOrder,
   type ReminderFilter
 } from "@/lib/reminders";
 import { eqFilter, makeRealtimeChannelName } from "@/lib/realtime-refresh";
-import { ReminderRow } from "./_components/ReminderRow";
+import { ReminderListSection } from "./_components/ReminderListSection";
+import { ReminderTabs } from "./_components/ReminderTabs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,15 +32,77 @@ type Props = {
   }>;
 };
 
-const actionableStatuses = new Set<ReminderStatus>([
-  "scheduled",
-  "sent",
-  "acknowledged",
-  "missed"
-]);
-
 function filterLabelKey(filter: ReminderFilter) {
   return `reminders.tabs.${filter}` as const;
+}
+
+function ReminderTabsSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="mt-4 flex gap-2 overflow-hidden pb-1"
+    >
+      {[76, 108, 80, 132, 92, 112, 110].map((width) => (
+        <Shimmer
+          key={width}
+          className="h-8 shrink-0 rounded-full"
+          style={{ width }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ReminderListFallback({
+  label = "Loading reminders"
+}: {
+  label?: string;
+}) {
+  return (
+    <div className="mx-auto max-w-6xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] shadow-sm">
+      <SkeletonList rows={8} label={label} density="comfortable" />
+    </div>
+  );
+}
+
+async function ReminderTotalBadge({
+  countsPromise
+}: {
+  countsPromise: Promise<Record<ReminderFilter, number>>;
+}) {
+  const counts = await countsPromise;
+  return <Badge tone="teal">{counts.all}</Badge>;
+}
+
+async function ReminderTabsLoader({
+  activeFilter,
+  ariaLabel,
+  countsPromise,
+  locale,
+  loadingLabel
+}: {
+  activeFilter: ReminderFilter;
+  ariaLabel: string;
+  countsPromise: Promise<Record<ReminderFilter, number>>;
+  locale: SupportedLocale;
+  loadingLabel: string;
+}) {
+  const t = createTranslator(locale);
+  const counts = await countsPromise;
+
+  return (
+    <ReminderTabs
+      activeFilter={activeFilter}
+      ariaLabel={ariaLabel}
+      loadingLabel={loadingLabel}
+      tabs={reminderFilterOrder.map((status) => ({
+        id: status,
+        href: withLocale(`/reminders?status=${status}`, locale),
+        label: t(filterLabelKey(status)),
+        count: counts[status]
+      }))}
+    />
+  );
 }
 
 export default async function RemindersPage({ searchParams }: Props) {
@@ -57,30 +120,10 @@ export default async function RemindersPage({ searchParams }: Props) {
     : sp.action_error;
 
   const staffContext = await requireStaffContext(locale, "/reminders");
-  const allReminders = await listReminders(
+  const countsPromise = listReminderCounts(
     staffContext.supabase,
-    staffContext.clinic.id,
-    "all"
+    staffContext.clinic.id
   );
-  const rows =
-    filter === "all"
-      ? allReminders
-      : allReminders.filter((reminder) => reminder.status === filter);
-  const counts = Object.fromEntries(
-    reminderFilterOrder.map((status) => [
-      status,
-      status === "all"
-        ? allReminders.length
-        : allReminders.filter((reminder) => reminder.status === status).length
-    ])
-  ) as Record<ReminderFilter, number>;
-
-  const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
-  const formatDateTime = (iso: string) =>
-    dateTimeFormatter.format(new Date(iso));
   const announcement =
     actionError === "reminder"
       ? t("reminders.error")
@@ -128,7 +171,9 @@ export default async function RemindersPage({ searchParams }: Props) {
                 {t("reminders.description")}
               </p>
             </div>
-            <Badge tone="teal">{counts.all}</Badge>
+            <Suspense fallback={<Shimmer className="h-6 w-10 rounded-full" />}>
+              <ReminderTotalBadge countsPromise={countsPromise} />
+            </Suspense>
           </div>
 
           {announcement ? (
@@ -144,66 +189,29 @@ export default async function RemindersPage({ searchParams }: Props) {
             </p>
           ) : null}
 
-          <nav
-            aria-label={t("nav.reminders")}
-            className="mt-4 flex gap-2 overflow-x-auto pb-1"
-          >
-            {reminderFilterOrder.map((status) => {
-              const active = status === filter;
-              return (
-                <Link
-                  key={status}
-                  href={withLocale(`/reminders?status=${status}`, locale)}
-                  className={cn(
-                    "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[12px] font-semibold transition",
-                    active
-                      ? "border-[var(--primary)] bg-[var(--primary)] text-[var(--paper)]"
-                      : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-2)] hover:bg-[var(--soft)]"
-                  )}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {t(filterLabelKey(status))}
-                  <span className={active ? "text-[var(--paper)]" : "text-[var(--muted)]"}>
-                    {counts[status]}
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
+          <Suspense fallback={<ReminderTabsSkeleton />}>
+            <ReminderTabsLoader
+              activeFilter={filter}
+              ariaLabel={t("nav.reminders")}
+              countsPromise={countsPromise}
+              locale={locale}
+              loadingLabel="Loading reminders"
+            />
+          </Suspense>
         </header>
 
         <section className="min-h-0 flex-1 overflow-y-auto bg-[var(--soft)] p-3 sm:p-4">
-          {rows.length > 0 ? (
-            <ol className="mx-auto flex max-w-6xl flex-col gap-2">
-              {rows.map((reminder) => (
-                <ReminderRow
-                  key={reminder.id}
-                  reminder={reminder}
-                  locale={locale}
-                  filter={filter}
-                  dueAtLabel={formatDateTime(reminder.dueAt)}
-                  actionable={actionableStatuses.has(reminder.status)}
-                  labels={{
-                    pet: t("reminders.pet"),
-                    owner: t("reminders.owner"),
-                    due: t("reminders.due"),
-                    channel: t("request.reminder.channel"),
-                    openRequest: t("reminders.openRequest"),
-                    markAcknowledged: t("reminders.markAcknowledged"),
-                    markCompleted: t("reminders.markCompleted"),
-                    cancel: t("reminders.cancel")
-                  }}
-                />
-              ))}
-            </ol>
-          ) : (
-            <div className="mx-auto mt-8 max-w-xl rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-6 text-center">
-              <h2 className="text-[18px] font-semibold">{t("reminders.empty")}</h2>
-              <p className="mt-2 text-[13px] leading-5 text-[var(--muted)]">
-                {t("reminders.emptyBody")}
-              </p>
-            </div>
-          )}
+          <Suspense
+            key={`reminders-${filter}`}
+            fallback={<ReminderListFallback />}
+          >
+            <ReminderListSection
+              clinicId={staffContext.clinic.id}
+              filter={filter}
+              locale={locale}
+              supabase={staffContext.supabase}
+            />
+          </Suspense>
         </section>
       </section>
     </AppShell>

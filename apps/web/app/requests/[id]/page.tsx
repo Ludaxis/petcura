@@ -132,14 +132,10 @@ export default async function RequestDetailPage({
     `/requests/${encodeURIComponent(id)}`
   );
 
-  // Page title for the mobile shell header. We don't know the pet/owner
-  // names yet (that requires the detail fetch we just deferred), so on
-  // mobile the AppShell renders the inbox title as a stable fallback
-  // until the detail loader resolves and the real header swaps in.
-  // Desktop hides the title row anyway. Reusing `inbox.title` keeps the
-  // EN/ET/RU triad satisfied without minting a new key for a string the
-  // user only sees for a few hundred ms.
-  const pageTitle = t("inbox.title");
+  // Page title for the mobile shell header. The detail fetch streams below,
+  // so the shell uses a request-oriented fallback until the request header
+  // with pet/owner context resolves.
+  const pageTitle = t("nav.headerTitle.requests");
 
   return (
     <AppShell

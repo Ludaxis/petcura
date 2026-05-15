@@ -74,7 +74,8 @@ export function MobileBottomNav({
   }, []);
 
   const inboxHref = withLocale("/inbox", locale);
-  const inboxActive = pathname.startsWith("/inbox");
+  const inboxActive =
+    pathname.startsWith("/inbox") || pathname.startsWith("/requests");
   const remindersHref = withLocale("/reminders", locale);
   const remindersActive = pathname.startsWith("/reminders");
 

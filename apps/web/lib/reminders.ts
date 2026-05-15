@@ -144,6 +144,34 @@ export async function listReminders(
   return ((data ?? []) as unknown as ReminderRow[]).map(toReminderListItem);
 }
 
+export async function listReminderCounts(
+  supabase: ServerSupabaseClient,
+  clinicId: string
+) {
+  const entries = await Promise.all(
+    reminderFilterOrder.map(async (status) => {
+      let query = supabase
+        .from("reminders")
+        .select("id", { count: "exact", head: true })
+        .eq("clinic_id", clinicId);
+
+      if (status !== "all") {
+        query = query.eq("status", status);
+      }
+
+      const { count, error } = await query;
+
+      if (error) {
+        throw new Error(`Could not load reminder count: ${error.message}`);
+      }
+
+      return [status, count ?? 0] as const;
+    })
+  );
+
+  return Object.fromEntries(entries) as Record<ReminderFilter, number>;
+}
+
 export async function listRequestReminders(
   supabase: ServerSupabaseClient,
   clinicId: string,

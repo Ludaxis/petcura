@@ -201,16 +201,13 @@ test.describe("Loading shimmer language", () => {
   //    /inbox is a slow server-rendered route (Supabase round-trips) so
   //    Next.js naturally streams the loading.tsx shell ahead of the
   //    resolved page tree. We commit on first byte, then immediately
-  //    assert the aria-busy region exists in the early DOM.
+  //    assert the aria-busy region exists in the early DOM while the
+  //    dashboard chrome remains mounted.
   // -----------------------------------------------------------------------
-  test("inbox initial paint includes an aria-busy loading shell", async ({
+  test("inbox initial paint keeps dashboard chrome around the busy pane", async ({
     page,
     baseURL
   }, testInfo) => {
-    test.skip(
-      testInfo.project.name.includes("mobile"),
-      "Inbox shell verified once on chromium; mobile uses the same loader."
-    );
     test.skip(
       !supabaseUrl || !publishableKey || !secretKey,
       "Supabase env required for /inbox load."
@@ -234,6 +231,15 @@ test.describe("Loading shimmer language", () => {
       await expect(page.locator('[aria-busy="true"]').first()).toBeVisible({
         timeout: 8_000
       });
+      await expect(page.locator("[data-app-shell]")).toBeVisible();
+      if (testInfo.project.name.includes("mobile")) {
+        await expect(page.locator("[data-mobile-shell-header]")).toBeVisible();
+        await expect(page.locator("[data-mobile-bottom-nav]")).toBeVisible();
+      } else {
+        await expect(
+          page.locator('[data-slot="sidebar-container"]').first()
+        ).toBeVisible();
+      }
     } finally {
       await teardown(admin, seed);
     }
