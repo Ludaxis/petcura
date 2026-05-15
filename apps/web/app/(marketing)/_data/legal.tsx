@@ -2,12 +2,16 @@ import type { LegalPageShellProps } from "../_components/LegalPageShell";
 import { CookiePreferences } from "../_components/CookiePreferences";
 
 export const legalRoutes = {
+  terms: "/terms",
+  dpa: "/dpa",
   privacy: "/privacy",
   cookies: "/cookies",
   subprocessors: "/subprocessors"
 } as const;
 
 export const legalNavLinks = [
+  { href: legalRoutes.terms, label: "Terms" },
+  { href: legalRoutes.dpa, label: "DPA" },
   { href: legalRoutes.privacy, label: "Privacy" },
   { href: legalRoutes.cookies, label: "Cookies" },
   { href: legalRoutes.subprocessors, label: "Subprocessors" }
@@ -30,6 +34,441 @@ const updatedDate = "15 May 2026";
 const updatedDateTime = "2026-05-15";
 
 export const legalPages: Record<LegalPageKey, LegalPageContent> = {
+  terms: {
+    metadata: {
+      title: "PetCura Terms of Service",
+      description:
+        "The pilot-stage service terms for clinics and invited owner users who use PetCura."
+    },
+    eyebrow: "Terms",
+    title: "Terms of Service",
+    lede:
+      "These terms describe how clinics and invited pet owners may use PetCura during the pilot stage. Signed order forms, data processing agreements, and clinic-specific agreements control where they conflict with this public summary.",
+    updatedDate,
+    updatedDateTime,
+    callouts: [
+      {
+        title: "Pilot-stage terms",
+        tone: "notice",
+        body: "Commercial details, legal entity information, governing law, fees, and service levels must be confirmed in the signed customer agreement."
+      },
+      {
+        title: "Not veterinary care",
+        tone: "caution",
+        body: "PetCura structures communication and workflow. It is not a PMS, emergency service, diagnosis tool, prescription tool, or substitute for veterinary professionals."
+      },
+      {
+        title: "Clinic-controlled data",
+        tone: "trust",
+        body: (
+          <>
+            The clinic remains responsible for owner communications and medical
+            decisions. PetCura processes clinic-controlled data under the{" "}
+            <a href={legalRoutes.dpa}>Data Processing Addendum</a>.
+          </>
+        )
+      }
+    ],
+    sections: [
+      {
+        id: "agreement",
+        title: "Agreement Scope",
+        body: (
+          <>
+            <p>
+              These Terms apply to access to PetCura&apos;s website, clinic
+              workspace, owner-facing intake or chat surfaces, integrations,
+              support, and related services. A clinic may also have an order
+              form, pilot agreement, data processing addendum, security exhibit,
+              or other written agreement with PetCura.
+            </p>
+            <p>
+              If a signed agreement conflicts with this public Terms page, the
+              signed agreement controls for that clinic relationship.
+            </p>
+          </>
+        )
+      },
+      {
+        id: "product-role",
+        title: "What PetCura Does",
+        items: [
+          "Receives owner requests through WhatsApp, web intake, or fallback channels configured by the clinic.",
+          "Structures requests into a clinic inbox so staff can triage, reply, follow up, and export records.",
+          "Assists staff with drafts, summaries, translations, categories, risk flags, reminders, and audit records.",
+          "Tracks workflow, delivery events, and AI accountability metadata.",
+          "Leaves medical judgment, final urgency, diagnosis, prescriptions, and PMS records with the clinic."
+        ]
+      },
+      {
+        id: "clinic-responsibilities",
+        title: "Clinic Responsibilities",
+        items: [
+          {
+            title: "Authority",
+            body: "The person creating or administering a clinic account must have authority to bind the clinic or must use PetCura only under an approved pilot invitation."
+          },
+          {
+            title: "Owner communication",
+            body: "The clinic is responsible for obtaining required owner permissions, maintaining accurate clinic contact details, and deciding what messages are sent to owners."
+          },
+          {
+            title: "Medical decisions",
+            body: "Clinic staff must review clinical context, decide urgency, approve medical replies, and keep the PMS or other medical system of record current."
+          },
+          {
+            title: "Users and access",
+            body: "The clinic must invite only appropriate staff, remove access when roles change, and keep credentials secure."
+          },
+          {
+            title: "Compliance",
+            body: "The clinic remains responsible for its professional, clinical, privacy, recordkeeping, and messaging obligations."
+          }
+        ]
+      },
+      {
+        id: "owner-use",
+        title: "Pet Owner Use",
+        body: (
+          <p>
+            Pet owners should use PetCura only when a clinic invites them or
+            makes a PetCura intake path available. Owners should not rely on
+            PetCura for emergencies. If a pet may need urgent care, the owner
+            should call the clinic, use the clinic&apos;s emergency instructions,
+            or seek local emergency veterinary care.
+          </p>
+        )
+      },
+      {
+        id: "ai-assistance",
+        title: "AI Assistance",
+        body: (
+          <>
+            <p>
+              PetCura AI is a staff-assistance feature. It may help with
+              intake questions, summaries, translation, category suggestions,
+              risk flags, memory context, and reply drafts. It does not
+              diagnose, prescribe, set final urgency, or auto-send medical
+              advice.
+            </p>
+            <p>
+              Clinic staff are responsible for reviewing AI-assisted content
+              before using it in owner-facing medical communication. PetCura
+              stores AI accountability records as described in the Privacy
+              Notice and customer agreement.
+            </p>
+          </>
+        )
+      },
+      {
+        id: "acceptable-use",
+        title: "Acceptable Use",
+        items: [
+          "Do not use PetCura to send spam, deceptive messages, unlawful content, or communications that violate WhatsApp, SMS, telecom, or clinic policies.",
+          "Do not attempt to bypass authentication, tenant isolation, rate limits, audit logs, security controls, or AI safety controls.",
+          "Do not upload malware, production secrets, stolen data, or content you do not have rights to process.",
+          "Do not use PetCura to build a competing product by copying non-public product behavior, interfaces, or documentation.",
+          "Do not use PetCura for emergency dispatch, autonomous diagnosis, prescription, or final medical triage."
+        ]
+      },
+      {
+        id: "data-protection",
+        title: "Data Protection",
+        body: (
+          <>
+            <p>
+              PetCura processes clinic-controlled personal data as a processor
+              under the clinic&apos;s documented instructions and the applicable{" "}
+              <a href={legalRoutes.dpa}>Data Processing Addendum</a>. PetCura
+              may act as an independent controller for its own website, sales,
+              account administration, support, security, and operational data.
+            </p>
+            <p>
+              The Privacy Notice, Cookie Notice, Subprocessors page, and signed
+              customer agreement provide more detail about roles, processing,
+              retention, transfers, subprocessors, and privacy rights.
+            </p>
+          </>
+        )
+      },
+      {
+        id: "integrations",
+        title: "Integrations And Third-Party Services",
+        body: (
+          <p>
+            PetCura may connect to WhatsApp, SMS, PMS export destinations,
+            background job providers, hosting providers, analytics,
+            observability tools, AI providers, and other clinic-approved
+            systems. Third-party services may have their own terms, service
+            limitations, routing, and availability. PetCura is not responsible
+            for a third-party service outside PetCura&apos;s reasonable control.
+          </p>
+        )
+      },
+      {
+        id: "fees",
+        title: "Fees, Trials, And Pilot Access",
+        body: (
+          <p>
+            Pilot pricing, free trials, usage limits, renewal terms, taxes,
+            payment timing, and cancellation rights are set out in the signed
+            order form or pilot agreement. If no paid order is signed, PetCura
+            may limit, change, or end pilot access with reasonable notice.
+          </p>
+        )
+      },
+      {
+        id: "availability",
+        title: "Availability And Changes",
+        body: (
+          <p>
+            PetCura aims to provide a reliable service, but pilot features may
+            change as we learn from clinics. We may add, remove, or modify
+            features to improve safety, security, reliability, compliance,
+            performance, or product fit. Any committed service levels must be
+            stated in a signed agreement.
+          </p>
+        )
+      },
+      {
+        id: "ip",
+        title: "Intellectual Property",
+        body: (
+          <p>
+            PetCura and its licensors own the product, software, design,
+            documentation, workflows, and non-public product materials. Clinics
+            and owners keep their rights in data and content they submit.
+            Feedback may be used by PetCura to improve the product without
+            obligation, unless a signed agreement says otherwise.
+          </p>
+        )
+      },
+      {
+        id: "termination",
+        title: "Suspension And Termination",
+        body: (
+          <p>
+            PetCura may suspend access where needed to address security risks,
+            unlawful use, non-payment, misuse, suspected compromise, legal
+            obligations, or material breach. Termination, export, deletion, and
+            transition assistance are handled under the signed customer
+            agreement and Data Processing Addendum.
+          </p>
+        )
+      },
+      {
+        id: "liability",
+        title: "Disclaimers And Liability",
+        body: (
+          <p>
+            PetCura is provided with the warranties, disclaimers, liability
+            limits, exclusions, indemnities, and remedies stated in the signed
+            customer agreement. Until final legal terms are approved, public
+            website copy should not be treated as a complete legal contract or
+            as legal, medical, or regulatory advice.
+          </p>
+        )
+      },
+      {
+        id: "contact",
+        title: "Contact",
+        body: (
+          <p>
+            For terms, privacy, or security questions, contact{" "}
+            <a href="mailto:legal@petcura.app">legal@petcura.app</a>,{" "}
+            <a href="mailto:privacy@petcura.app">privacy@petcura.app</a>, or{" "}
+            <a href="mailto:security@petcura.app">security@petcura.app</a>.
+          </p>
+        )
+      }
+    ]
+  },
+  dpa: {
+    metadata: {
+      title: "PetCura Data Processing Addendum",
+      description:
+        "A public DPA overview for PetCura clinic customers, covering controller and processor roles, Article 28 processing details, subprocessors, security, and data rights support."
+    },
+    eyebrow: "DPA",
+    title: "Data Processing Addendum",
+    lede:
+      "This public DPA overview explains PetCura's processor commitments for clinic-controlled personal data. The signed DPA or customer agreement controls the legal relationship with each clinic.",
+    updatedDate,
+    updatedDateTime,
+    callouts: [
+      {
+        title: "Article 28 structure",
+        tone: "trust",
+        body: "This overview follows the GDPR controller-processor contract topics: subject matter, duration, nature, purpose, data types, data subjects, and controller rights."
+      },
+      {
+        title: "Signed DPA controls",
+        tone: "notice",
+        body: "This page is a public summary and implementation target. Clinics should rely on the signed DPA for binding obligations."
+      },
+      {
+        title: "Legal review required",
+        tone: "caution",
+        body: "Entity details, audit mechanics, liability, transfer modules, breach timelines, and final vendor terms must be approved by counsel before launch."
+      }
+    ],
+    sections: [
+      {
+        id: "roles",
+        title: "Roles",
+        body: (
+          <>
+            <p>
+              For clinic communication data, the clinic is the controller and
+              PetCura is the processor. PetCura processes that personal data
+              only to provide, secure, support, improve, and document the
+              PetCura service under the clinic&apos;s documented instructions.
+            </p>
+            <p>
+              PetCura may act as an independent controller for its own website,
+              sales, account administration, support, security, and operational
+              data, as described in the Privacy Notice.
+            </p>
+          </>
+        )
+      },
+      {
+        id: "processing-details",
+        title: "Processing Details",
+        items: [
+          {
+            title: "Subject matter",
+            body: "Clinic communication, intake, follow-up workflow, delivery tracking, AI-assisted staff review, exports, auditability, support, and security."
+          },
+          {
+            title: "Duration",
+            body: "For the term of the clinic agreement and any post-termination export, deletion, audit, legal, or security period agreed in writing."
+          },
+          {
+            title: "Nature and purpose",
+            body: "Hosting, storing, transmitting, organizing, analyzing for staff assistance, securing, logging, exporting, deleting, and supporting clinic-controlled communications and workflow records."
+          },
+          {
+            title: "Data subjects",
+            body: "Clinic staff, pet owners or representatives, and other people whose details appear in clinic communications or workflow records."
+          },
+          {
+            title: "Personal data categories",
+            body: "Contact details, messages, attachments, pet/request context, workflow notes, reminders, delivery metadata, account data, support data, audit logs, and AI accountability records."
+          },
+          {
+            title: "Special category or sensitive context",
+            body: "PetCura is not a human healthcare system, but owner communications may still contain sensitive personal context. Clinic configuration and staff behavior should minimize unnecessary personal data."
+          }
+        ]
+      },
+      {
+        id: "processor-commitments",
+        title: "Processor Commitments",
+        items: [
+          "Process clinic-controlled personal data only on documented clinic instructions, unless required by applicable law.",
+          "Ensure authorized personnel are subject to confidentiality obligations.",
+          "Maintain appropriate technical and organizational measures for access control, tenant isolation, encryption where appropriate, auditability, secure development, monitoring, backups, and incident response.",
+          "Support clinic requests for access, correction, export, deletion, restriction, or objection where PetCura processes data as the clinic's processor.",
+          "Assist with security, data breach assessment, data protection impact assessments, and supervisory authority consultation where legally required and reasonably applicable.",
+          "Return, export, delete, or de-identify clinic-controlled data at termination according to the signed agreement, while preserving limited audit or legal records where required.",
+          "Keep records needed to demonstrate processor compliance and make relevant information available under agreed audit terms."
+        ]
+      },
+      {
+        id: "subprocessors",
+        title: "Subprocessors",
+        body: (
+          <p>
+            PetCura uses subprocessors only for documented service purposes and
+            requires them to protect personal data through appropriate
+            contractual, security, and confidentiality commitments. Current and
+            planned provider categories are listed on the{" "}
+            <a href={legalRoutes.subprocessors}>Subprocessors page</a>.
+            Material changes are handled under the signed DPA.
+          </p>
+        )
+      },
+      {
+        id: "security",
+        title: "Security Measures",
+        items: [
+          {
+            title: "Access control",
+            body: "Role-based access, tenant isolation, least-privilege operational access, staff membership checks, and prompt revocation paths."
+          },
+          {
+            title: "Application security",
+            body: "Webhook signature verification, idempotent inbound processing, secrets kept out of client code, input validation, RLS for tenant data, and security headers."
+          },
+          {
+            title: "Auditability",
+            body: "Request events, AI outputs, delivery events, staff actions, and relevant system events are logged for operational accountability."
+          },
+          {
+            title: "Operational controls",
+            body: "Monitoring, incident response, backups, dependency review, deployment controls, and environment separation."
+          },
+          {
+            title: "AI controls",
+            body: "Minimum-necessary prompts, staff approval for medical replies, provider-route documentation, prompt versioning, output accountability, and review status tracking."
+          }
+        ]
+      },
+      {
+        id: "transfers",
+        title: "International Transfers",
+        body: (
+          <p>
+            PetCura is designed for EU-region primary application data hosting.
+            Some subprocessors may process limited data outside the EEA when
+            needed for messaging, hosting, observability, AI assistance, or
+            support. Transfer mechanisms, regional configuration, and provider
+            terms must be documented in the signed DPA or subprocessor record.
+          </p>
+        )
+      },
+      {
+        id: "breach",
+        title: "Security Incidents",
+        body: (
+          <p>
+            PetCura will notify affected clinic customers without undue delay
+            after confirming a personal data breach involving clinic-controlled
+            personal data processed by PetCura, and will provide information
+            reasonably needed for the clinic to meet its own notification
+            obligations. Exact timelines and escalation paths belong in the
+            signed DPA.
+          </p>
+        )
+      },
+      {
+        id: "deletion-export",
+        title: "Export And Deletion",
+        body: (
+          <p>
+            PetCura supports clinic-controlled export and deletion workflows
+            consistent with auditability, security, legal retention, backup
+            lifecycle, and veterinary recordkeeping requirements. Erasure flows
+            should minimize personal data while preserving required audit
+            integrity.
+          </p>
+        )
+      },
+      {
+        id: "order-of-precedence",
+        title: "Order Of Precedence",
+        body: (
+          <p>
+            If this public DPA overview conflicts with a signed customer
+            agreement, signed DPA, standard contractual clauses, or legally
+            required data transfer terms, the signed or legally required terms
+            control.
+          </p>
+        )
+      }
+    ]
+  },
   privacy: {
     metadata: {
       title: "PetCura Privacy Notice",

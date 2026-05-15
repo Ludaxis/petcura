@@ -26,6 +26,8 @@ export default function robots(): MetadataRoute.Robots {
           "/demo",
           "/sandbox",
           "/trust",
+          "/terms",
+          "/dpa",
           "/privacy",
           "/cookies",
           "/owners",

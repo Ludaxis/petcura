@@ -458,6 +458,8 @@ export const uiCopy = {
     "landing.footer.changelog": "Changelog",
     "landing.footer.status": "Status",
     "landing.footer.trust": "Trust Center",
+    "landing.footer.terms": "Terms",
+    "landing.footer.dpa": "DPA",
     "landing.footer.privacy": "Privacy",
     "landing.footer.cookies": "Cookies",
     "landing.footer.cookieSettings": "Cookie settings",
@@ -625,7 +627,11 @@ export const uiCopy = {
     "trust.docs.badge": "Data protection",
     "trust.docs.title": "Review the public trust documents",
     "trust.docs.body":
-      "Privacy, cookie, and subprocessor pages keep buyer diligence separate from marketing claims.",
+      "Terms, DPA, privacy, cookie, and subprocessor pages keep buyer diligence separate from marketing claims.",
+    "trust.docs.terms.body":
+      "Pilot-stage service rules for clinics and invited owners, including AI and medical-use boundaries.",
+    "trust.docs.dpa.body":
+      "Controller/processor roles, processing details, subprocessors, security, transfers, and rights support.",
     "trust.docs.privacy.body":
       "How PetCura handles website, clinic, owner, messaging, and AI accountability data.",
     "trust.docs.cookies.body":
@@ -1563,6 +1569,8 @@ export const uiCopy = {
     "landing.footer.changelog": "Muudatuste logi",
     "landing.footer.status": "Olek",
     "landing.footer.trust": "Usalduskeskus",
+    "landing.footer.terms": "Tingimused",
+    "landing.footer.dpa": "DPA",
     "landing.footer.privacy": "Privaatsus",
     "landing.footer.cookies": "Küpsised",
     "landing.footer.cookieSettings": "Küpsiste seaded",
@@ -1730,7 +1738,11 @@ export const uiCopy = {
     "trust.docs.badge": "Andmekaitse",
     "trust.docs.title": "Vaata avalikke usaldusdokumente",
     "trust.docs.body":
-      "Privaatsuse, küpsiste ja alamtöötlejate lehed hoiavad ostja due diligence'i eraldi turundusväidetest.",
+      "Tingimuste, DPA, privaatsuse, küpsiste ja alamtöötlejate lehed hoiavad ostja due diligence'i eraldi turundusväidetest.",
+    "trust.docs.terms.body":
+      "Piloodi teenusereeglid kliinikutele ja kutsutud omanikele, sh AI ja meditsiinilise kasutuse piirid.",
+    "trust.docs.dpa.body":
+      "Vastutava töötleja/töötleja rollid, töötlemise detailid, alamtöötlejad, turve, edastused ja õiguste tugi.",
     "trust.docs.privacy.body":
       "Kuidas PetCura käsitleb veebisaidi, kliiniku, omaniku, sõnumite ja AI vastutuse andmeid.",
     "trust.docs.cookies.body":
@@ -2676,6 +2688,8 @@ export const uiCopy = {
     "landing.footer.changelog": "Журнал изменений",
     "landing.footer.status": "Статус",
     "landing.footer.trust": "Trust Center",
+    "landing.footer.terms": "Условия",
+    "landing.footer.dpa": "DPA",
     "landing.footer.privacy": "Приватность",
     "landing.footer.cookies": "Файлы cookie",
     "landing.footer.cookieSettings": "Настройки cookie",
@@ -2843,7 +2857,11 @@ export const uiCopy = {
     "trust.docs.badge": "Защита данных",
     "trust.docs.title": "Публичные документы доверия",
     "trust.docs.body":
-      "Страницы о приватности, cookies и субпроцессорах отделяют проверку покупателя от маркетинговых заявлений.",
+      "Страницы условий, DPA, приватности, cookies и субпроцессоров отделяют проверку покупателя от маркетинговых заявлений.",
+    "trust.docs.terms.body":
+      "Правила пилотного сервиса для клиник и приглашенных владельцев, включая границы AI и медицинского использования.",
+    "trust.docs.dpa.body":
+      "Роли контролера/обработчика, детали обработки, субпроцессоры, безопасность, передачи и поддержка прав.",
     "trust.docs.privacy.body":
       "Как PetCura обрабатывает данные сайта, клиники, владельца, сообщений и отчетности AI.",
     "trust.docs.cookies.body":

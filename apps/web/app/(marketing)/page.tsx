@@ -56,6 +56,8 @@ export default async function MarketingPage({
   );
   const sandboxHref = withLocale(marketingRoutes.sandbox, locale);
   const trustHref = withLocale(marketingRoutes.trust, locale);
+  const termsHref = marketingRoutes.terms;
+  const dpaHref = marketingRoutes.dpa;
   const privacyHref = marketingRoutes.privacy;
   const cookiesHref = marketingRoutes.cookies;
   const subprocessorsHref = marketingRoutes.subprocessors;
@@ -306,6 +308,8 @@ export default async function MarketingPage({
         ownersHref={ownersHref}
         ownerSignInHref={ownerSignInHref}
         signInHref={clinicSignInHref}
+        termsHref={termsHref}
+        dpaHref={dpaHref}
         privacyHref={privacyHref}
         cookiesHref={cookiesHref}
         subprocessorsHref={subprocessorsHref}
@@ -422,6 +426,8 @@ function Footer({
   ownersHref,
   ownerSignInHref,
   signInHref,
+  termsHref,
+  dpaHref,
   privacyHref,
   cookiesHref,
   subprocessorsHref,
@@ -433,6 +439,8 @@ function Footer({
   ownersHref: string;
   ownerSignInHref: string;
   signInHref: string;
+  termsHref: string;
+  dpaHref: string;
   privacyHref: string;
   cookiesHref: string;
   subprocessorsHref: string;
@@ -462,6 +470,8 @@ function Footer({
     {
       heading: t("landing.footer.legalHeading"),
       links: [
+        { href: termsHref, label: t("landing.footer.terms") },
+        { href: dpaHref, label: t("landing.footer.dpa") },
         { href: privacyHref, label: t("landing.footer.privacy") },
         { href: cookiesHref, label: t("landing.footer.cookies") },
         { href: subprocessorsHref, label: t("landing.footer.subprocessors") },
@@ -478,6 +488,8 @@ function Footer({
     }
   ];
   const bottomLinks = [
+    { href: termsHref, label: t("landing.footer.terms") },
+    { href: dpaHref, label: t("landing.footer.dpa") },
     { href: privacyHref, label: t("landing.footer.privacy") },
     { href: cookiesHref, label: t("landing.footer.cookies") },
     {

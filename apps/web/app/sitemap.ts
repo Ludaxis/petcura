@@ -12,6 +12,16 @@ const publicRoutes = [
     priority: 0.8
   },
   {
+    path: "/terms",
+    changeFrequency: "monthly",
+    priority: 0.7
+  },
+  {
+    path: "/dpa",
+    changeFrequency: "monthly",
+    priority: 0.7
+  },
+  {
     path: "/owners",
     changeFrequency: "monthly",
     priority: 0.7

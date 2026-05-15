@@ -7,6 +7,8 @@
 The public legal/trust surface now includes:
 
 - `/trust`: buyer-facing trust summary and links to public data-protection documents.
+- `/terms`: pilot-stage public service terms for clinics and invited owner users.
+- `/dpa`: public data processing addendum overview aligned to GDPR Article 28 topics.
 - `/privacy`: public privacy notice for website visitors, clinic buyers/staff, and owners whose clinics use PetCura.
 - `/cookies`: public cookie and analytics notice.
 - `/subprocessors`: public subprocessor register and buyer diligence summary.

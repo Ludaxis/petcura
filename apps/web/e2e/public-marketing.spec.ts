@@ -6,6 +6,8 @@ const publicRoutes = [
   "/demo",
   "/sandbox",
   "/trust",
+  "/terms",
+  "/dpa",
   "/privacy",
   "/cookies",
   "/subprocessors"
@@ -37,6 +39,8 @@ test.describe("Public marketing experience", () => {
       "/sandbox",
       "/trust",
       "/owners",
+      "/terms",
+      "/dpa",
       "/privacy",
       "/cookies",
       "/subprocessors"
@@ -77,6 +81,12 @@ test.describe("Public marketing experience", () => {
     await page.goto("/");
 
     const footer = page.locator("footer");
+    await expect(
+      footer.getByRole("link", { name: "Terms", exact: true }).first()
+    ).toBeVisible();
+    await expect(
+      footer.getByRole("link", { name: "DPA", exact: true }).first()
+    ).toBeVisible();
     await expect(
       footer.getByRole("link", { name: "Privacy", exact: true }).first()
     ).toBeVisible();
@@ -141,6 +151,8 @@ test.describe("Public marketing experience", () => {
     expect(bodyText).toContain("In progress");
     expect(bodyText).toContain("ISO 27001");
     expect(bodyText).toContain("Planned");
+    expect(bodyText).toContain("Terms");
+    expect(bodyText).toContain("DPA");
     expect(bodyText).toContain("Privacy");
     expect(bodyText).toContain("Cookies");
     expect(bodyText).toContain("Subprocessors");
@@ -161,6 +173,20 @@ test.describe("Public marketing experience", () => {
     await expect(page.getByRole("heading", { name: "Privacy Notice" })).toBeVisible();
     await expect(page.getByText("Clinic-controlled data")).toBeVisible();
     await expect(page.getByText("does not sell owner data")).toBeVisible();
+
+    await page.goto("/terms");
+    await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
+    await expect(page.getByText("Pilot-stage terms")).toBeVisible();
+    await expect(page.getByText("does not diagnose, prescribe")).toBeVisible();
+
+    await page.goto("/dpa");
+    await expect(
+      page.getByRole("heading", { name: "Data Processing Addendum" })
+    ).toBeVisible();
+    await expect(page.getByText("Article 28 structure")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Processor Commitments" })
+    ).toBeVisible();
 
     await page.goto("/cookies");
     await expect(page.getByRole("heading", { name: "Cookie Notice" })).toBeVisible();

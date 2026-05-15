@@ -44,8 +44,9 @@ Primary application data is hosted in EU regions. Subprocessors, transfer mechan
 
 ## Public Website Requirements
 
-- `/privacy`, `/cookies`, `/subprocessors`, and `/trust` must stay aligned with `docs/contracts/trust-center.md` and `docs/compliance/public-legal-copy.md`.
+- `/terms`, `/dpa`, `/privacy`, `/cookies`, `/subprocessors`, and `/trust` must stay aligned with `docs/contracts/trust-center.md` and `docs/compliance/public-legal-copy.md`.
 - Public copy must describe PetCura as processor for clinic-controlled communication data and avoid completed certification claims until evidence exists.
+- Public terms and DPA copy must identify pilot-stage boundaries, signed-agreement precedence, Article 28 processing topics, subprocessor notice, transfer safeguards, security measures, and breach/export/deletion support without replacing legal review.
 - Cookie and analytics claims must match the deployed consent behavior and cookie inventory before launch.
 - Subprocessor claims must match signed vendor DPAs, configured regions, transfer safeguards, and AI inference settings before launch.
 - `/.well-known/security.txt`, `robots.txt`, `sitemap.xml`, global security headers, and scanner-path handling are part of the public security baseline.

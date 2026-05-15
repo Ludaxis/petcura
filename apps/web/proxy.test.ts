@@ -123,6 +123,8 @@ describe("metadata routes", () => {
       "/demo",
       "/sandbox",
       "/trust",
+      "/terms",
+      "/dpa",
       "/privacy",
       "/cookies",
       "/owners",
@@ -142,6 +144,8 @@ describe("metadata routes", () => {
     expect(urls).toEqual([
       "https://petcura.app/",
       "https://petcura.app/trust",
+      "https://petcura.app/terms",
+      "https://petcura.app/dpa",
       "https://petcura.app/owners",
       "https://petcura.app/privacy",
       "https://petcura.app/cookies",

@@ -5,6 +5,8 @@ export const marketingRoutes = {
   demo: "/demo",
   sandbox: "/sandbox",
   trust: "/trust",
+  terms: "/terms",
+  dpa: "/dpa",
   privacy: "/privacy",
   cookies: "/cookies",
   subprocessors: "/subprocessors",

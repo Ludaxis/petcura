@@ -6,7 +6,7 @@ Status: Website-ready draft for legal review. Do not publish as final legal text
 
 Owner: UX writing/content specialist
 
-Scope: Public copy for `/privacy`, `/cookies`, `/subprocessors`, trust-center enhancements, footer/legal microcopy, and legal-review placeholders.
+Scope: Public copy for `/terms`, `/dpa`, `/privacy`, `/cookies`, `/subprocessors`, trust-center enhancements, footer/legal microcopy, and legal-review placeholders.
 
 ## Claim Guardrails
 
@@ -87,6 +87,58 @@ We use data to:
 - meet contractual and legal obligations.
 
 We do not sell owner data. We do not use owner conversations for advertising.
+
+## `/terms`
+
+### Page Title
+
+Terms of Service
+
+### Purpose
+
+Public pilot-stage service terms for clinics and invited pet owners. The page must make clear that signed order forms, pilot agreements, DPAs, and clinic-specific agreements control where they conflict with the public page.
+
+### Required Topics
+
+- Agreement scope and signed-agreement precedence.
+- PetCura product role: communication workflow, intake, reminders, exports, auditability, and staff-assistance AI.
+- Medical boundary: PetCura is not a PMS, emergency service, diagnosis tool, prescription tool, final urgency system, or replacement for veterinary professionals.
+- Clinic responsibilities: authority, staff access, owner permissions, medical decisions, PMS records, compliance, and credential security.
+- Owner responsibilities: use PetCura only through clinic invitation or clinic-published intake paths; seek urgent care through the clinic or local emergency veterinary care.
+- AI rules: staff assistance only, no autonomous medical advice, owner-facing medical replies require staff approval.
+- Acceptable use: no spam, unlawful messaging, security bypass, malware, secrets, stolen data, or competing-product extraction.
+- Data protection: clinic is controller and PetCura is processor for clinic-controlled communication data; DPA applies.
+- Third-party services: WhatsApp, SMS, PMS, hosting, observability, jobs, and AI providers may have independent terms and routing.
+- Fees, trials, pilot access, availability, changes, IP, suspension, termination, disclaimers, liability, and contact.
+
+### Legal Review Notes
+
+Confirm legal entity, governing law, venue, order-form precedence, payment terms, liability cap, warranties, indemnities, notice mechanics, and consumer-law requirements before treating `/terms` as final legal text.
+
+## `/dpa`
+
+### Page Title
+
+Data Processing Addendum
+
+### Purpose
+
+Public DPA overview for clinic buyers. It should track GDPR Article 28 data-processing contract topics while saying the signed DPA controls.
+
+### Required Topics
+
+- Roles: clinic is controller and PetCura is processor for clinic communication data.
+- Subject matter: clinic communication, intake, follow-up workflow, delivery tracking, AI-assisted staff review, exports, auditability, support, and security.
+- Duration: customer term plus agreed export, deletion, audit, legal, or security period.
+- Nature and purpose: hosting, storing, transmitting, organizing, staff-assistance analysis, securing, logging, exporting, deleting, and support.
+- Data subjects: clinic staff, pet owners or representatives, and people whose details appear in clinic communications.
+- Data categories: contact details, messages, attachments, pet/request context, workflow notes, reminders, delivery metadata, account data, support data, audit logs, and AI accountability records.
+- Processor commitments: documented instructions, confidentiality, security, rights support, breach/DPIA assistance, deletion/export, records, and audit information.
+- Subprocessors, security measures, international transfers, incident notice, export/deletion, and order of precedence.
+
+### Legal Review Notes
+
+Confirm exact Article 28 clauses, transfer modules, subprocessor authorization mechanics, audit rights, assistance scope, liability, breach timeline, TOMs, deletion mechanics, backup retention, and AI-provider-specific terms before launch.
 
 ### AI Assistance
 
@@ -393,6 +445,7 @@ Internal PetCura sources:
 External legal, vendor, and standards sources:
 
 - [EDPB GDPR Article 28 - Processor](https://www.edpb.europa.eu/gdpr-articles/article-28-processor_en)
+- [Irish Data Protection Commission - Controller-Processor Contracts](https://www.dataprotection.ie/en/dpc-guidance/data-processing-agreements)
 - [EDPB GDPR Article 12 - Transparent information](https://www.edpb.europa.eu/gdpr-articles/article-12-transparent-information-communication-and-modalities-exercise-rights-data_en)
 - [EDPB GDPR Article 33 - Breach notification](https://www.edpb.europa.eu/gdpr-articles/article-33-notification-personal-data-breach-supervisory-authority_en)
 - [EDPB SME guide - Data breaches](https://www.edpb.europa.eu/sme-data-protection-guide/data-breaches_en)

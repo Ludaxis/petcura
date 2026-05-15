@@ -40,6 +40,8 @@ export default async function TrustPage({ searchParams }: TrustPageProps) {
   const t = createTranslator(locale);
   const homeHref = withLocale(marketingRoutes.home, locale);
   const demoHref = withLocale(demoHrefBySource(leadSources.trust), locale);
+  const termsHref = marketingRoutes.terms;
+  const dpaHref = marketingRoutes.dpa;
   const privacyHref = marketingRoutes.privacy;
   const cookiesHref = marketingRoutes.cookies;
   const subprocessorsHref = marketingRoutes.subprocessors;
@@ -65,6 +67,18 @@ export default async function TrustPage({ searchParams }: TrustPageProps) {
     }
   ];
   const legalDocs = [
+    {
+      icon: <FileCheck2 aria-hidden="true" size={18} />,
+      title: t("landing.footer.terms"),
+      body: t("trust.docs.terms.body"),
+      href: termsHref
+    },
+    {
+      icon: <ShieldCheck aria-hidden="true" size={18} />,
+      title: t("landing.footer.dpa"),
+      body: t("trust.docs.dpa.body"),
+      href: dpaHref
+    },
     {
       icon: <FileText aria-hidden="true" size={18} />,
       title: t("landing.footer.privacy"),
@@ -228,7 +242,7 @@ export default async function TrustPage({ searchParams }: TrustPageProps) {
                 {t("trust.docs.body")}
               </p>
             </div>
-            <ul className="grid gap-3 sm:grid-cols-3" role="list">
+            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" role="list">
               {legalDocs.map((item) => (
                 <li key={item.href}>
                   <Link

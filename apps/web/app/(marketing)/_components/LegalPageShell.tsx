@@ -181,7 +181,7 @@ export function LegalPageShell({
                     <h2 className="text-sm font-semibold text-[var(--foreground)]">
                       {callout.title}
                     </h2>
-                    <div className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                    <div className="mt-1 text-sm leading-6 text-[var(--muted)] [&_a]:font-semibold [&_a]:text-[var(--primary-strong)] [&_a]:underline-offset-4 [&_a:focus-visible]:underline [&_a:hover]:underline">
                       {callout.body}
                     </div>
                   </div>

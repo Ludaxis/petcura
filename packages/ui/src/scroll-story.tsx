@@ -211,8 +211,8 @@ export function ScrollStory({
           className="relative grid h-screen w-full place-items-center"
           ref={pinRef}
         >
-          <div className="grid w-full max-w-5xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:gap-12">
-            <div className="relative min-h-[240px] overflow-hidden rounded-[16px]">
+          <div className="grid w-full max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] lg:gap-12">
+            <div className="relative min-h-[560px] overflow-hidden rounded-[22px] lg:min-h-[620px]">
               {beats.map((beat, index) => {
                 const captionId = `${captionBaseId}-${beat.id}`;
                 const active = index === activeIndex;
