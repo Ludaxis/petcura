@@ -296,7 +296,82 @@ export function AdminLeadTable({
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <div className="divide-y divide-[var(--line)] md:hidden">
+        {leads.map((lead) => (
+          <article className="grid gap-3 p-4" key={lead.id}>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                aria-label={`${labels.contact}: ${lead.clinic_name}`}
+                checked={selected.has(lead.id)}
+                className="mt-1"
+                onCheckedChange={() => toggleLead(lead.id)}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="break-words font-semibold text-[var(--ink)]">
+                  {lead.clinic_name}
+                </div>
+                <div className="mt-1 break-words text-[12.5px] leading-5 text-[var(--muted)]">
+                  {lead.contact_name} · {lead.work_email}
+                </div>
+              </div>
+              <Badge tone={statusTones[lead.status]}>
+                {statusLabel(lead.status, labels)}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-[12.5px]">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                  {labels.source}
+                </div>
+                <div className="mt-1 capitalize text-[var(--muted)]">
+                  {formatLeadValue(lead.source, labels.notProvided)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                  {labels.country}
+                </div>
+                <div className="mt-1 text-[var(--muted)]">{lead.country}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                  {labels.pms}
+                </div>
+                <div className="mt-1 text-[var(--muted)]">
+                  {formatLeadValue(lead.pms_system, labels.notProvided)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                  {labels.updated}
+                </div>
+                <div className="mt-1 text-[var(--muted)]">
+                  {dateFormatter.format(new Date(lead.updated_at))}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button asChild size="sm" variant="ghost">
+                <a href={makeMailto(lead)} onClick={() => runReply(lead)}>
+                  <Mail aria-hidden="true" size={14} />
+                  {labels.reply}
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                type="button"
+                variant="secondary"
+                onClick={() => openLead(lead)}
+              >
+                <PanelRightOpen aria-hidden="true" size={14} />
+                {labels.details}
+              </Button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[960px] border-separate border-spacing-0 text-left text-sm">
           <thead>
             <tr className="border-b border-[var(--line)] text-[11px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
