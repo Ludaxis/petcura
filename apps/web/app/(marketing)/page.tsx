@@ -477,6 +477,15 @@ function Footer({
       ]
     }
   ];
+  const bottomLinks = [
+    { href: privacyHref, label: t("landing.footer.privacy") },
+    { href: cookiesHref, label: t("landing.footer.cookies") },
+    {
+      href: `${cookiesHref}#cookie-settings`,
+      label: t("landing.footer.cookieSettings")
+    },
+    { href: subprocessorsHref, label: t("landing.footer.subprocessors") }
+  ];
 
   return (
     <footer className="bg-[var(--paper)]">
@@ -521,12 +530,23 @@ function Footer({
         </nav>
       </div>
       <div className="border-t border-[var(--line)]">
-        <div
-          className="mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-2 px-4 py-5 text-[11px] uppercase tracking-[0.08em] text-[var(--muted)] sm:flex-row sm:items-center sm:px-6 lg:px-8"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          <span>{t("landing.footer.legal")}</span>
-          <span>PetCura · v1.0</span>
+        <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-5 text-[11px] uppercase tracking-[0.08em] text-[var(--muted)] sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
+          <div
+            className="flex flex-wrap items-center gap-x-4 gap-y-2"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            <span>{t("landing.footer.legal")}</span>
+            {bottomLinks.map((link) => (
+              <Link
+                className="transition hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                href={link.href}
+                key={link.href}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <span style={{ fontFamily: "var(--font-mono)" }}>PetCura · v1.0</span>
         </div>
       </div>
     </footer>

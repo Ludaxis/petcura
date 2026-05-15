@@ -47,6 +47,50 @@ test.describe("Public marketing experience", () => {
     }
   });
 
+  test("fresh visitors receive analytics cookie consent before tracking", async ({
+    context,
+    page
+  }) => {
+    await context.clearCookies();
+    await page.goto("/");
+
+    const notice = page.locator('aside[aria-label="Cookie notice"]');
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText("Privacy-first analytics");
+    await expect(notice).toContainText("Optional analytics");
+    await expect(
+      page.getByRole("link", { name: "Manage choices" })
+    ).toHaveAttribute("href", "/cookies#cookie-settings");
+
+    await page
+      .getByRole("button", { name: "Reject optional", exact: true })
+      .click();
+    await expect(notice).toBeHidden();
+
+    const cookies = await context.cookies();
+    expect(
+      cookies.find((cookie) => cookie.name === "petcura-analytics")?.value
+    ).toBe("rejected");
+  });
+
+  test("footer exposes legal and cookie controls", async ({ page }) => {
+    await page.goto("/");
+
+    const footer = page.locator("footer");
+    await expect(
+      footer.getByRole("link", { name: "Privacy", exact: true }).first()
+    ).toBeVisible();
+    await expect(
+      footer.getByRole("link", { name: "Cookies", exact: true }).first()
+    ).toBeVisible();
+    await expect(
+      footer.getByRole("link", { name: "Cookie settings", exact: true })
+    ).toHaveAttribute("href", "/cookies#cookie-settings");
+    await expect(
+      footer.getByRole("link", { name: "Subprocessors", exact: true }).first()
+    ).toBeVisible();
+  });
+
   test("demo form validates, blocks honeypot spam, and shows a confirmation path", async ({
     page
   }) => {
