@@ -1,5 +1,7 @@
 begin;
 
+select plan(3);
+
 insert into auth.users (
   id,
   aud,
@@ -179,14 +181,20 @@ values
   );
 
 set local role authenticated;
-select set_config(
-  'request.jwt.claim.sub',
-  '10000000-0000-4000-8000-000000000001',
-  true
-);
-select set_config('request.jwt.claim.role', 'authenticated', true);
+do $jwt$
+begin
+  perform set_config(
+    'request.jwt.claim.sub',
+    '10000000-0000-4000-8000-000000000001',
+    true
+  );
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+end
+$jwt$;
 
-do $$
+select lives_ok(
+  $test$
+  do $block$
 begin
   if (select count(*) from public.owners) <> 1 then
     raise exception 'staff A should see exactly one owner';
@@ -280,18 +288,28 @@ begin
         raise;
       end if;
   end;
-end $$;
+end
+$block$;
+  $test$,
+  'staff A can only read and write allowed clinic A data'
+);
 
 reset role;
 set local role authenticated;
-select set_config(
-  'request.jwt.claim.sub',
-  '10000000-0000-4000-8000-000000000003',
-  true
-);
-select set_config('request.jwt.claim.role', 'authenticated', true);
+do $jwt$
+begin
+  perform set_config(
+    'request.jwt.claim.sub',
+    '10000000-0000-4000-8000-000000000003',
+    true
+  );
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+end
+$jwt$;
 
-do $$
+select lives_ok(
+  $test$
+  do $block$
 begin
   if (select count(*) from public.ai_memory_items) <> 2 then
     raise exception 'viewer A should read clinic A AI memory items';
@@ -321,14 +339,24 @@ begin
         raise;
       end if;
   end;
-end $$;
+end
+$block$;
+  $test$,
+  'viewer A can read clinic A memory but cannot write'
+);
 
 reset role;
 set local role anon;
-select set_config('request.jwt.claim.sub', '', true);
-select set_config('request.jwt.claim.role', 'anon', true);
+do $jwt$
+begin
+  perform set_config('request.jwt.claim.sub', '', true);
+  perform set_config('request.jwt.claim.role', 'anon', true);
+end
+$jwt$;
 
-do $$
+select lives_ok(
+  $test$
+  do $block$
 begin
   if (select count(*) from public.owners) <> 0 then
     raise exception 'anonymous user can read owners';
@@ -361,6 +389,13 @@ begin
   exception
     when insufficient_privilege then null;
   end;
-end $$;
+end
+$block$;
+  $test$,
+  'anonymous users cannot read tenant-owned private data'
+);
+
+reset role;
+select * from finish();
 
 rollback;

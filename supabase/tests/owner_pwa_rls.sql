@@ -1,5 +1,7 @@
 begin;
 
+select plan(9);
+
 insert into auth.users (
   id,
   aud,
@@ -231,57 +233,37 @@ values (
 );
 
 set local role authenticated;
-select set_config(
-  'request.jwt.claim.sub',
-  '61000000-0000-4000-8000-000000000001',
-  true
-);
-select set_config('request.jwt.claim.role', 'authenticated', true);
-select set_config(
-  'request.jwt.claims',
-  '{"sub":"61000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"petcura_actor":"owner"}}',
-  true
-);
-
-do $$
+do $jwt$
 begin
-  if (select count(*) from public.clinics) <> 1 then
-    raise exception 'owner A should see one clinic';
-  end if;
+  perform set_config(
+    'request.jwt.claim.sub',
+    '61000000-0000-4000-8000-000000000001',
+    true
+  );
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config(
+    'request.jwt.claims',
+    '{"sub":"61000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"petcura_actor":"owner"}}',
+    true
+  );
+end
+$jwt$;
 
-  if (select count(*) from public.owners) <> 1 then
-    raise exception 'owner A should see one owner profile';
-  end if;
+select is((select count(*)::integer from public.clinics), 1, 'owner A sees one clinic');
+select is((select count(*)::integer from public.owners), 1, 'owner A sees one owner profile');
+select is((select count(*)::integer from public.pets), 1, 'owner A sees one pet');
+select is((select count(*)::integer from public.services), 1, 'owner A sees one active service');
+select is((select count(*)::integer from public.vaccinations), 1, 'owner A sees one vaccination');
+select is((select count(*)::integer from public.requests), 1, 'owner A sees one request');
+select is((select count(*)::integer from public.messages), 1, 'owner A sees one message');
+select is((select count(*)::integer from public.ai_outputs), 0, 'owner A cannot read AI outputs');
+select is(
+  public.is_active_clinic_member('62000000-0000-4000-8000-000000000001'),
+  false,
+  'owner-context JWT does not pass staff membership checks'
+);
 
-  if (select count(*) from public.pets) <> 1 then
-    raise exception 'owner A should see one pet';
-  end if;
-
-  if (select count(*) from public.services) <> 1 then
-    raise exception 'owner A should see one active service';
-  end if;
-
-  if (select count(*) from public.vaccinations) <> 1 then
-    raise exception 'owner A should see one vaccination';
-  end if;
-
-  if (select count(*) from public.requests) <> 1 then
-    raise exception 'owner A should see one request';
-  end if;
-
-  if (select count(*) from public.messages) <> 1 then
-    raise exception 'owner A should see one message';
-  end if;
-
-  if (select count(*) from public.ai_outputs) <> 0 then
-    raise exception 'owner A must not read AI outputs';
-  end if;
-
-  if public.is_active_clinic_member(
-    '62000000-0000-4000-8000-000000000001'
-  ) then
-    raise exception 'owner-context JWT must not pass staff membership checks';
-  end if;
-end $$;
+reset role;
+select * from finish();
 
 rollback;
