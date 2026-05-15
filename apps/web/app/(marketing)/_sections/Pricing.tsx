@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Badge, Button } from "@petcura/ui";
+import type { SupportedLocale } from "@petcura/shared";
 import { SectionKicker } from "../_components/SectionKicker";
+import { TrackedMarketingLink } from "../_components/TrackedMarketingLink";
+import { leadSources } from "../_data/landing";
 
 type PricingProps = {
   kicker: string;
@@ -16,6 +18,11 @@ type PricingProps = {
     ctaSecondary: string;
     sandboxNote: string;
   };
+  hrefs: {
+    demo: string;
+    sandbox: string;
+  };
+  locale: SupportedLocale;
 };
 
 /**
@@ -23,7 +30,7 @@ type PricingProps = {
  * (demo + sandbox). The "Locked through 2027" line gets a static
  * leitmotif underline; no draw-on-enter animation lib needed.
  */
-export function Pricing({ kicker, title, body, tier }: PricingProps) {
+export function Pricing({ kicker, title, body, tier, hrefs, locale }: PricingProps) {
   return (
     <section
       aria-labelledby="pricing-heading"
@@ -72,13 +79,27 @@ export function Pricing({ kicker, title, body, tier }: PricingProps) {
           </ul>
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild>
-              <Link href="mailto:hello@petcura.app?subject=Pilot%20enquiry">
+              <TrackedMarketingLink
+                eventName="landing_cta_clicked"
+                href={hrefs.demo}
+                locale={locale}
+                route="/demo"
+                source={leadSources.pricing}
+              >
                 {tier.ctaPrimary}
                 <ArrowRight aria-hidden="true" size={16} />
-              </Link>
+              </TrackedMarketingLink>
             </Button>
             <Button asChild variant="secondary">
-              <Link href="/sandbox#walkthrough">{tier.ctaSecondary}</Link>
+              <TrackedMarketingLink
+                eventName="landing_cta_clicked"
+                href={hrefs.sandbox}
+                locale={locale}
+                route="/sandbox"
+                source={leadSources.pricing}
+              >
+                {tier.ctaSecondary}
+              </TrackedMarketingLink>
             </Button>
           </div>
           <p className="text-xs italic text-[var(--muted)]">

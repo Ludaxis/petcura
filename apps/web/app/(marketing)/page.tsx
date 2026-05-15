@@ -5,6 +5,12 @@ import { createTranslator, withLocale } from "@petcura/shared";
 
 import { getRequestLocale } from "@/lib/locale";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import {
+  demoHrefBySource,
+  leadSources,
+  marketingRoutes,
+  pilotProofSignals
+} from "./_data/landing";
 
 import { AISafety } from "./_sections/AISafety";
 import { Compliance } from "./_sections/Compliance";
@@ -20,6 +26,7 @@ import { Testimonial } from "./_sections/Testimonial";
 import { UseCases } from "./_sections/UseCases";
 import { Walkthrough } from "./_sections/Walkthrough";
 import { MobileCTABar } from "./_components/MobileCTABar";
+import { MobileMarketingMenu } from "./_components/MobileMarketingMenu";
 
 type MarketingPageProps = {
   searchParams?: Promise<{ lang?: string | string[] }>;
@@ -30,10 +37,29 @@ export default async function MarketingPage({
 }: MarketingPageProps) {
   const locale = await getRequestLocale((await searchParams)?.lang);
   const t = createTranslator(locale);
-  const ownersNavHref = withLocale("/owners", locale);
-  const intakeHref = withLocale("/intake", locale);
-  const ownersHref = withLocale("/owners", locale);
-  const ownerSignInHref = withLocale("/o/login", locale);
+  const demoHeroHref = withLocale(demoHrefBySource(leadSources.hero), locale);
+  const demoPricingHref = withLocale(
+    demoHrefBySource(leadSources.pricing),
+    locale
+  );
+  const demoFinalHref = withLocale(
+    demoHrefBySource(leadSources.finalCta),
+    locale
+  );
+  const demoMobileHref = withLocale(
+    demoHrefBySource(leadSources.mobileBar),
+    locale
+  );
+  const demoFooterHref = withLocale(
+    demoHrefBySource(leadSources.footer),
+    locale
+  );
+  const sandboxHref = withLocale(marketingRoutes.sandbox, locale);
+  const trustHref = withLocale(marketingRoutes.trust, locale);
+  const intakeHref = withLocale(marketingRoutes.ownerIntake, locale);
+  const ownersHref = withLocale(marketingRoutes.owners, locale);
+  const ownerSignInHref = withLocale(marketingRoutes.ownerLogin, locale);
+  const clinicSignInHref = withLocale(marketingRoutes.clinicLogin, locale);
 
   return (
     <div className="bg-[var(--background)] text-[var(--foreground)]">
@@ -43,7 +69,13 @@ export default async function MarketingPage({
       >
         Skip to content
       </a>
-      <TopNav locale={locale} t={t} ownersHref={ownersNavHref} />
+      <TopNav
+        demoHref={demoHeroHref}
+        locale={locale}
+        ownersHref={ownersHref}
+        signInHref={clinicSignInHref}
+        t={t}
+      />
 
       <main id="main-content">
         <Hero
@@ -53,6 +85,7 @@ export default async function MarketingPage({
             body: t("landing.hero.body"),
             ctaPrimary: t("landing.hero.ctaPrimary"),
             ctaSecondary: t("landing.cta.secondary_sandbox"),
+            ownerPath: t("landing.hero.ownerPath"),
             trust: t("landing.hero.trust"),
             loop: {
               whatsappLabel: t("landing.loop.whatsapp.label"),
@@ -70,12 +103,18 @@ export default async function MarketingPage({
               exportDetail: t("landing.loop.export.detail")
             }
           }}
+          hrefs={{
+            demo: demoHeroHref,
+            owners: ownersHref,
+            sandbox: sandboxHref
+          }}
+          locale={locale}
         />
 
         <LogoStrip
           footnote={t("landing.logos.consent_footnote")}
           heading={t("landing.logos.heading")}
-          placeholder={t("landing.logos.placeholder")}
+          signals={pilotProofSignals}
         />
 
         <Problem
@@ -196,6 +235,7 @@ export default async function MarketingPage({
           title={t("landing.compliance.title")}
           training={t("landing.compliance.training")}
           trustCenterLink={t("landing.compliance.trustcenter_link")}
+          trustCenterHref={trustHref}
         />
 
         <Testimonial
@@ -226,11 +266,16 @@ export default async function MarketingPage({
             ctaSecondary: t("landing.pricing.cta_secondary"),
             sandboxNote: t("landing.pricing.sandbox_note")
           }}
+          hrefs={{
+            demo: demoPricingHref,
+            sandbox: sandboxHref
+          }}
+          locale={locale}
           title={t("landing.pricing.title")}
         />
 
         <FAQ
-          items={[1, 2, 3, 4, 5, 6].map((n) => ({
+          items={[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
             id: `faq-${n}`,
             question: t(`landing.faq.q${n}` as `landing.faq.q1`),
             answer: t(`landing.faq.a${n}` as `landing.faq.a1`)
@@ -241,14 +286,29 @@ export default async function MarketingPage({
 
         <FinalCTA
           body={t("landing.cta.body")}
+          hrefs={{
+            demo: demoFinalHref,
+            owners: ownersHref
+          }}
+          locale={locale}
           primary={t("landing.cta.primary")}
-          secondary={t("landing.cta.secondary_sandbox")}
+          secondary={t("landing.cta.secondary_owner")}
           title={t("landing.cta.title")}
         />
       </main>
 
-      <Footer t={t} intakeHref={intakeHref} ownersHref={ownersHref} />
+      <Footer
+        demoHref={demoFooterHref}
+        intakeHref={intakeHref}
+        ownersHref={ownersHref}
+        ownerSignInHref={ownerSignInHref}
+        signInHref={clinicSignInHref}
+        t={t}
+        trustHref={trustHref}
+      />
       <MobileCTABar
+        hrefs={{ demo: demoMobileHref, owners: ownersHref }}
+        locale={locale}
         primary={t("landing.mobilebar.primary")}
         secondary={t("landing.mobilebar.secondary")}
       />
@@ -260,11 +320,15 @@ type Translator = ReturnType<typeof createTranslator>;
 type Locale = Awaited<ReturnType<typeof getRequestLocale>>;
 
 function TopNav({
+  demoHref,
   locale,
+  signInHref,
   t,
   ownersHref
 }: {
+  demoHref: string;
   locale: Locale;
+  signInHref: string;
   t: Translator;
   ownersHref: string;
 }) {
@@ -313,13 +377,32 @@ function TopNav({
           />
           <Link
             className="hidden rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)] lg:inline-flex"
-            href="/login"
+            href={signInHref}
           >
             {t("landing.nav.signIn")}
           </Link>
-          <Button asChild size="sm">
-            <Link href="#pricing">{t("landing.nav.bookDemo")}</Link>
+          <Button asChild className="hidden sm:inline-flex" size="sm">
+            <Link href={demoHref}>{t("landing.nav.bookDemo")}</Link>
           </Button>
+          <MobileMarketingMenu
+            hrefs={{
+              demo: demoHref,
+              owners: ownersHref,
+              signIn: signInHref
+            }}
+            labels={{
+              menu: t("landing.nav.menu"),
+              close: t("landing.nav.close"),
+              howItWorks: t("landing.nav.howItWorks"),
+              safety: t("landing.nav.safety"),
+              security: t("landing.nav.security"),
+              pricing: t("landing.nav.pricing"),
+              owners: t("landing.nav.forOwners"),
+              signIn: t("landing.nav.signIn"),
+              demo: t("landing.nav.bookDemo")
+            }}
+            locale={locale}
+          />
         </div>
       </div>
     </header>
@@ -327,13 +410,21 @@ function TopNav({
 }
 
 function Footer({
+  demoHref,
   t,
   intakeHref,
-  ownersHref
+  ownersHref,
+  ownerSignInHref,
+  signInHref,
+  trustHref
 }: {
+  demoHref: string;
   t: Translator;
   intakeHref: string;
   ownersHref: string;
+  ownerSignInHref: string;
+  signInHref: string;
+  trustHref: string;
 }) {
   const columns = [
     {
@@ -343,7 +434,7 @@ function Footer({
         { href: "#safety", label: t("landing.footer.safety") },
         { href: "#security", label: t("landing.footer.compliance") },
         { href: "#pricing", label: t("landing.footer.pricing") },
-        { href: "/login", label: t("landing.nav.signIn") }
+        { href: signInHref, label: t("landing.nav.signIn") }
       ]
     },
     {
@@ -351,19 +442,16 @@ function Footer({
       links: [
         { href: "/design", label: t("landing.footer.changelog") },
         { href: "/health", label: t("landing.footer.status") },
-        { href: "#security", label: t("landing.footer.trust") },
+        { href: trustHref, label: t("landing.footer.trust") },
         { href: "#how-it-works", label: t("landing.footer.manifesto") },
-        {
-          href: "mailto:hello@petcura.app",
-          label: t("landing.footer.contact")
-        }
+        { href: demoHref, label: t("landing.footer.contact") }
       ]
     },
     {
       heading: t("landing.footer.owners"),
       links: [
         { href: ownersHref, label: t("landing.footer.owners") },
-        { href: "/o", label: t("owners.cta.primary") },
+        { href: ownerSignInHref, label: t("owners.cta.primary") },
         { href: intakeHref, label: t("intake.title") }
       ]
     }

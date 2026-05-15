@@ -1,16 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
   FileText,
   MessageCircle,
+  PawPrint,
   ShieldCheck,
   Sparkles
 } from "lucide-react";
-import { Button, KineticHeadline } from "@petcura/ui";
-import { motion, useReducedMotion } from "motion/react";
+import { Button } from "@petcura/ui";
+import { motion } from "motion/react";
+import type { SupportedLocale } from "@petcura/shared";
+import { TrackedMarketingLink } from "../_components/TrackedMarketingLink";
+import { leadSources } from "../_data/landing";
 
 type HeroProps = {
   copy: {
@@ -19,6 +22,7 @@ type HeroProps = {
     body: string;
     ctaPrimary: string;
     ctaSecondary: string;
+    ownerPath: string;
     trust: string;
     loop: {
       whatsappLabel: string;
@@ -36,41 +40,26 @@ type HeroProps = {
       exportDetail: string;
     };
   };
+  hrefs: {
+    demo: string;
+    owners: string;
+    sandbox: string;
+  };
+  locale: SupportedLocale;
 };
 
 /**
- * Hero — narrative §1. The H1 is the only h1 on the page. The kinetic
- * headline reveals as line-grouped beats matching the subhead verbs
- * (structure / draft / export). Letter-by-letter splits are forbidden
- * across EN/ET/RU.
- *
- * Secondary CTA targets /sandbox (Codex contract pending) with
- * #walkthrough fallback per landing-narrative §1.2.
+ * Hero — narrative §1. The H1 is the only h1 on the page and renders
+ * statically so the first viewport never depends on an observer before
+ * the core offer is readable.
  */
-export function Hero({ copy }: HeroProps) {
-  const reduce = useReducedMotion();
-  // Line-grouped split for the H1. We choose two breaks so each verb in
-  // the subhead (structure / draft / export) lines up with one rendered
-  // line at desktop widths. The exact wrap point is content-driven —
-  // we never letter-split.
+export function Hero({ copy, hrefs, locale }: HeroProps) {
   const titleLines = splitHeadlineIntoLines(copy.title);
 
-  // Hero is above-the-fold: animate on mount instead of viewport-entry.
-  // Reveal's whileInView would skip elements below the IntersectionObserver
-  // trigger line on shorter viewports (e.g. CTAs at y=662 in a 757-px screen
-  // never fire because the `-20%` bottom margin shrinks the trigger to y=606).
-  const heroEntrance = (delay: number, distance = 48) =>
-    reduce
-      ? { initial: false as const, animate: { opacity: 1, y: 0 } }
-      : {
-          initial: { opacity: 0, y: distance },
-          animate: { opacity: 1, y: 0 },
-          transition: {
-            duration: 0.64,
-            ease: [0, 0, 0, 1] as [number, number, number, number],
-            delay: delay / 1000
-          }
-        };
+  const heroEntrance = (_delay: number, _distance = 48) => ({
+    initial: false as const,
+    animate: { opacity: 1, y: 0 }
+  });
 
   return (
     <section
@@ -87,13 +76,16 @@ export function Hero({ copy }: HeroProps) {
             <span>{copy.eyebrow}</span>
           </motion.span>
 
-          <KineticHeadline
-            as="h1"
-            className="max-w-2xl text-[40px] font-semibold leading-[1.05] tracking-[-0.01em] text-[var(--foreground)] sm:text-[52px] lg:text-[60px]"
-            delay={450}
+          <h1
+            className="max-w-2xl text-[40px] font-semibold leading-[1.05] text-[var(--foreground)] sm:text-[52px] lg:text-[60px]"
             id="hero-heading"
-            lines={titleLines}
-          />
+          >
+            {titleLines.map((line) => (
+              <span className="block" key={line}>
+                {line}
+              </span>
+            ))}
+          </h1>
 
           <motion.p
             className="block max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8"
@@ -107,25 +99,56 @@ export function Hero({ copy }: HeroProps) {
             {...heroEntrance(1350)}
           >
             <Button asChild>
-              <Link href="#pricing">
+              <TrackedMarketingLink
+                eventName="landing_cta_clicked"
+                href={hrefs.demo}
+                locale={locale}
+                route="/demo"
+                source={leadSources.hero}
+              >
                 {copy.ctaPrimary}
                 <ArrowRight aria-hidden="true" size={16} />
-              </Link>
+              </TrackedMarketingLink>
             </Button>
             <Button asChild variant="secondary">
-              {/*
-                /sandbox does not yet exist (Codex contract).
-                Fallback to #walkthrough until the route ships.
-              */}
-              <Link href="/sandbox#walkthrough">{copy.ctaSecondary}</Link>
+              <TrackedMarketingLink
+                eventName="landing_cta_clicked"
+                href={hrefs.sandbox}
+                locale={locale}
+                route="/sandbox"
+                source={leadSources.hero}
+              >
+                {copy.ctaSecondary}
+              </TrackedMarketingLink>
             </Button>
           </motion.div>
+
+          <motion.p
+            className="flex flex-wrap items-center gap-2 text-sm leading-6 text-[var(--muted)]"
+            {...heroEntrance(1500, 24)}
+          >
+            <PawPrint
+              aria-hidden="true"
+              className="text-[var(--primary)]"
+              size={15}
+            />
+            <TrackedMarketingLink
+              className="font-semibold text-[var(--primary-strong)] underline-offset-4 hover:underline focus-visible:underline"
+              eventName="owner_path_clicked"
+              href={hrefs.owners}
+              locale={locale}
+              route="/owners"
+              source={leadSources.ownerPath}
+            >
+              {copy.ownerPath}
+            </TrackedMarketingLink>
+          </motion.p>
 
           <motion.ul
             aria-label="Trust signals"
             className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[var(--muted)]"
             role="list"
-            {...heroEntrance(1600, 24)}
+            {...heroEntrance(1700, 24)}
           >
             {copy.trust
               .split(" · ")

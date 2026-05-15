@@ -9,15 +9,13 @@ type ComplianceProps = {
   strip: string;
   training: string;
   trustCenterLink: string;
+  trustCenterHref: string;
   badges: ReadonlyArray<{ id: string; label: string }>;
 };
 
 /**
- * Compliance — narrative §8. Promotes residency + audit trail to a
- * first-class signal. The training line ("We don't train your data on
- * our models.") deliberately also appears in §7 (AISafety) — same
- * canonical string in two placements. Removing one is a regression
- * per acceptance §16.5.
+ * Compliance — narrative §8. Promotes residency, audit trail, and
+ * pilot-stage trust posture without overclaiming certification status.
  */
 export function Compliance({
   kicker,
@@ -26,6 +24,7 @@ export function Compliance({
   strip,
   training,
   trustCenterLink,
+  trustCenterHref,
   badges
 }: ComplianceProps) {
   return (
@@ -58,7 +57,7 @@ export function Compliance({
           <p>
             <Link
               className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--primary-strong)] underline-offset-4 hover:underline focus-visible:underline"
-              href="/trust"
+              href={trustCenterHref}
             >
               {trustCenterLink}
             </Link>

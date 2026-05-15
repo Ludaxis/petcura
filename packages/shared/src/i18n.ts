@@ -293,11 +293,13 @@ export const uiCopy = {
     "landing.nav.bookDemo": "Book demo",
     "landing.nav.signIn": "Sign in",
     "landing.nav.forOwners": "For pet owners",
+    "landing.nav.menu": "Open marketing menu",
+    "landing.nav.close": "Close marketing menu",
     "landing.owners.kicker": "For pet owners",
-    "landing.owners.title": "You don't need an account here",
+    "landing.owners.title": "A calmer way for owners to reach the clinic",
     "landing.owners.body":
-      "Your clinic will send you a WhatsApp link to start chatting. Already a PetCura owner?",
-    "landing.owners.ctaPrimary": "Sign in",
+      "Owners use PetCura only when their clinic invites them. They keep using WhatsApp or a simple form while the clinic stays in control.",
+    "landing.owners.ctaPrimary": "Open owner portal",
     "landing.owners.ctaSecondary": "How it works for owners",
     "landing.hero.eyebrow": "EU-hosted · GDPR-aligned · Built for veterinary clinics",
     "landing.hero.title": "The WhatsApp inbox built for veterinary clinics.",
@@ -305,6 +307,7 @@ export const uiCopy = {
       "Turn phone chaos into structured requests, safe AI drafts, and clean PMS exports — without changing how owners message you.",
     "landing.hero.ctaPrimary": "Book a 15-min clinic demo",
     "landing.hero.ctaSecondary": "See a live inbox tour",
+    "landing.hero.ownerPath": "Pet owner? See what PetCura means for you.",
     "landing.hero.trust": "EU-hosted · GDPR-aligned · Full audit trail · SOC 2 in progress",
     "landing.loop.whatsapp.label": "WhatsApp",
     "landing.loop.whatsapp.from": "Marta · owner of Luna",
@@ -322,7 +325,7 @@ export const uiCopy = {
     "landing.loop.reply.author": "Tiina · front desk",
     "landing.loop.export.label": "PMS export",
     "landing.loop.export.detail": "Logged · audit ID 8421 · 09:18",
-    "landing.logos.heading": "In pilot with veterinary clinics across the EU",
+    "landing.logos.heading": "Pilot-stage proof, stated honestly",
     "landing.logos.placeholder": "Pilot clinic",
     "landing.problem.kicker": "The problem",
     "landing.problem.title": "Phones break clinics.",
@@ -379,7 +382,8 @@ export const uiCopy = {
     "landing.safety.willnot.2": "Prescribe medication",
     "landing.safety.willnot.3": "Set final urgency",
     "landing.safety.willnot.4": "Auto-send medical advice",
-    "landing.safety.training": "We don't train our models on your data.",
+    "landing.safety.training":
+      "AI data-use commitments are documented per provider route before pilot go-live.",
     "landing.compliance.kicker": "Security & residency",
     "landing.compliance.title": "European by default.",
     "landing.compliance.body":
@@ -389,14 +393,14 @@ export const uiCopy = {
     "landing.compliance.badge.audit": "Full audit trail",
     "landing.compliance.badge.soc": "SOC 2 in progress",
     "landing.compliance.badge.iso": "ISO 27001 planned",
-    "landing.compliance.badge.aiact": "EU AI Act conformant",
+    "landing.compliance.badge.aiact": "EU AI Act readiness tracked",
     "landing.proof.kicker": "Early pilots",
-    "landing.proof.title": "What pilot clinics are saying",
+    "landing.proof.title": "What we can prove at pilot stage",
     "landing.proof.quote":
-      "We were skeptical about putting WhatsApp in the loop. The audit trail and the AI-draft review step changed that. Our team now answers owners in minutes instead of leaving them on hold.",
-    "landing.proof.author": "Pilot clinic, Tallinn",
-    "landing.proof.metricLabel": "Pilot result",
-    "landing.proof.metric": "Phone load down meaningfully in month one",
+      "PetCura is measured against pilot targets before we publish customer logos or production metrics: fewer routine calls, faster first responses, reliable reminders, and zero safety incidents.",
+    "landing.proof.author": "PetCura pilot proof policy",
+    "landing.proof.metricLabel": "Week 12 target",
+    "landing.proof.metric": "25% fewer routine inbound calls",
     "landing.proof.disclaimer":
       "Pilots in progress. Named clinic quotes will replace this at GA.",
     "landing.pricing.kicker": "Pricing",
@@ -432,11 +436,18 @@ export const uiCopy = {
     "landing.faq.q6": "How do we get owners onto WhatsApp?",
     "landing.faq.a6":
       "Onboarding sets up the WhatsApp Business number and the web-intake fallback for owners who prefer a form. Most pilots see owners switch within a couple of weeks.",
+    "landing.faq.q7": "What should pet owners do here?",
+    "landing.faq.a7":
+      "Owners should use PetCura only when their clinic has invited them. The owner page explains WhatsApp, web intake, privacy, languages, and emergency boundaries.",
+    "landing.faq.q8": "Do you have public customer logos or hard metrics?",
+    "landing.faq.a8":
+      "Not yet. Until clinics give written consent and pilot data is verified, PetCura uses target-based proof and clear pilot-stage language.",
     "landing.cta.title": "Bring calm to your phone lines this quarter.",
     "landing.cta.body":
       "Book a 15-minute walkthrough. We'll show the WhatsApp → inbox → PMS loop with real product, not a demo lab.",
     "landing.cta.primary": "Book a 15-min demo",
     "landing.cta.secondary": "Or open the owner intake",
+    "landing.cta.secondary_owner": "I'm a pet owner",
     "landing.footer.product": "Product",
     "landing.footer.howItWorks": "How it works",
     "landing.footer.safety": "AI safety",
@@ -451,7 +462,7 @@ export const uiCopy = {
     "landing.footer.owners": "For pet owners",
     "landing.footer.legal": "© 2026 PetCura · Built in the EU",
     "landing.logos.consent_footnote":
-      "Pilot cohort. Named with each clinic's written consent.",
+      "No public clinic names, logos, or production metrics appear without written consent and verified data.",
     "landing.problem.scene_caption":
       "A reception desk during a phone surge: front desk on call, vet mid-consult, owner on hold, voicemail blinking.",
     "landing.walkthrough.beat.1": "Owner messages on WhatsApp.",
@@ -469,16 +480,16 @@ export const uiCopy = {
     "landing.safety.tagline_kinetic_1": "PetCura drafts.",
     "landing.safety.tagline_kinetic_2": "Your team decides.",
     "landing.compliance.strip":
-      "EU-hosted · GDPR-aligned · Full audit trail · SOC 2 in progress.",
+      "EU-hosted · GDPR-aligned · Full audit trail · SOC 2 in progress · EU AI Act readiness tracked.",
     "landing.compliance.training":
-      "We don't train your data on our models.",
+      "AI data-use commitments are documented per provider route before pilot go-live.",
     "landing.compliance.trustcenter_link": "View Trust Center",
     "landing.pricing.cta_secondary": "Try the sandbox inbox",
     "landing.pricing.sandbox_note":
       "Seeded with fake owner messages. No card, no commitment.",
     "landing.cta.secondary_sandbox": "Try the sandbox inbox",
     "landing.mobilebar.primary": "Book demo",
-    "landing.mobilebar.secondary": "Sandbox",
+    "landing.mobilebar.secondary": "For owners",
     "owners.eyebrow": "For pet owners",
     "owners.title": "Your vet uses PetCura. Here's what that means.",
     "owners.body":
@@ -498,6 +509,131 @@ export const uiCopy = {
     "owners.cta.primary": "Open the app",
     "owners.cta.secondary": "Or open the web intake form",
     "owners.cta.back": "Back to PetCura for clinics",
+    "owners.invited.kicker": "Invited owner flow",
+    "owners.invited.title": "Use PetCura if your clinic invited you.",
+    "owners.invited.body":
+      "PetCura is not a public veterinary advice service. It is the communication layer your clinic may use to organize messages and reply safely.",
+    "owners.next.1": "Your clinic shares a WhatsApp, web intake, or portal link.",
+    "owners.next.2": "You describe what is happening in your preferred language.",
+    "owners.next.3": "Clinic staff review the request and decide the response.",
+    "owners.paths.title": "Three ways your clinic may invite you",
+    "owners.paths.body":
+      "The exact path depends on your clinic's setup. The clinic stays in control of advice, urgency, records, and follow-up.",
+    "owners.path.whatsapp.title": "WhatsApp",
+    "owners.path.whatsapp.body":
+      "Send a message, photo, or voice note. PetCura structures it for clinic staff.",
+    "owners.path.web.title": "Web intake",
+    "owners.path.web.body":
+      "Use a short form when WhatsApp is not available or your clinic gives you a direct intake link.",
+    "owners.path.portal.title": "Owner portal",
+    "owners.path.portal.body":
+      "Invited owners can view requests and follow-ups that their clinic has made available.",
+    "owners.emergency.title": "Emergencies still need direct care",
+    "owners.emergency.body":
+      "If your pet is struggling to breathe, collapsing, bleeding heavily, having seizures, or seems severely weak, call your clinic or local emergency vet immediately.",
+    "owners.language.title": "EN, ET, and RU support",
+    "owners.language.body":
+      "PetCura helps clinics work across English, Estonian, and Russian while staff review the final message.",
+    "owners.privacy.title": "Your clinic stays in control",
+    "owners.privacy.body":
+      "PetCura helps organize communication. Your clinic controls medical decisions and keeps the medical record in its PMS.",
+    "demo.nav.back": "Back to landing",
+    "demo.eyebrow": "Clinic pilot request",
+    "demo.title": "See how PetCura would calm your front desk.",
+    "demo.body":
+      "Tell us a little about your clinic. We will show the WhatsApp-to-inbox-to-PMS loop, discuss pilot fit, and keep the conversation practical.",
+    "demo.promise.1.title": "15-minute walkthrough",
+    "demo.promise.1.body":
+      "A focused product tour around your real owner-message volume and staffing model.",
+    "demo.promise.2.title": "Pilot workflow mapping",
+    "demo.promise.2.body":
+      "We map WhatsApp, web intake, AI review, follow-ups, and PMS exports before rollout.",
+    "demo.promise.3.title": "Trust questions welcome",
+    "demo.promise.3.body":
+      "We cover EU hosting, GDPR processor/controller roles, AI boundaries, and auditability.",
+    "demo.sandboxLead": "Want to inspect the flow first?",
+    "demo.sandboxLink": "Open the fake-data sandbox.",
+    "demo.form.title": "Request a pilot demo",
+    "demo.form.body":
+      "This goes to PetCura's internal pilot list. Do not include owner or pet medical details.",
+    "demo.form.clinicName": "Clinic name",
+    "demo.form.contactName": "Contact name",
+    "demo.form.workEmail": "Work email",
+    "demo.form.country": "Country",
+    "demo.form.pmsSystem": "PMS system (optional)",
+    "demo.form.monthlyRequestVolume": "Monthly owner requests (optional)",
+    "demo.form.volume.placeholder": "Select a rough range",
+    "demo.form.volume.under100": "Under 100",
+    "demo.form.volume.100300": "100-300",
+    "demo.form.volume.300800": "300-800",
+    "demo.form.volume.800plus": "800+",
+    "demo.form.volume.unknown": "Not sure yet",
+    "demo.form.message": "What should we know? (optional)",
+    "demo.form.messagePlaceholder":
+      "Current channels, PMS, phone pain, pilot timeline...",
+    "demo.form.consent":
+      "I agree PetCura may process this information to respond to my demo request.",
+    "demo.form.submit": "Request demo",
+    "demo.form.submitting": "Sending...",
+    "demo.form.successTitle": "Demo request received",
+    "demo.form.successBody":
+      "Thanks. We will review the clinic fit and follow up from hello@petcura.app.",
+    "demo.form.fallbackTitle": "Use the email fallback",
+    "demo.form.fallbackBody":
+      "The form could not store your request just now. Use the prefilled email link so your pilot request still reaches us.",
+    "demo.form.fallbackCta": "Open email draft",
+    "demo.form.requiredError": "Check this field and try again.",
+    "sandbox.nav.back": "Back to landing",
+    "sandbox.eyebrow": "Fake-data product tour",
+    "sandbox.title": "Walk through the PetCura inbox without logging in.",
+    "sandbox.body":
+      "This sandbox uses static fake data. It shows the workflow without auth redirects, Supabase writes, real owner PII, or AI provider calls.",
+    "sandbox.cta.demo": "Book a clinic demo",
+    "sandbox.cta.trust": "View trust center",
+    "sandbox.badge.fakeData": "Fake data only",
+    "sandbox.badge.noAuth": "No auth",
+    "sandbox.badge.noWrites": "No writes",
+    "sandbox.preview.language": "Language",
+    "sandbox.preview.structured": "Structured request",
+    "sandbox.preview.status": "Status",
+    "sandbox.preview.risk": "Risk flag",
+    "sandbox.preview.staffReview": "Staff approval",
+    "sandbox.guard.1.title": "No production data",
+    "sandbox.guard.1.body":
+      "Every name, message, audit id, and export shown here is deterministic fake data.",
+    "sandbox.guard.2.title": "No provider calls",
+    "sandbox.guard.2.body":
+      "The tour does not call AI, Twilio, PMS systems, Supabase, or owner channels.",
+    "sandbox.guard.3.title": "Same safety boundary",
+    "sandbox.guard.3.body":
+      "AI drafts are always staff-reviewed and never diagnose, prescribe, or send medical advice by themselves.",
+    "trust.nav.back": "Back to landing",
+    "trust.eyebrow": "Trust center",
+    "trust.title": "Pilot-stage trust claims, without overclaiming.",
+    "trust.body":
+      "PetCura is built for clinics that need EU-aware data handling, staff-approved AI, and an audit trail around owner communication.",
+    "trust.cta.demo": "Discuss pilot trust needs",
+    "trust.cta.sandbox": "Open sandbox",
+    "trust.snapshot.title": "Current posture",
+    "trust.snapshot.body":
+      "EU hosting design, GDPR processor/controller framing, staff-approved AI, audit trails, SOC 2 in progress, and ISO 27001 planned.",
+    "trust.residency.title": "Residency and roles",
+    "trust.residency.body":
+      "PetCura keeps communication data separate from the PMS record and documents controller/processor responsibilities.",
+    "trust.ai.title": "AI safety boundaries",
+    "trust.ai.body":
+      "AI helps staff move faster, but medical judgment remains with the clinic.",
+    "trust.audit.title": "Auditability",
+    "trust.audit.body":
+      "Operational events, AI outputs, and delivery lifecycle are designed to be reviewable.",
+    "trust.limits.badge": "Boundaries",
+    "trust.limits.title": "What PetCura does not claim",
+    "trust.limits.body":
+      "We keep public claims intentionally narrow until certifications, vendor terms, and customer proof are final.",
+    "trust.limits.item.1": "SOC 2 is listed as in progress; ISO 27001 is listed as planned.",
+    "trust.limits.item.2": "No diagnosis, prescription, or final urgency setting.",
+    "trust.limits.item.3": "No autonomous owner-facing medical replies.",
+    "trust.limits.item.4": "No named clinic logos or metrics without written consent.",
     "intake.badge": "AI-assisted intake",
     "intake.title": "Tell the clinic what is happening",
     "intake.description":
@@ -1225,11 +1361,13 @@ export const uiCopy = {
     "landing.nav.bookDemo": "Broneeri demo",
     "landing.nav.signIn": "Logi sisse",
     "landing.nav.forOwners": "Omanikele",
+    "landing.nav.menu": "Ava turundusmenüü",
+    "landing.nav.close": "Sulge turundusmenüü",
     "landing.owners.kicker": "Lemmikloomade omanikele",
-    "landing.owners.title": "Siin pole sul kontot vaja",
+    "landing.owners.title": "Rahulikum viis kliinikuga ühendust võtta",
     "landing.owners.body":
-      "Sinu kliinik saadab sulle WhatsApp'i lingi vestluse alustamiseks. Oled juba PetCura omanik?",
-    "landing.owners.ctaPrimary": "Logi sisse",
+      "Omanik kasutab PetCurat ainult siis, kui kliinik kutsub. WhatsApp või lihtne vorm jääb tuttavaks, kliinik hoiab kontrolli.",
+    "landing.owners.ctaPrimary": "Ava omaniku portaal",
     "landing.owners.ctaSecondary": "Kuidas see omanikele toimib",
     "landing.hero.eyebrow": "EU-s majutatud · GDPR-iga kooskõlas · Loodud loomakliinikutele",
     "landing.hero.title": "WhatsApp postkast loomakliinikutele.",
@@ -1237,6 +1375,8 @@ export const uiCopy = {
       "Muuda telefonikaos struktureeritud pöördumisteks, turvalisteks AI mustanditeks ja puhasteks PMS eksportideks — muutmata seda, kuidas omanikud sulle kirjutavad.",
     "landing.hero.ctaPrimary": "Broneeri 15-minutiline kliiniku demo",
     "landing.hero.ctaSecondary": "Vaata postkasti ringkäiku",
+    "landing.hero.ownerPath":
+      "Lemmiklooma omanik? Vaata, mida PetCura sinu jaoks tähendab.",
     "landing.hero.trust":
       "EU-s majutatud · GDPR-iga kooskõlas · Täielik auditijälg · SOC 2 töös",
     "landing.loop.whatsapp.label": "WhatsApp",
@@ -1255,7 +1395,7 @@ export const uiCopy = {
     "landing.loop.reply.author": "Tiina · vastuvõtt",
     "landing.loop.export.label": "PMS eksport",
     "landing.loop.export.detail": "Logitud · auditi ID 8421 · 09:18",
-    "landing.logos.heading": "Pilootimas Euroopa loomakliinikutega",
+    "landing.logos.heading": "Piloodi tõendid, ausalt sõnastatud",
     "landing.logos.placeholder": "Pilootkliinik",
     "landing.problem.kicker": "Probleem",
     "landing.problem.title": "Telefonid lõhuvad kliinikuid.",
@@ -1312,7 +1452,8 @@ export const uiCopy = {
     "landing.safety.willnot.2": "Ei kirjuta ravimeid",
     "landing.safety.willnot.3": "Ei määra lõplikku kiireloomulisust",
     "landing.safety.willnot.4": "Ei saada automaatselt meditsiinilist nõu",
-    "landing.safety.training": "Me ei treeni mudeleid sinu andmetel.",
+    "landing.safety.training":
+      "AI andmekasutuse kohustused dokumenteeritakse iga teenusepakkuja teekonna kohta enne piloodi käivitamist.",
     "landing.compliance.kicker": "Turve ja andmeasukoht",
     "landing.compliance.title": "Euroopas vaikimisi.",
     "landing.compliance.body":
@@ -1322,14 +1463,14 @@ export const uiCopy = {
     "landing.compliance.badge.audit": "Täielik auditijälg",
     "landing.compliance.badge.soc": "SOC 2 töös",
     "landing.compliance.badge.iso": "ISO 27001 plaanis",
-    "landing.compliance.badge.aiact": "EU AI Act kooskõlas",
+    "landing.compliance.badge.aiact": "EU AI Act valmisolek jälgimisel",
     "landing.proof.kicker": "Esimesed piloodid",
-    "landing.proof.title": "Mida pilootkliinikud räägivad",
+    "landing.proof.title": "Mida saame piloodi faasis tõendada",
     "landing.proof.quote":
-      "Olime skeptilised WhatsAppi kaasamise suhtes. Auditijälg ja AI mustandi ülevaatamise samm muutsid meelt. Tiim vastab omanikele nüüd minutitega, mitte ei jäta neid liinile ootama.",
-    "landing.proof.author": "Pilootkliinik, Tallinn",
-    "landing.proof.metricLabel": "Piloodi tulemus",
-    "landing.proof.metric": "Telefonikoormus esimesel kuul märgatavalt langenud",
+      "PetCura mõõdab enne avalike logode või tootmismõõdikute avaldamist piloodi eesmärke: vähem rutiinseid kõnesid, kiirem esmane vastus, töökindlad meeldetuletused ja null ohutusintsidenti.",
+    "landing.proof.author": "PetCura piloodi tõenduspoliitika",
+    "landing.proof.metricLabel": "12. nädala eesmärk",
+    "landing.proof.metric": "25% vähem rutiinseid sissetulevaid kõnesid",
     "landing.proof.disclaimer":
       "Piloodid käivad. Nimelised kliiniku tsitaadid asendavad selle ploki GA-l.",
     "landing.pricing.kicker": "Hinnad",
@@ -1364,11 +1505,18 @@ export const uiCopy = {
     "landing.faq.q6": "Kuidas saame omanikud WhatsAppi peale?",
     "landing.faq.a6":
       "Sisseelamine seab üles WhatsApp Business numbri ja veebivormi neile, kes eelistavad vormi. Enamik piloote näeb omanikuid üle minemas mõne nädala jooksul.",
+    "landing.faq.q7": "Mida peaks lemmiklooma omanik siin tegema?",
+    "landing.faq.a7":
+      "Omanik peaks kasutama PetCurat ainult siis, kui kliinik on teda kutsunud. Omaniku leht selgitab WhatsAppi, veebivormi, privaatsust, keeli ja erakorralise abi piire.",
+    "landing.faq.q8": "Kas teil on avalikke kliendilogosid või kindlaid mõõdikuid?",
+    "landing.faq.a8":
+      "Veel mitte. Kuni kliinikud annavad kirjaliku nõusoleku ja piloodiandmed on kinnitatud, kasutab PetCura eesmärgipõhist tõendust ja selget piloodifaasi keelt.",
     "landing.cta.title": "Too rahu oma telefoniliinidele juba sellel kvartalil.",
     "landing.cta.body":
       "Broneeri 15-minutiline tutvustus. Näitame WhatsApp → postkast → PMS protsessi päris tootega, mitte demoga.",
     "landing.cta.primary": "Broneeri 15-min demo",
     "landing.cta.secondary": "Või proovi omaniku vormi",
+    "landing.cta.secondary_owner": "Olen lemmiklooma omanik",
     "landing.footer.product": "Toode",
     "landing.footer.howItWorks": "Kuidas see töötab",
     "landing.footer.safety": "AI turvalisus",
@@ -1383,7 +1531,7 @@ export const uiCopy = {
     "landing.footer.owners": "Lemmikloomade omanikele",
     "landing.footer.legal": "© 2026 PetCura · Euroopas tehtud",
     "landing.logos.consent_footnote":
-      "Pilootgrupp. Nimetatud iga kliiniku kirjalikul nõusolekul.",
+      "Avalikke kliinikunimesid, logosid ega tootmismõõdikuid ei avaldata ilma kirjaliku nõusoleku ja kinnitatud andmeteta.",
     "landing.problem.scene_caption":
       "Vastuvõtt telefonitulva ajal: vastuvõtuametnik kõnel, veterinaararst konsultatsioonis, omanik ootel, kõnepost vilgub.",
     "landing.walkthrough.beat.1": "Omanik kirjutab WhatsAppis.",
@@ -1401,16 +1549,16 @@ export const uiCopy = {
     "landing.safety.tagline_kinetic_1": "PetCura koostab.",
     "landing.safety.tagline_kinetic_2": "Sinu tiim otsustab.",
     "landing.compliance.strip":
-      "EU-s majutatud · GDPR-iga kooskõlas · Täielik auditijälg · SOC 2 töös.",
+      "EU-s majutatud · GDPR-iga kooskõlas · Täielik auditijälg · SOC 2 töös · EU AI Act valmisolek jälgimisel.",
     "landing.compliance.training":
-      "Me ei treeni teie andmetel oma mudeleid.",
+      "AI andmekasutuse kohustused dokumenteeritakse iga teenusepakkuja teekonna kohta enne piloodi käivitamist.",
     "landing.compliance.trustcenter_link": "Vaata Usalduskeskust",
     "landing.pricing.cta_secondary": "Proovi näidispostkasti",
     "landing.pricing.sandbox_note":
       "Täidetud näidisõnumitega. Kaarti pole, kohustusi pole.",
     "landing.cta.secondary_sandbox": "Proovi näidispostkasti",
     "landing.mobilebar.primary": "Broneeri demo",
-    "landing.mobilebar.secondary": "Näidis",
+    "landing.mobilebar.secondary": "Omanikele",
     "owners.eyebrow": "Lemmikloomade omanikele",
     "owners.title": "Sinu kliinik kasutab PetCurat. Vaata, mida see tähendab.",
     "owners.body":
@@ -1430,6 +1578,131 @@ export const uiCopy = {
     "owners.cta.primary": "Ava rakendus",
     "owners.cta.secondary": "Või ava veebivorm",
     "owners.cta.back": "Tagasi PetCura kliinikutele",
+    "owners.invited.kicker": "Kutsutud omaniku teekond",
+    "owners.invited.title": "Kasuta PetCurat, kui kliinik on sind kutsunud.",
+    "owners.invited.body":
+      "PetCura ei ole avalik veterinaarnõu teenus. See on sinu kliiniku suhtluskiht, mis aitab sõnumeid korrastada ja turvaliselt vastata.",
+    "owners.next.1": "Kliinik jagab WhatsAppi, veebivormi või portaali linki.",
+    "owners.next.2": "Kirjeldad toimuvat sulle sobivas keeles.",
+    "owners.next.3": "Kliiniku töötajad vaatavad pöördumise üle ja otsustavad vastuse.",
+    "owners.paths.title": "Kolm viisi, kuidas kliinik võib sind kutsuda",
+    "owners.paths.body":
+      "Täpne teekond sõltub kliiniku seadistusest. Kliinik hoiab kontrolli nõu, kiireloomulisuse, andmete ja järeltegevuste üle.",
+    "owners.path.whatsapp.title": "WhatsApp",
+    "owners.path.whatsapp.body":
+      "Saada sõnum, foto või häälsõnum. PetCura struktureerib selle kliiniku töötajatele.",
+    "owners.path.web.title": "Veebivorm",
+    "owners.path.web.body":
+      "Kasuta lühikest vormi, kui WhatsApp ei sobi või kliinik annab otselingi.",
+    "owners.path.portal.title": "Omaniku portaal",
+    "owners.path.portal.body":
+      "Kutsutud omanikud näevad pöördumisi ja järeltegevusi, mille kliinik on neile avanud.",
+    "owners.emergency.title": "Erakorraline olukord vajab otsekontakti",
+    "owners.emergency.body":
+      "Kui lemmikul on hingamisraskus, kokkuvarisemine, tugev verejooks, krambid või raske nõrkus, helista kohe kliinikusse või erakorralisse loomakliinikusse.",
+    "owners.language.title": "EN, ET ja RU tugi",
+    "owners.language.body":
+      "PetCura aitab kliinikutel töötada inglise, eesti ja vene keeles, kuid lõpliku sõnumi vaatab üle töötaja.",
+    "owners.privacy.title": "Kliinik hoiab kontrolli",
+    "owners.privacy.body":
+      "PetCura aitab suhtlust korrastada. Meditsiinilised otsused jäävad kliinikule ja meditsiinikaart jääb PMS-i.",
+    "demo.nav.back": "Tagasi avalehele",
+    "demo.eyebrow": "Kliiniku piloodipäring",
+    "demo.title": "Vaata, kuidas PetCura rahustab vastuvõttu.",
+    "demo.body":
+      "Räägi veidi oma kliinikust. Näitame WhatsAppist postkasti ja PMS-i jõudvat protsessi, arutame piloodi sobivust ja hoiame jutu praktilisena.",
+    "demo.promise.1.title": "15-minutiline tutvustus",
+    "demo.promise.1.body":
+      "Fookuses tootetuur sinu tegeliku sõnumimahu ja tiimi töökorralduse järgi.",
+    "demo.promise.2.title": "Piloodi töövoo kaardistus",
+    "demo.promise.2.body":
+      "Kaardistame WhatsAppi, veebivormi, AI ülevaatuse, järeltegevused ja PMS ekspordid enne käivitust.",
+    "demo.promise.3.title": "Usaldusküsimused on oodatud",
+    "demo.promise.3.body":
+      "Räägime EU majutusest, GDPR töötleja/vastutava töötleja rollidest, AI piiridest ja auditijäljest.",
+    "demo.sandboxLead": "Tahad enne voogu vaadata?",
+    "demo.sandboxLink": "Ava näidisandmetega sandbox.",
+    "demo.form.title": "Küsi piloodidemo",
+    "demo.form.body":
+      "See jõuab PetCura sisemisse piloodinimekirja. Ära lisa omaniku ega lemmiku meditsiinilisi andmeid.",
+    "demo.form.clinicName": "Kliiniku nimi",
+    "demo.form.contactName": "Kontaktisik",
+    "demo.form.workEmail": "Töö e-post",
+    "demo.form.country": "Riik",
+    "demo.form.pmsSystem": "PMS süsteem (valikuline)",
+    "demo.form.monthlyRequestVolume": "Omanike pöördumised kuus (valikuline)",
+    "demo.form.volume.placeholder": "Vali ligikaudne vahemik",
+    "demo.form.volume.under100": "Alla 100",
+    "demo.form.volume.100300": "100-300",
+    "demo.form.volume.300800": "300-800",
+    "demo.form.volume.800plus": "800+",
+    "demo.form.volume.unknown": "Pole veel kindel",
+    "demo.form.message": "Mida peaksime teadma? (valikuline)",
+    "demo.form.messagePlaceholder":
+      "Praegused kanalid, PMS, telefonivalu, piloodi ajastus...",
+    "demo.form.consent":
+      "Nõustun, et PetCura võib seda infot töödelda demopäringule vastamiseks.",
+    "demo.form.submit": "Küsi demo",
+    "demo.form.submitting": "Saadan...",
+    "demo.form.successTitle": "Demopäring on saadud",
+    "demo.form.successBody":
+      "Aitäh. Vaatame kliiniku sobivuse üle ja vastame aadressilt hello@petcura.app.",
+    "demo.form.fallbackTitle": "Kasuta e-posti varuteed",
+    "demo.form.fallbackBody":
+      "Vorm ei saanud päringut praegu salvestada. Kasuta eeltäidetud e-posti linki, et piloodipäring jõuaks meieni.",
+    "demo.form.fallbackCta": "Ava e-kirja mustand",
+    "demo.form.requiredError": "Kontrolli välja ja proovi uuesti.",
+    "sandbox.nav.back": "Tagasi avalehele",
+    "sandbox.eyebrow": "Näidisandmetega tootetuur",
+    "sandbox.title": "Vaata PetCura postkasti ilma sisse logimata.",
+    "sandbox.body":
+      "Sandbox kasutab staatilisi näidisandmeid. See näitab töövoogu ilma autentimise, Supabase kirjutuste, päris omanikuandmete või AI teenusekutseteta.",
+    "sandbox.cta.demo": "Broneeri kliiniku demo",
+    "sandbox.cta.trust": "Vaata usalduskeskust",
+    "sandbox.badge.fakeData": "Ainult näidisandmed",
+    "sandbox.badge.noAuth": "Sisselogimist pole",
+    "sandbox.badge.noWrites": "Kirjutusi pole",
+    "sandbox.preview.language": "Keel",
+    "sandbox.preview.structured": "Struktureeritud pöördumine",
+    "sandbox.preview.status": "Staatus",
+    "sandbox.preview.risk": "Riskimärge",
+    "sandbox.preview.staffReview": "Töötaja kinnitus",
+    "sandbox.guard.1.title": "Tootmisandmeid pole",
+    "sandbox.guard.1.body":
+      "Kõik nimed, sõnumid, auditi ID-d ja eksport on siin deterministlik näidis.",
+    "sandbox.guard.2.title": "Teenusekutseid pole",
+    "sandbox.guard.2.body":
+      "Tuur ei kutsu AI-d, Twiliot, PMS-e, Supabase'i ega omaniku kanaleid.",
+    "sandbox.guard.3.title": "Sama turvapiir",
+    "sandbox.guard.3.body":
+      "AI mustandid vaatab alati üle töötaja ning need ei diagnoosi, ei kirjuta ravimeid ega saada ise meditsiinilist nõu.",
+    "trust.nav.back": "Tagasi avalehele",
+    "trust.eyebrow": "Usalduskeskus",
+    "trust.title": "Piloodifaasi usaldusväited ilma üle lubamata.",
+    "trust.body":
+      "PetCura on loodud kliinikutele, kes vajavad EU-teadlikku andmekäitlust, töötaja kinnitatud AI-d ja auditijälge omanike suhtluses.",
+    "trust.cta.demo": "Räägime piloodi usaldusnõuetest",
+    "trust.cta.sandbox": "Ava sandbox",
+    "trust.snapshot.title": "Praegune seis",
+    "trust.snapshot.body":
+      "EU majutuse disain, GDPR töötleja/vastutava töötleja raam, töötaja kinnitatud AI, auditijäljed, SOC 2 töös ja ISO 27001 plaanis.",
+    "trust.residency.title": "Andmeasukoht ja rollid",
+    "trust.residency.body":
+      "PetCura hoiab suhtlusandmed PMS-i meditsiinikaardist eraldi ning dokumenteerib vastutusrollid.",
+    "trust.ai.title": "AI turvapiirid",
+    "trust.ai.body":
+      "AI aitab töötajatel kiiremini tegutseda, kuid meditsiiniline otsus jääb kliinikule.",
+    "trust.audit.title": "Audititavus",
+    "trust.audit.body":
+      "Töö sündmused, AI väljundid ja sõnumite kättetoimetamine on mõeldud ülevaadatavaks.",
+    "trust.limits.badge": "Piirid",
+    "trust.limits.title": "Mida PetCura ei väida",
+    "trust.limits.body":
+      "Hoiame avalikud väited teadlikult kitsad, kuni sertifikaadid, tarnijatingimused ja klienditõendid on lõplikud.",
+    "trust.limits.item.1": "SOC 2 on märgitud töösolevana; ISO 27001 on märgitud plaanituna.",
+    "trust.limits.item.2": "Ei diagnoosi, ei kirjuta ravimeid ega määra lõplikku kiireloomulisust.",
+    "trust.limits.item.3": "Ei saada autonoomseid meditsiinilisi vastuseid omanikele.",
+    "trust.limits.item.4": "Ei avalda kliinikulogo ega mõõdikuid ilma kirjaliku nõusolekuta.",
     "intake.badge": "AI-abiga vastuvõtt",
     "intake.title": "Kirjelda kliinikule, mis toimub",
     "intake.description":
@@ -2161,11 +2434,13 @@ export const uiCopy = {
     "landing.nav.bookDemo": "Запланировать демо",
     "landing.nav.signIn": "Войти",
     "landing.nav.forOwners": "Для владельцев",
+    "landing.nav.menu": "Открыть меню",
+    "landing.nav.close": "Закрыть меню",
     "landing.owners.kicker": "Для владельцев питомцев",
-    "landing.owners.title": "Здесь аккаунт не нужен",
+    "landing.owners.title": "Более спокойный способ связаться с клиникой",
     "landing.owners.body":
-      "Ваша клиника отправит вам ссылку в WhatsApp для начала чата. Уже владелец PetCura?",
-    "landing.owners.ctaPrimary": "Войти",
+      "Владельцы используют PetCura только по приглашению клиники. WhatsApp или простая форма остаются привычными, а клиника сохраняет контроль.",
+    "landing.owners.ctaPrimary": "Открыть портал владельца",
     "landing.owners.ctaSecondary": "Как это работает для владельцев",
     "landing.hero.eyebrow":
       "Хостинг в ЕС · Соответствует GDPR · Сделано для ветеринарных клиник",
@@ -2174,6 +2449,8 @@ export const uiCopy = {
       "Превратите телефонный хаос в структурированные запросы, безопасные черновики AI и аккуратные экспорты в PMS — не меняя того, как владельцы вам пишут.",
     "landing.hero.ctaPrimary": "Запланировать 15-минутное демо",
     "landing.hero.ctaSecondary": "Посмотреть тур по входящим",
+    "landing.hero.ownerPath":
+      "Владелец питомца? Узнайте, что PetCura значит для вас.",
     "landing.hero.trust":
       "Хостинг в ЕС · GDPR · Полный журнал аудита · SOC 2 в процессе",
     "landing.loop.whatsapp.label": "WhatsApp",
@@ -2192,7 +2469,7 @@ export const uiCopy = {
     "landing.loop.reply.author": "Тийна · регистратура",
     "landing.loop.export.label": "Экспорт в PMS",
     "landing.loop.export.detail": "Сохранено · ID аудита 8421 · 09:18",
-    "landing.logos.heading": "В пилоте с ветеринарными клиниками по всему ЕС",
+    "landing.logos.heading": "Пилотные доказательства, честно сформулированные",
     "landing.logos.placeholder": "Пилотная клиника",
     "landing.problem.kicker": "Проблема",
     "landing.problem.title": "Телефоны ломают клиники.",
@@ -2251,7 +2528,8 @@ export const uiCopy = {
     "landing.safety.willnot.2": "Не назначает лекарства",
     "landing.safety.willnot.3": "Не определяет окончательную срочность",
     "landing.safety.willnot.4": "Не отправляет медицинский совет автоматически",
-    "landing.safety.training": "Мы не обучаем модели на ваших данных.",
+    "landing.safety.training":
+      "Обязательства по использованию данных AI документируются по каждому маршруту провайдера до запуска пилота.",
     "landing.compliance.kicker": "Защита и хранение",
     "landing.compliance.title": "Европейский по умолчанию.",
     "landing.compliance.body":
@@ -2261,14 +2539,14 @@ export const uiCopy = {
     "landing.compliance.badge.audit": "Полный аудит-журнал",
     "landing.compliance.badge.soc": "SOC 2 в процессе",
     "landing.compliance.badge.iso": "ISO 27001 в плане",
-    "landing.compliance.badge.aiact": "Соответствует EU AI Act",
+    "landing.compliance.badge.aiact": "Готовность к EU AI Act отслеживается",
     "landing.proof.kicker": "Ранние пилоты",
-    "landing.proof.title": "Что говорят пилотные клиники",
+    "landing.proof.title": "Что можно доказать на пилотном этапе",
     "landing.proof.quote":
-      "Мы скептически относились к WhatsApp в этом цикле. Аудит-журнал и шаг проверки черновика AI изменили наше мнение. Команда теперь отвечает за минуты вместо часов на линии.",
-    "landing.proof.author": "Пилотная клиника, Таллинн",
-    "landing.proof.metricLabel": "Результат пилота",
-    "landing.proof.metric": "Нагрузка на телефон заметно ниже в первый месяц",
+      "PetCura измеряется по пилотным целям до публикации логотипов или производственных метрик: меньше рутинных звонков, быстрее первый ответ, надежные напоминания и ноль инцидентов безопасности.",
+    "landing.proof.author": "Политика пилотных доказательств PetCura",
+    "landing.proof.metricLabel": "Цель к 12-й неделе",
+    "landing.proof.metric": "На 25% меньше рутинных входящих звонков",
     "landing.proof.disclaimer":
       "Пилоты в процессе. Именные цитаты клиник заменят этот блок на GA.",
     "landing.pricing.kicker": "Цены",
@@ -2304,11 +2582,18 @@ export const uiCopy = {
     "landing.faq.q6": "Как привести владельцев в WhatsApp?",
     "landing.faq.a6":
       "Онбординг подключает номер WhatsApp Business и веб-форму для тех, кто предпочитает форму. Большинство пилотов видят переход владельцев в течение пары недель.",
+    "landing.faq.q7": "Что делать владельцу питомца на этом сайте?",
+    "landing.faq.a7":
+      "Владельцу стоит использовать PetCura только по приглашению клиники. Страница владельца объясняет WhatsApp, веб-форму, приватность, языки и границы экстренной помощи.",
+    "landing.faq.q8": "Есть ли публичные логотипы клиентов или твердые метрики?",
+    "landing.faq.a8":
+      "Пока нет. Пока клиники не дадут письменное согласие и пилотные данные не будут проверены, PetCura использует целевые показатели и четкий язык пилота.",
     "landing.cta.title": "Принесите спокойствие телефонным линиям уже в этом квартале.",
     "landing.cta.body":
       "Запланируйте 15-минутный обзор. Покажем цикл WhatsApp → входящие → PMS на реальном продукте, не на демо.",
     "landing.cta.primary": "Запланировать 15-мин демо",
     "landing.cta.secondary": "Или откройте форму владельца",
+    "landing.cta.secondary_owner": "Я владелец питомца",
     "landing.footer.product": "Продукт",
     "landing.footer.howItWorks": "Как это работает",
     "landing.footer.safety": "Безопасность AI",
@@ -2323,7 +2608,7 @@ export const uiCopy = {
     "landing.footer.owners": "Для владельцев",
     "landing.footer.legal": "© 2026 PetCura · Сделано в ЕС",
     "landing.logos.consent_footnote":
-      "Пилотная группа. Указано с письменного согласия каждой клиники.",
+      "Публичные названия клиник, логотипы и производственные метрики не публикуются без письменного согласия и проверенных данных.",
     "landing.problem.scene_caption":
       "Регистратура в час пиковой нагрузки: сотрудник на звонке, врач на приёме, владелец ждёт, мигает голосовая почта.",
     "landing.walkthrough.beat.1": "Владелец пишет в WhatsApp.",
@@ -2341,16 +2626,16 @@ export const uiCopy = {
     "landing.safety.tagline_kinetic_1": "PetCura готовит.",
     "landing.safety.tagline_kinetic_2": "Ваша команда решает.",
     "landing.compliance.strip":
-      "Размещено в ЕС · соответствует GDPR · полный журнал аудита · SOC 2 в процессе.",
+      "Размещено в ЕС · соответствует GDPR · полный журнал аудита · SOC 2 в процессе · готовность к EU AI Act отслеживается.",
     "landing.compliance.training":
-      "Мы не обучаем наши модели на ваших данных.",
+      "Обязательства по использованию данных AI документируются по каждому маршруту провайдера до запуска пилота.",
     "landing.compliance.trustcenter_link": "Открыть Центр доверия",
     "landing.pricing.cta_secondary": "Открыть демо-входящие",
     "landing.pricing.sandbox_note":
       "Заполнено демо-сообщениями. Без карты и обязательств.",
     "landing.cta.secondary_sandbox": "Открыть демо-входящие",
     "landing.mobilebar.primary": "Демо",
-    "landing.mobilebar.secondary": "Демо-входящие",
+    "landing.mobilebar.secondary": "Владельцам",
     "owners.eyebrow": "Для владельцев питомцев",
     "owners.title": "Ваш ветеринар использует PetCura. Вот что это значит.",
     "owners.body":
@@ -2370,6 +2655,131 @@ export const uiCopy = {
     "owners.cta.primary": "Открыть приложение",
     "owners.cta.secondary": "Или открыть веб-форму",
     "owners.cta.back": "Назад к PetCura для клиник",
+    "owners.invited.kicker": "Путь приглашенного владельца",
+    "owners.invited.title": "Используйте PetCura, если клиника вас пригласила.",
+    "owners.invited.body":
+      "PetCura не является публичным сервисом ветеринарных советов. Это коммуникационный слой вашей клиники для организации сообщений и безопасных ответов.",
+    "owners.next.1": "Клиника делится ссылкой WhatsApp, веб-формы или портала.",
+    "owners.next.2": "Вы описываете, что происходит, на удобном языке.",
+    "owners.next.3": "Сотрудники клиники проверяют запрос и выбирают ответ.",
+    "owners.paths.title": "Три способа, которыми клиника может вас пригласить",
+    "owners.paths.body":
+      "Точный путь зависит от настройки клиники. Клиника контролирует советы, срочность, записи и последующие действия.",
+    "owners.path.whatsapp.title": "WhatsApp",
+    "owners.path.whatsapp.body":
+      "Отправьте сообщение, фото или голосовое. PetCura структурирует это для сотрудников клиники.",
+    "owners.path.web.title": "Веб-форма",
+    "owners.path.web.body":
+      "Используйте короткую форму, когда WhatsApp недоступен или клиника дала прямую ссылку.",
+    "owners.path.portal.title": "Портал владельца",
+    "owners.path.portal.body":
+      "Приглашенные владельцы могут видеть запросы и follow-up, которые клиника им открыла.",
+    "owners.emergency.title": "Экстренные случаи требуют прямой помощи",
+    "owners.emergency.body":
+      "Если питомцу трудно дышать, он падает, сильно кровит, у него судороги или выраженная слабость, сразу звоните в клинику или местную экстренную ветклинику.",
+    "owners.language.title": "Поддержка EN, ET и RU",
+    "owners.language.body":
+      "PetCura помогает клиникам работать на английском, эстонском и русском, а финальное сообщение проверяет сотрудник.",
+    "owners.privacy.title": "Клиника сохраняет контроль",
+    "owners.privacy.body":
+      "PetCura помогает организовать коммуникацию. Медицинские решения остаются за клиникой, а медицинская карта остается в PMS.",
+    "demo.nav.back": "Назад на лендинг",
+    "demo.eyebrow": "Заявка клиники на пилот",
+    "demo.title": "Посмотрите, как PetCura успокоит вашу регистратуру.",
+    "demo.body":
+      "Расскажите немного о клинике. Мы покажем цикл WhatsApp -> входящие -> PMS, обсудим пригодность пилота и будем практичны.",
+    "demo.promise.1.title": "15-минутный обзор",
+    "demo.promise.1.body":
+      "Фокусированный тур по продукту с учетом вашего объема сообщений и модели команды.",
+    "demo.promise.2.title": "Карта пилотного workflow",
+    "demo.promise.2.body":
+      "До запуска разбираем WhatsApp, веб-прием, проверку AI, follow-up и экспорт в PMS.",
+    "demo.promise.3.title": "Вопросы доверия приветствуются",
+    "demo.promise.3.body":
+      "Обсудим хостинг в ЕС, роли GDPR, границы AI и аудитируемость.",
+    "demo.sandboxLead": "Хотите сначала осмотреть поток?",
+    "demo.sandboxLink": "Откройте sandbox с фейковыми данными.",
+    "demo.form.title": "Запросить пилотное демо",
+    "demo.form.body":
+      "Это попадет во внутренний список пилотов PetCura. Не добавляйте медицинские данные владельцев или питомцев.",
+    "demo.form.clinicName": "Название клиники",
+    "demo.form.contactName": "Контактное лицо",
+    "demo.form.workEmail": "Рабочая почта",
+    "demo.form.country": "Страна",
+    "demo.form.pmsSystem": "PMS система (необязательно)",
+    "demo.form.monthlyRequestVolume": "Запросы владельцев в месяц (необязательно)",
+    "demo.form.volume.placeholder": "Выберите примерный диапазон",
+    "demo.form.volume.under100": "Менее 100",
+    "demo.form.volume.100300": "100-300",
+    "demo.form.volume.300800": "300-800",
+    "demo.form.volume.800plus": "800+",
+    "demo.form.volume.unknown": "Пока не уверены",
+    "demo.form.message": "Что нам нужно знать? (необязательно)",
+    "demo.form.messagePlaceholder":
+      "Текущие каналы, PMS, боль с телефонами, сроки пилота...",
+    "demo.form.consent":
+      "Я согласен, что PetCura может обработать эту информацию, чтобы ответить на запрос демо.",
+    "demo.form.submit": "Запросить демо",
+    "demo.form.submitting": "Отправляем...",
+    "demo.form.successTitle": "Запрос демо получен",
+    "demo.form.successBody":
+      "Спасибо. Мы проверим пригодность клиники и ответим с hello@petcura.app.",
+    "demo.form.fallbackTitle": "Используйте email fallback",
+    "demo.form.fallbackBody":
+      "Форма не смогла сохранить запрос сейчас. Используйте подготовленное письмо, чтобы заявка на пилот дошла до нас.",
+    "demo.form.fallbackCta": "Открыть черновик письма",
+    "demo.form.requiredError": "Проверьте поле и попробуйте снова.",
+    "sandbox.nav.back": "Назад на лендинг",
+    "sandbox.eyebrow": "Тур продукта с фейковыми данными",
+    "sandbox.title": "Пройдите по входящим PetCura без входа.",
+    "sandbox.body":
+      "Sandbox использует статичные фейковые данные. Он показывает workflow без входа, записей в Supabase, реальной PII владельцев или вызовов AI-провайдеров.",
+    "sandbox.cta.demo": "Запланировать демо клиники",
+    "sandbox.cta.trust": "Открыть центр доверия",
+    "sandbox.badge.fakeData": "Только фейковые данные",
+    "sandbox.badge.noAuth": "Без входа",
+    "sandbox.badge.noWrites": "Без записей",
+    "sandbox.preview.language": "Язык",
+    "sandbox.preview.structured": "Структурированный запрос",
+    "sandbox.preview.status": "Статус",
+    "sandbox.preview.risk": "Метка риска",
+    "sandbox.preview.staffReview": "Проверка сотрудником",
+    "sandbox.guard.1.title": "Нет производственных данных",
+    "sandbox.guard.1.body":
+      "Все имена, сообщения, ID аудита и экспорты здесь являются детерминированными фейковыми данными.",
+    "sandbox.guard.2.title": "Нет вызовов провайдеров",
+    "sandbox.guard.2.body":
+      "Тур не вызывает AI, Twilio, PMS, Supabase или каналы владельцев.",
+    "sandbox.guard.3.title": "Та же граница безопасности",
+    "sandbox.guard.3.body":
+      "AI-черновики всегда проверяет сотрудник; они не диагностируют, не назначают лекарства и не отправляют медицинские советы сами.",
+    "trust.nav.back": "Назад на лендинг",
+    "trust.eyebrow": "Центр доверия",
+    "trust.title": "Пилотные trust claims без завышения.",
+    "trust.body":
+      "PetCura создается для клиник, которым нужны обработка данных с учетом ЕС, AI с подтверждением сотрудника и аудит коммуникаций с владельцами.",
+    "trust.cta.demo": "Обсудить требования доверия",
+    "trust.cta.sandbox": "Открыть sandbox",
+    "trust.snapshot.title": "Текущая позиция",
+    "trust.snapshot.body":
+      "Дизайн хостинга в ЕС, рамка GDPR обработчик/контролер, AI с подтверждением сотрудника, аудит, SOC 2 в процессе и ISO 27001 в плане.",
+    "trust.residency.title": "Хранение и роли",
+    "trust.residency.body":
+      "PetCura держит коммуникационные данные отдельно от медицинской записи PMS и документирует роли ответственности.",
+    "trust.ai.title": "Границы безопасности AI",
+    "trust.ai.body":
+      "AI помогает сотрудникам двигаться быстрее, но медицинское решение остается за клиникой.",
+    "trust.audit.title": "Аудитируемость",
+    "trust.audit.body":
+      "Операционные события, AI-выводы и жизненный цикл доставки спроектированы для проверки.",
+    "trust.limits.badge": "Границы",
+    "trust.limits.title": "Что PetCura не заявляет",
+    "trust.limits.body":
+      "Мы намеренно держим публичные заявления узкими, пока сертификаты, условия провайдеров и доказательства клиентов не финализированы.",
+    "trust.limits.item.1": "SOC 2 указан как в процессе; ISO 27001 указан как запланированный.",
+    "trust.limits.item.2": "Нет диагностики, назначений или финальной срочности.",
+    "trust.limits.item.3": "Нет автономных медицинских ответов владельцам.",
+    "trust.limits.item.4": "Нет логотипов или метрик клиник без письменного согласия.",
     "intake.badge": "Прием с AI-помощью",
     "intake.title": "Расскажите клинике, что происходит",
     "intake.description":

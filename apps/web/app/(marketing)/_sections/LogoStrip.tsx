@@ -1,17 +1,14 @@
 type LogoStripProps = {
   heading: string;
-  placeholder: string;
   footnote: string;
+  signals: readonly string[];
 };
 
 /**
- * Logo strip — narrative §2. Static 6-up grid (3-up on mobile). No marquee,
- * no auto-scroll — those are 2026 conversion leaks per the research file.
- * Reveal on enter happens at the wrapper via CSS-only (handled by the
- * Reveal primitive when a parent introduces one); this section stays
- * server-rendered for SSR friendliness.
+ * Honest pilot proof strip. No fabricated logo placeholders, no named
+ * clinics without written consent.
  */
-export function LogoStrip({ heading, placeholder, footnote }: LogoStripProps) {
+export function LogoStrip({ heading, footnote, signals }: LogoStripProps) {
   return (
     <section
       aria-labelledby="logos-heading"
@@ -25,16 +22,16 @@ export function LogoStrip({ heading, placeholder, footnote }: LogoStripProps) {
           {heading}
         </p>
         <ul
-          aria-label="Pilot clinics"
+          aria-label="Pilot-stage proof points"
           className="mt-6 grid grid-cols-2 items-center justify-items-center gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-6"
           role="list"
         >
-          {[1, 2, 3, 4, 5, 6].map((index) => (
+          {signals.map((signal) => (
             <li
-              className="flex h-10 w-full max-w-[160px] items-center justify-center rounded-[var(--radius)] border border-dashed border-[var(--line)] bg-[var(--paper)] text-[12px] font-medium uppercase tracking-[0.08em] text-[var(--muted-2,var(--muted))]"
-              key={index}
+              className="flex min-h-12 w-full max-w-[190px] items-center justify-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-center text-[11px] font-semibold uppercase leading-5 text-[var(--muted)]"
+              key={signal}
             >
-              {placeholder} {index}
+              {signal}
             </li>
           ))}
         </ul>

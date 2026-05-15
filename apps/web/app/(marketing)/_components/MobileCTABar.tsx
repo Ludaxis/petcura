@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
+import type { SupportedLocale } from "@petcura/shared";
+import { TrackedMarketingLink } from "./TrackedMarketingLink";
+import { leadSources } from "../_data/landing";
 
 type MobileCTABarProps = {
   primary: string;
   secondary: string;
+  hrefs: {
+    demo: string;
+    owners: string;
+  };
+  locale: SupportedLocale;
 };
 
 /**
@@ -17,7 +24,12 @@ type MobileCTABarProps = {
  * Only visible <md so it doesn't compete with the sticky top nav
  * on desktop.
  */
-export function MobileCTABar({ primary, secondary }: MobileCTABarProps) {
+export function MobileCTABar({
+  primary,
+  secondary,
+  hrefs,
+  locale
+}: MobileCTABarProps) {
   const [visible, setVisible] = useState(false);
   const reduce = useReducedMotion();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -58,18 +70,26 @@ export function MobileCTABar({ primary, secondary }: MobileCTABarProps) {
         style={{ pointerEvents: visible ? "auto" : "none" }}
         transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
       >
-        <Link
+        <TrackedMarketingLink
           className="flex-1 rounded-[var(--radius)] bg-[var(--primary)] px-4 py-2 text-center text-sm font-semibold text-white"
-          href="mailto:hello@petcura.app?subject=Demo%20request"
+          eventName="landing_cta_clicked"
+          href={hrefs.demo}
+          locale={locale}
+          route="/demo"
+          source={leadSources.mobileBar}
         >
           {primary}
-        </Link>
-        <Link
+        </TrackedMarketingLink>
+        <TrackedMarketingLink
           className="flex-1 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-4 py-2 text-center text-sm font-semibold text-[var(--foreground)]"
-          href="/sandbox#walkthrough"
+          eventName="owner_path_clicked"
+          href={hrefs.owners}
+          locale={locale}
+          route="/owners"
+          source={leadSources.ownerPath}
         >
           {secondary}
-        </Link>
+        </TrackedMarketingLink>
       </motion.aside>
     </>
   );

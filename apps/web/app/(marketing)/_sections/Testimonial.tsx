@@ -11,9 +11,8 @@ type TestimonialProps = {
 };
 
 /**
- * Testimonial — narrative §9. One named pilot quote, metric chip
- * standalone (never inline numbers in the quote). Skepticism-overcome
- * shape mirrored from Glean.
+ * Honest proof panel. Pilot stage means goal-based proof and consent rules,
+ * not fabricated customer quotes or logos.
  */
 export function Testimonial({
   kicker,
@@ -44,10 +43,10 @@ export function Testimonial({
         <figure className="mt-10 grid items-center gap-8 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-6 sm:p-10 lg:grid-cols-[1.4fr_0.6fr] lg:gap-12">
           <blockquote className="space-y-6">
             <p className="text-xl leading-relaxed text-[var(--foreground)] sm:text-2xl">
-              &ldquo;{quote}&rdquo;
+              {quote}
             </p>
             <figcaption className="text-sm font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
-              — {author}
+              {author}
             </figcaption>
           </blockquote>
           <aside className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-5">

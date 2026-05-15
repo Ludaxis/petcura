@@ -6,6 +6,7 @@ import {
   createReminderSchema,
   intakeRequestSchema,
   internalNoteSchema,
+  marketingLeadSchema,
   ownerProfileSchema,
   petProfileSchema,
   reminderStatusActionSchema,
@@ -94,6 +95,52 @@ describe("intakeRequestSchema", () => {
       preferredLanguage: "et",
       idempotencyKey: undefined
     });
+  });
+});
+
+describe("marketingLeadSchema", () => {
+  it("normalizes consented clinic demo requests", () => {
+    const parsed = marketingLeadSchema.parse({
+      source: "hero",
+      locale: "et",
+      clinicName: "  Tartu Vet Group ",
+      contactName: "  Mari Tamm ",
+      workEmail: " Mari@Clinic.EE ",
+      country: " Estonia ",
+      pmsSystem: "",
+      monthlyRequestVolume: "100_300",
+      message: " We want to reduce phone load. ",
+      consentGiven: "on",
+      website: ""
+    });
+
+    expect(parsed).toMatchObject({
+      source: "hero",
+      locale: "et",
+      clinicName: "Tartu Vet Group",
+      contactName: "Mari Tamm",
+      workEmail: "mari@clinic.ee",
+      country: "Estonia",
+      pmsSystem: undefined,
+      monthlyRequestVolume: "100_300",
+      message: "We want to reduce phone load.",
+      consentGiven: true,
+      website: undefined
+    });
+  });
+
+  it("requires consent and rejects PII-heavy invalid fields early", () => {
+    expect(
+      marketingLeadSchema.safeParse({
+        source: "demo_page",
+        locale: "en",
+        clinicName: "A",
+        contactName: "M",
+        workEmail: "not-email",
+        country: "E",
+        consentGiven: "false"
+      }).success
+    ).toBe(false);
   });
 });
 

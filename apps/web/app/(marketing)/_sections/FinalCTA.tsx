@@ -1,14 +1,21 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button, KineticHeadline } from "@petcura/ui";
+import type { SupportedLocale } from "@petcura/shared";
+import { TrackedMarketingLink } from "../_components/TrackedMarketingLink";
+import { leadSources } from "../_data/landing";
 
 type FinalCTAProps = {
   title: string;
   body: string;
   primary: string;
   secondary: string;
+  hrefs: {
+    demo: string;
+    owners: string;
+  };
+  locale: SupportedLocale;
 };
 
 /**
@@ -16,7 +23,14 @@ type FinalCTAProps = {
  * opened: same KineticHeadline engine, line-grouped reveal. Only
  * other place kinetic type is allowed on the page.
  */
-export function FinalCTA({ title, body, primary, secondary }: FinalCTAProps) {
+export function FinalCTA({
+  title,
+  body,
+  primary,
+  secondary,
+  hrefs,
+  locale
+}: FinalCTAProps) {
   const lines = splitHeadlineIntoLines(title);
   return (
     <section
@@ -35,13 +49,27 @@ export function FinalCTA({ title, body, primary, secondary }: FinalCTAProps) {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button asChild>
-            <Link href="mailto:hello@petcura.app?subject=Demo%20request">
+            <TrackedMarketingLink
+              eventName="landing_cta_clicked"
+              href={hrefs.demo}
+              locale={locale}
+              route="/demo"
+              source={leadSources.finalCta}
+            >
               {primary}
               <ArrowRight aria-hidden="true" size={16} />
-            </Link>
+            </TrackedMarketingLink>
           </Button>
           <Button asChild variant="secondary">
-            <Link href="/sandbox#walkthrough">{secondary}</Link>
+            <TrackedMarketingLink
+              eventName="owner_path_clicked"
+              href={hrefs.owners}
+              locale={locale}
+              route="/owners"
+              source={leadSources.ownerPath}
+            >
+              {secondary}
+            </TrackedMarketingLink>
           </Button>
         </div>
       </div>

@@ -82,6 +82,53 @@ const booleanConsentSchema = z.union([
     .transform((value) => value === "true" || value === "on")
 ]);
 
+export const marketingLeadSourceSchema = z.enum([
+  "hero",
+  "owner_path",
+  "pricing",
+  "final_cta",
+  "mobile_bar",
+  "demo_page",
+  "sandbox",
+  "trust",
+  "footer"
+]);
+
+export const monthlyRequestVolumeSchema = z.enum([
+  "under_100",
+  "100_300",
+  "300_800",
+  "800_plus",
+  "unknown"
+]);
+
+const optionalTrimmedString = (max: number) =>
+  z
+    .union([trimmedString.max(max), z.literal("")])
+    .optional()
+    .transform((value) => value || undefined);
+
+export const marketingLeadSchema = z.object({
+  source: marketingLeadSourceSchema.default("demo_page"),
+  locale: supportedLocaleSchema.default("en"),
+  clinicName: trimmedString.min(2).max(160),
+  contactName: trimmedString.min(2).max(140),
+  workEmail: emailSchema,
+  country: trimmedString.min(2).max(80),
+  pmsSystem: optionalTrimmedString(100),
+  monthlyRequestVolume: z
+    .union([monthlyRequestVolumeSchema, z.literal("")])
+    .optional()
+    .transform((value) => value || undefined),
+  message: optionalTrimmedString(1000),
+  consentGiven: booleanConsentSchema.pipe(z.literal(true)),
+  website: optionalTrimmedString(300)
+});
+
+export type MarketingLeadInput = z.infer<typeof marketingLeadSchema>;
+export type MarketingLeadSource = z.infer<typeof marketingLeadSourceSchema>;
+export type MonthlyRequestVolume = z.infer<typeof monthlyRequestVolumeSchema>;
+
 export const webIntakeStartSchema = intakeRequestSchema.extend({
   consent: booleanConsentSchema.pipe(z.literal(true)),
   idempotencyKey: optionalIdempotencyKeySchema
