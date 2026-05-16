@@ -4,6 +4,7 @@ import type { Database, StaffRole } from "@petcura/shared";
 import { hasClinicPermission } from "@petcura/shared";
 import type { StaffContext } from "@/lib/auth/staff";
 import { buildReportsDashboard, createReportRange } from "./metrics";
+import { isMissingOptionalReportTableError } from "./query-errors";
 import type {
   BuildReportsInput,
   ReportAiMemoryRow,
@@ -146,20 +147,24 @@ export async function getReportsDashboard(options: {
       .gte("issued_at", range.previousStart)
       .lt("issued_at", range.end);
 
-    if (error) {
+    if (error && isMissingOptionalReportTableError(error, "pms_invoice_summaries")) {
+      console.warn(
+        "[reports] Optional PMS invoice summaries table is unavailable; financial report panels will render as not connected."
+      );
+    } else if (error) {
       throw new Error(`Could not load report PMS invoices: ${error.message}`);
+    } else {
+      invoiceRows = asArray(data).map((row): ReportInvoiceRow => ({
+        id: row.id,
+        ownerId: row.owner_id,
+        petId: row.pet_id,
+        issuedAt: row.issued_at,
+        currency: row.currency,
+        grossAmountCents: row.gross_amount_cents,
+        serviceCategory: row.service_category,
+        voidedAt: row.voided_at
+      }));
     }
-
-    invoiceRows = asArray(data).map((row): ReportInvoiceRow => ({
-      id: row.id,
-      ownerId: row.owner_id,
-      petId: row.pet_id,
-      issuedAt: row.issued_at,
-      currency: row.currency,
-      grossAmountCents: row.gross_amount_cents,
-      serviceCategory: row.service_category,
-      voidedAt: row.voided_at
-    }));
   }
 
   const requestRows = asArray(requestsResult.data).map((row): ReportRequestRow => ({
