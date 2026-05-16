@@ -1722,6 +1722,79 @@ export type Database = {
           },
         ]
       }
+      pms_invoice_summaries: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          currency: string
+          external_invoice_id_hash: string
+          gross_amount_cents: number
+          id: string
+          issued_at: string
+          metadata_json: Json
+          owner_id: string
+          pet_id: string | null
+          service_category: string | null
+          source_system: string
+          updated_at: string
+          voided_at: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          currency?: string
+          external_invoice_id_hash: string
+          gross_amount_cents: number
+          id?: string
+          issued_at: string
+          metadata_json?: Json
+          owner_id: string
+          pet_id?: string | null
+          service_category?: string | null
+          source_system: string
+          updated_at?: string
+          voided_at?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          currency?: string
+          external_invoice_id_hash?: string
+          gross_amount_cents?: number
+          id?: string
+          issued_at?: string
+          metadata_json?: Json
+          owner_id?: string
+          pet_id?: string | null
+          service_category?: string | null
+          source_system?: string
+          updated_at?: string
+          voided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pms_invoice_summaries_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pms_invoice_summaries_clinic_id_owner_id_fkey"
+            columns: ["clinic_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "owners"
+            referencedColumns: ["clinic_id", "id"]
+          },
+          {
+            foreignKeyName: "pms_invoice_summaries_clinic_id_pet_id_fkey"
+            columns: ["clinic_id", "pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["clinic_id", "id"]
+          },
+        ]
+      }
       reminders: {
         Row: {
           acknowledged_at: string | null

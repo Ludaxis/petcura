@@ -35,4 +35,13 @@ describe("clinic role permissions", () => {
     expect(hasClinicPermission("tech", "customers:manage")).toBe(true);
     expect(hasClinicPermission("reception", "customers:manage")).toBe(true);
   });
+
+  it("separates reports visibility from financial report access", () => {
+    expect(hasClinicPermission("viewer", "reports:view")).toBe(true);
+    expect(hasClinicPermission("viewer", "reports:financial")).toBe(false);
+    expect(hasClinicPermission("vet", "reports:view")).toBe(true);
+    expect(hasClinicPermission("vet", "reports:financial")).toBe(false);
+    expect(hasClinicPermission("admin", "reports:financial")).toBe(true);
+    expect(hasClinicPermission("owner", "reports:financial")).toBe(true);
+  });
 });

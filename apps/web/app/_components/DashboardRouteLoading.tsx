@@ -258,14 +258,30 @@ function AdminSkeleton() {
 
 function ReportsSkeleton() {
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center bg-[var(--soft)] p-4">
-      <div className="w-full max-w-xl rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-6 shadow-sm">
-        <Shimmer className="h-10 w-10 rounded-[var(--radius)]" />
-        <Shimmer className="mt-4 h-6 w-40 rounded" />
-        <SkeletonText className="mt-3" lines={3} />
-        <Shimmer className="mt-5 h-9 w-32 rounded-[var(--radius)]" />
+    <>
+      <HeaderSkeleton tabs />
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--soft)] p-3 sm:p-4">
+        <div className="mx-auto grid max-w-7xl gap-4">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Shimmer key={index} className="h-9 rounded-[var(--radius)]" />
+            ))}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonCard key={index} lines={2} />
+            ))}
+          </div>
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.7fr)]">
+            <SkeletonCard lines={5} footer />
+            <div className="grid gap-4">
+              <SkeletonCard lines={3} />
+              <SkeletonCard lines={4} />
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

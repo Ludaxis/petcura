@@ -158,7 +158,8 @@ export const SIDEBAR_NAV: NavItem[] = [
     id: "reports",
     labelKey: "nav.reports",
     href: "/reports",
-    icon: FileText
+    icon: FileText,
+    requiredPermissions: ["reports:view"]
   },
   {
     id: "settings",
