@@ -265,7 +265,7 @@ export function MobileBottomNav({
       <button
         type="button"
         onClick={openMeSheet}
-        aria-label={meAriaLabel}
+        aria-label={meSheetOpen ? t("nav.bottom.closeUserMenu") : meAriaLabel}
         aria-haspopup="dialog"
         aria-expanded={meSheetOpen}
         data-bottom-nav-me

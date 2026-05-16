@@ -183,7 +183,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
             className={cn(
               "min-w-[112px]",
               pending &&
-                "!opacity-100 ring-2 ring-offset-1 ring-[var(--primary-soft)] ring-offset-[var(--paper)] animate-pulse"
+                "!opacity-100 ring-2 ring-offset-1 ring-[var(--primary-soft)] ring-offset-[var(--paper)] animate-pulse motion-reduce:animate-none"
             )}
           >
             {pending ? (

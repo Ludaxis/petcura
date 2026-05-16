@@ -1251,6 +1251,9 @@ export const uiCopy = {
     "nav.bottom.reminders": "Reminders",
     "nav.bottom.reports": "Reports",
     "nav.bottom.me": "Me",
+    "nav.bottom.closeUserMenu": "Close user menu",
+    "directory.pet.ownerPrefix": "owner",
+    "directory.search.loading": "Searching…",
     "request.detail.editActions": "Edit",
     "request.detail.editSheet.title": "Update request",
 
@@ -2419,6 +2422,9 @@ export const uiCopy = {
     "nav.bottom.reminders": "Meeldetuletused",
     "nav.bottom.reports": "Aruanded",
     "nav.bottom.me": "Mina",
+    "nav.bottom.closeUserMenu": "Sulge kasutaja menüü",
+    "directory.pet.ownerPrefix": "omanik",
+    "directory.search.loading": "Otsin…",
     "request.detail.editActions": "Muuda",
     "request.detail.editSheet.title": "Uuenda pöördumist",
 
@@ -3595,6 +3601,9 @@ export const uiCopy = {
     "nav.bottom.reminders": "Напоминания",
     "nav.bottom.reports": "Отчёты",
     "nav.bottom.me": "Я",
+    "nav.bottom.closeUserMenu": "Закрыть меню пользователя",
+    "directory.pet.ownerPrefix": "владелец",
+    "directory.search.loading": "Идёт поиск…",
     "request.detail.editActions": "Изменить",
     "request.detail.editSheet.title": "Обновить запрос",
 

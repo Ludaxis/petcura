@@ -87,7 +87,11 @@ function FieldError({
     return null;
   }
 
-  return <p className="text-xs text-[var(--red)]">{firstError}</p>;
+  return (
+    <p role="alert" className="text-xs text-[var(--red)]">
+      {firstError}
+    </p>
+  );
 }
 
 export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) {

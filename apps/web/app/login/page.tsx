@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth/last-route-cookie";
 import { resolvePostLoginDestination } from "@/lib/auth/post-login-router";
 import { resolveStaffActor } from "@/lib/auth/resolve-staff-actor";
+import { getPublicEnvStatus } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { AuthShell } from "@/app/(auth)/_components/AuthShell";
 import type { BrandPaneQuote } from "@/app/(auth)/_components/BrandPane";
@@ -73,6 +74,10 @@ async function redirectAuthenticatedStaff(
   locale: Awaited<ReturnType<typeof getRequestLocale>>,
   nextPath: string
 ) {
+  if (!getPublicEnvStatus().success) {
+    return;
+  }
+
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
 

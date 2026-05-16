@@ -11,7 +11,8 @@ import {
   Settings,
   Shield,
   Sun,
-  UserRound
+  UserRound,
+  X
 } from "lucide-react";
 import { localeOptions, withLocale } from "@petcura/shared";
 import { cn } from "@petcura/ui";
@@ -131,9 +132,7 @@ export function MobileMeSheet({
             aria-label={labels.close}
             className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] transition hover:bg-[var(--soft)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           >
-            <span aria-hidden="true" className="text-[18px] leading-none">
-              x
-            </span>
+            <X aria-hidden="true" size={18} />
           </SheetClose>
         </SheetHeader>
 

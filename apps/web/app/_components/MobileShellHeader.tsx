@@ -32,7 +32,8 @@ export function MobileShellHeader({
   // SidebarTrigger primitive needing to be patched.
   const { openMobile } = useSidebar();
   return (
-    <div
+    <header
+      role="banner"
       className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-[var(--line)] bg-[var(--paper)] px-2 md:hidden"
       data-mobile-shell-header
     >
@@ -41,12 +42,15 @@ export function MobileShellHeader({
         aria-expanded={openMobile}
         className="h-9 w-9 rounded-[var(--radius)] text-[var(--ink-2)] hover:bg-[var(--soft)]"
       />
-      <p className="min-w-0 flex-1 truncate text-center text-[13px] font-semibold text-[var(--ink)]">
+      <p
+        title={title}
+        className="min-w-0 flex-1 truncate text-center text-[13px] font-semibold text-[var(--ink)]"
+      >
         {title}
       </p>
       {/* Right spacer matches the trigger width so the title sits visually
           centered without measuring. */}
       <span aria-hidden="true" className="h-9 w-9" />
-    </div>
+    </header>
   );
 }
