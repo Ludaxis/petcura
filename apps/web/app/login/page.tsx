@@ -1,8 +1,17 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@petcura/ui";
-import { createTranslator } from "@petcura/shared";
+import { createTranslator, withLocale } from "@petcura/shared";
 import { getRequestLocale } from "@/lib/locale";
+import {
+  STAFF_LAST_ROUTE_COOKIE,
+  readStaffLastRoute
+} from "@/lib/auth/last-route-cookie";
+import { resolvePostLoginDestination } from "@/lib/auth/post-login-router";
+import { resolveStaffActor } from "@/lib/auth/resolve-staff-actor";
+import { createClient } from "@/lib/supabase/server";
 import { AuthShell } from "@/app/(auth)/_components/AuthShell";
 import type { BrandPaneQuote } from "@/app/(auth)/_components/BrandPane";
 import { signInWithMagicLink } from "./actions";
@@ -60,6 +69,36 @@ function resolveError(
   return { copy: t("auth.error.loginError") };
 }
 
+async function redirectAuthenticatedStaff(
+  locale: Awaited<ReturnType<typeof getRequestLocale>>,
+  nextPath: string
+) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+
+  if (!data.user) {
+    return;
+  }
+
+  const actor = await resolveStaffActor(supabase, data.user.id);
+
+  if (!actor) {
+    return;
+  }
+
+  const cookieStore = await cookies();
+  const lastVisited = readStaffLastRoute(
+    cookieStore.get(STAFF_LAST_ROUTE_COOKIE)?.value
+  );
+  const { destination } = resolvePostLoginDestination({
+    actor: { kind: "clinic_staff", ...actor },
+    nextParam: nextPath,
+    lastVisitedCookie: lastVisited
+  });
+
+  redirect(withLocale(destination, locale));
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const locale = await getRequestLocale(params?.lang);
@@ -70,6 +109,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const inviteEmail = getSearchParam(params?.email) ?? "";
   const inviteClinic = getSearchParam(params?.clinic) ?? "";
   const error = resolveError(t, getSearchParam(params?.error));
+
+  await redirectAuthenticatedStaff(locale, nextPath);
 
   const heading = invite && inviteClinic
     ? t("auth.login.headingInvite", { clinicName: inviteClinic })
