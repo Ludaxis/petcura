@@ -168,7 +168,6 @@ function useActiveResolver(inboxStream: InboxStream) {
   const activeChildId = activeStreamId(inboxStream);
 
   return (item: NavItem, parent?: NavItem) => {
-    if (item.id === "search") return false;
     // Inbox sub-items: compare against the active stream id from search params.
     if (parent?.id === "inbox") {
       return pathname.startsWith("/inbox") && item.id === activeChildId;
@@ -192,16 +191,6 @@ function useActiveResolver(inboxStream: InboxStream) {
     if (item.href === "/") return pathname === "/";
     return pathname.startsWith(item.href);
   };
-}
-
-/**
- * Bridge for the sidebar Search row. The /inbox CommandPalette listens for a
- * `petcura:open-cmdk` window event, so non-inbox routes can degrade
- * gracefully (the event is ignored when the palette isn't mounted).
- */
-function openCommandPalette() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("petcura:open-cmdk"));
 }
 
 export function AppSidebar({
@@ -282,29 +271,6 @@ export function AppSidebar({
     const visibleChildren = item.children?.filter((child) =>
       canShowNavItem(child, { isSuperAdmin, permissions })
     );
-
-    if (item.id === "search") {
-      return (
-        <SidebarMenuItem key={item.id}>
-          <SidebarMenuButton
-            data-nav-button="true"
-            onClick={openCommandPalette}
-            tooltip={labels.searchLabel}
-            aria-label={labels.searchLabel}
-            className="text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]"
-          >
-            {Icon ? <Icon aria-hidden="true" /> : null}
-            <span className="text-[13px]">{labels.searchLabel}</span>
-            <kbd
-              aria-hidden="true"
-              className="ml-auto inline-flex h-5 items-center rounded border border-[var(--line)] bg-[var(--paper)] px-1.5 font-mono text-[10px] text-[var(--muted)]"
-            >
-              {item.keyboardHint ?? labels.searchHint}
-            </kbd>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      );
-    }
 
     const childrenJsx = visibleChildren?.length ? (
       <SidebarMenuSub>
@@ -444,11 +410,6 @@ export function AppSidebar({
         aria-label={labels.navAria}
         className="px-2"
       >
-        {/* Search row sits up top, outside the section eyebrow. */}
-        <SidebarMenu className="px-1 pt-1">
-          {renderTopLevel(SIDEBAR_NAV[0]!)}
-        </SidebarMenu>
-
         <div className="px-3 pb-1 pt-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-2)]">
             {labels.sectionInbox}
@@ -456,7 +417,7 @@ export function AppSidebar({
         </div>
 
         <SidebarMenu className="px-1">
-          {SIDEBAR_NAV.slice(1)
+          {SIDEBAR_NAV
             .filter((item) =>
               canShowNavItem(item, { isSuperAdmin, permissions })
             )

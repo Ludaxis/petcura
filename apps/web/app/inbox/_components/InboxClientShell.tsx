@@ -80,9 +80,9 @@ export function InboxClientShell({
   }, [rowIds, safeFocusedIndex]);
 
   // The CommandPalette listens to `petcura:open-cmdk` directly now (see
-  // CommandPalette.tsx) so any open/close trigger — sidebar Search, ⌘K, the
-  // Playwright test hook below — is just a window dispatch. The bridge
-  // handler that used to call paletteRef.current?.toggle() is gone.
+  // CommandPalette.tsx) so any open/close trigger — ⌘K or the Playwright
+  // test hook below — is just a window dispatch. The bridge handler that
+  // used to call paletteRef.current?.toggle() is gone.
 
   const currentRowId = rowIds[safeFocusedIndex] ?? null;
 

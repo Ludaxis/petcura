@@ -16,8 +16,9 @@ describe("sidebar-nav", () => {
     // Profile is intentionally absent from the main nav — it lives on the
     // identity card (UserMenu + MobileMeSheet) to avoid duplicating an
     // entry the user is already standing on at the bottom of the rail.
+    // Search is intentionally absent until there is a real global search
+    // surface; the inbox command palette remains keyboard-only.
     expect(ids).toEqual([
-      "search",
       "inbox",
       "directory",
       "reminders",

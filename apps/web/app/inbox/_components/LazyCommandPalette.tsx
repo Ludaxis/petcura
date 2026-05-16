@@ -6,11 +6,11 @@ import type { CommandPalette as CommandPaletteComponent } from "./CommandPalette
 
 /**
  * Defer-loaded CommandPalette. The cmdk library + theme/streaming logic is a
- * sizeable chunk and clinic staff only need it after the first ⌘K (or the
- * sidebar Search click). Until then this wrapper renders nothing.
+ * sizeable chunk and clinic staff only need it after the first ⌘K. Until
+ * then this wrapper renders nothing.
  *
- * The trigger is the existing `petcura:open-cmdk` window event (already
- * dispatched from `AppSidebar.openCommandPalette` and from InboxKeyboard).
+ * The trigger is the existing `petcura:open-cmdk` window event dispatched
+ * from InboxKeyboard and the hidden Playwright test hook.
  * On first event we flip `mounted=true`; the dynamic import fires; the real
  * palette mounts and immediately listens for subsequent events, opening
  * itself the first time it hears one.

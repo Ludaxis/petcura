@@ -130,10 +130,11 @@ export const CommandPalette = forwardRef<CommandPaletteRef, CommandPaletteProps>
       [open, openPalette, closePalette]
     );
 
-    // Window-event bridge so the lazy wrapper can mount us on first ⌘K /
-    // sidebar Search click, then we open ourselves on subsequent events.
-    // The `petcura:open-cmdk` event already fires from AppSidebar and the
-    // inbox keyboard layer; consuming it here removes the need for a ref.
+    // Window-event bridge so the lazy wrapper can mount us on first ⌘K,
+    // then we open ourselves on subsequent events. The
+    // `petcura:open-cmdk` event fires from the inbox keyboard layer and
+    // the hidden Playwright test hook; consuming it here removes the need
+    // for a ref.
     const openRef = useRef(open);
     openRef.current = open;
     useEffect(() => {

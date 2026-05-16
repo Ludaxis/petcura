@@ -7,7 +7,6 @@ import {
   FolderOpen,
   Inbox,
   ListChecks,
-  Search,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -53,13 +52,10 @@ export type NavItem = {
   /**
    * Destination href. Use a `?stream=` query for inbox sub-items; the
    * existing search-params flow on /inbox is the consumer.
-   * The pseudo href `#cmdk` is special-cased to open the command palette.
    */
   href: string;
   /** Optional lucide icon — usually only top-level rows show icons. */
   icon?: LucideIcon;
-  /** Right-aligned keyboard hint (e.g. "⌘K"). Purely visual. */
-  keyboardHint?: string;
   countSource?: NavCountSource;
   badgeTone?: NavBadgeTone;
   /** Gate visibility by role. Resolved at render time by the AppSidebar. */
@@ -119,13 +115,6 @@ const INBOX_CHILDREN: NavItem[] = [
 ];
 
 export const SIDEBAR_NAV: NavItem[] = [
-  {
-    id: "search",
-    labelKey: "menu.search",
-    href: "#cmdk",
-    icon: Search,
-    keyboardHint: "⌘K"
-  },
   {
     id: "inbox",
     labelKey: "nav.inbox",
@@ -233,7 +222,6 @@ export {
   Clock,
   Inbox,
   ListChecks,
-  Search,
   Settings,
   ShieldCheck,
   Sparkles,
