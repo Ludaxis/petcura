@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Bell, Inbox as InboxIcon } from "lucide-react";
+import { Bell, FileText, Inbox as InboxIcon, Users } from "lucide-react";
 import {
   createTranslator,
   withLocale,
@@ -76,32 +76,55 @@ export function MobileBottomNav({
   const inboxHref = withLocale("/inbox", locale);
   const inboxActive =
     pathname.startsWith("/inbox") || pathname.startsWith("/requests");
+  // /customers and /pets redirect to /directory, but during the redirect
+  // hop pathname briefly matches the legacy path — treat them all as the
+  // same "Directory" surface so the indicator doesn't flicker.
+  const directoryHref = withLocale("/directory", locale);
+  const directoryActive =
+    pathname.startsWith("/directory") ||
+    pathname.startsWith("/customers") ||
+    pathname.startsWith("/pets");
   const remindersHref = withLocale("/reminders", locale);
   const remindersActive = pathname.startsWith("/reminders");
+  const reportsHref = withLocale("/reports", locale);
+  const reportsActive = pathname.startsWith("/reports");
 
   const openMeSheet = () => {
     if (typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent("petcura:open-me-sheet"));
   };
 
-  const TAB_COUNT = 3;
+  // Tabs order: Inbox · Directory · Reminders · Reports · Me. Me lives at
+  // the far right because it's the identity sheet, not a route.
+  const TAB_COUNT = 5;
   const activeIndex = meSheetOpen
-    ? 2
-    : remindersActive
-      ? 1
-      : inboxActive
-        ? 0
-        : -1;
+    ? 4
+    : reportsActive
+      ? 3
+      : remindersActive
+        ? 2
+        : directoryActive
+          ? 1
+          : inboxActive
+            ? 0
+            : -1;
 
   const tabClass = (active: boolean) =>
     cn(
       "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 text-[10.5px] font-medium",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]",
       !prefersReducedMotion && "transition-colors duration-200",
+      // Inactive label moved off --muted-2 (contrast ≈ 2.6:1, fails AA) onto
+      // --muted; --muted-2 is reserved for decorative chrome per design rules.
       active
         ? "text-[var(--primary-strong)]"
-        : "text-[var(--muted-2)] hover:text-[var(--ink)]"
+        : "text-[var(--muted)] hover:text-[var(--ink)]"
     );
+
+  // Shared label class: truncate at the parent flex width so ET strings like
+  // "Meeldetuletused" (15ch, ~85px at 10.5px font) don't wrap a second line
+  // and break the h-14 indicator math on 320–390px viewports.
+  const labelClass = "block max-w-full truncate text-center";
 
   const iconAnim = (active: boolean) =>
     cn(
@@ -128,14 +151,24 @@ export function MobileBottomNav({
           "pointer-events-none absolute bottom-1 left-2 right-2 top-1 z-0",
           activeIndex < 0 && "opacity-0"
         )}
-        style={{
-          // Width = (100% - (TAB_COUNT - 1) * gap) / TAB_COUNT. Gap is 4px (gap-1).
-          width: `calc((100% - ${TAB_COUNT - 1} * 0.25rem) / ${TAB_COUNT})`,
-          transform: `translateX(calc(${Math.max(activeIndex, 0)} * (100% + 0.25rem)))`,
-          transition: prefersReducedMotion
-            ? "none"
-            : "transform 320ms var(--ease-leitmotif), opacity 200ms var(--ease-standard)"
-        }}
+        // Only emit transform + transition once we have a real active tab.
+        // Off-nav routes (e.g. /settings, /profile) would otherwise leave a
+        // stale translateX(0) that, on first re-activation, slides visibly
+        // from the Inbox slot to wherever you actually landed.
+        style={
+          activeIndex < 0
+            ? {
+                // Width = (100% - (TAB_COUNT - 1) * gap) / TAB_COUNT. Gap is 4px (gap-1).
+                width: `calc((100% - ${TAB_COUNT - 1} * 0.25rem) / ${TAB_COUNT})`
+              }
+            : {
+                width: `calc((100% - ${TAB_COUNT - 1} * 0.25rem) / ${TAB_COUNT})`,
+                transform: `translateX(calc(${activeIndex} * (100% + 0.25rem)))`,
+                transition: prefersReducedMotion
+                  ? "none"
+                  : "transform 320ms var(--ease-leitmotif), opacity 200ms var(--ease-standard)"
+              }
+        }
       >
         <span className="block h-full w-full rounded-[10px] bg-[var(--primary-soft)]" />
       </span>
@@ -151,7 +184,27 @@ export function MobileBottomNav({
             strokeWidth={inboxActive ? 2.25 : 1.75}
           />
         </span>
-        <span>{t("nav.bottom.inbox")}</span>
+        <span className={labelClass} title={t("nav.bottom.inbox")}>
+          {t("nav.bottom.inbox")}
+        </span>
+      </Link>
+
+      <Link
+        href={directoryHref}
+        aria-current={directoryActive ? "page" : undefined}
+        data-bottom-nav-directory
+        className={tabClass(directoryActive)}
+      >
+        <span className={iconAnim(directoryActive)}>
+          <Users
+            aria-hidden="true"
+            size={18}
+            strokeWidth={directoryActive ? 2.25 : 1.75}
+          />
+        </span>
+        <span className={labelClass} title={t("nav.bottom.directory")}>
+          {t("nav.bottom.directory")}
+        </span>
       </Link>
 
       <Link
@@ -186,7 +239,27 @@ export function MobileBottomNav({
             />
           ) : null}
         </span>
-        <span>{t("nav.bottom.reminders")}</span>
+        <span className={labelClass} title={t("nav.bottom.reminders")}>
+          {t("nav.bottom.reminders")}
+        </span>
+      </Link>
+
+      <Link
+        href={reportsHref}
+        aria-current={reportsActive ? "page" : undefined}
+        data-bottom-nav-reports
+        className={tabClass(reportsActive)}
+      >
+        <span className={iconAnim(reportsActive)}>
+          <FileText
+            aria-hidden="true"
+            size={18}
+            strokeWidth={reportsActive ? 2.25 : 1.75}
+          />
+        </span>
+        <span className={labelClass} title={t("nav.bottom.reports")}>
+          {t("nav.bottom.reports")}
+        </span>
       </Link>
 
       <button
@@ -213,7 +286,9 @@ export function MobileBottomNav({
             meInitials || "?"
           )}
         </span>
-        <span>{t("nav.bottom.me")}</span>
+        <span className={labelClass} title={t("nav.bottom.me")}>
+          {t("nav.bottom.me")}
+        </span>
       </button>
     </nav>
   );

@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@petcura/shared";
 
@@ -121,9 +121,17 @@ test.describe("Mobile redesign screenshots", () => {
       await page.reload({ waitUntil: "domcontentloaded" });
       await page.locator("[data-mobile-bottom-nav]").waitFor();
 
-      // 1) Bottom nav — four tabs.
+      // 1) Bottom nav — five tabs: Inbox · Directory · Reminders · Reports · Me.
+      // Assert tab count so adding/removing a tab in the future fails loudly
+      // here instead of silently breaking the indicator math.
+      const bottomNavTabs = page.locator(
+        "[data-mobile-bottom-nav] a, [data-mobile-bottom-nav] button"
+      );
+      await expect(bottomNavTabs).toHaveCount(5);
+      await expect(page.locator("[data-bottom-nav-directory]")).toBeVisible();
+      await expect(page.locator("[data-bottom-nav-reports]")).toBeVisible();
       await page.screenshot({
-        path: "screenshots/mobile-bottom-nav-4.png",
+        path: "screenshots/mobile-bottom-nav-5.png",
         fullPage: false
       });
 
