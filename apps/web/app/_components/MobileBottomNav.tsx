@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Bell, Inbox as InboxIcon, Search } from "lucide-react";
+import { Bell, Inbox as InboxIcon } from "lucide-react";
 import {
   createTranslator,
   withLocale,
@@ -79,11 +79,6 @@ export function MobileBottomNav({
   const remindersHref = withLocale("/reminders", locale);
   const remindersActive = pathname.startsWith("/reminders");
 
-  const openCommandPalette = () => {
-    if (typeof window === "undefined") return;
-    window.dispatchEvent(new CustomEvent("petcura:open-cmdk"));
-  };
-
   const openMeSheet = () => {
     if (typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent("petcura:open-me-sheet"));
@@ -121,16 +116,6 @@ export function MobileBottomNav({
         />
         <span>{t("nav.bottom.inbox")}</span>
       </Link>
-
-      <button
-        type="button"
-        onClick={openCommandPalette}
-        aria-label={t("nav.bottom.search")}
-        className={tabClass(false)}
-      >
-        <Search aria-hidden="true" size={18} strokeWidth={1.75} />
-        <span>{t("nav.bottom.search")}</span>
-      </button>
 
       <Link
         href={remindersHref}

@@ -20,10 +20,9 @@ function adminClient() {
 /**
  * Slice C coverage:
  *
- *   1. MobileBottomNav renders on viewport < md (390×844) with all four
- *      tabs (Inbox / Search / Reminders / Me). Search dispatches the
- *      cmdk event; Me dispatches the open-me-sheet event which surfaces
- *      MobileMeSheet.
+ *   1. MobileBottomNav renders on viewport < md (390×844) with only
+ *      functional tabs (Inbox / Reminders / Me). Me dispatches the
+ *      open-me-sheet event which surfaces MobileMeSheet.
  *
  *   2. Bulk select on /inbox: select two rows via checkbox clicks, then
  *      click "Resolve" — both rows disappear from the default "all" view
@@ -36,7 +35,7 @@ function adminClient() {
  *      spec keeps the toast surface independently regressable.)
  */
 test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
-  test("bottom nav renders four tabs on mobile and surfaces cmdk + me sheet", async ({
+  test("bottom nav renders functional tabs on mobile and surfaces the me sheet", async ({
     page,
     baseURL
   }) => {
@@ -98,10 +97,6 @@ test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
         bottomNav.getByRole("link", { name: /^Inbox$/i })
       ).toBeVisible();
       await expect(
-        bottomNav.getByRole("button", { name: /^Search$/i })
-      ).toBeVisible();
-      // Reminders is the new 3rd tab.
-      await expect(
         bottomNav.locator("[data-bottom-nav-reminders]")
       ).toBeVisible();
       // The Me tab uses the localized aria-label from menu.ariaLabel.
@@ -109,24 +104,8 @@ test.describe("Slice C — bottom-nav, bulk resolve, realtime toast", () => {
         bottomNav.getByRole("button", { name: /account menu/i })
       ).toBeVisible();
 
-      // All four tabs should be present (Inbox, Search, Reminders, Me).
-      await expect(bottomNav.locator("a, button")).toHaveCount(4);
-
-      // Search tab opens the command palette.
-      let cmdkOpened = false;
-      await page.exposeFunction("__bottomNavSawCmdk", () => {
-        cmdkOpened = true;
-      });
-      await page.evaluate(() => {
-        window.addEventListener("petcura:open-cmdk", () => {
-          (window as unknown as { __bottomNavSawCmdk: () => void })
-            .__bottomNavSawCmdk();
-        });
-      });
-      await bottomNav.getByRole("button", { name: /^Search$/i }).click();
-      // event handler fires synchronously, but wait a tick for safety.
-      await page.waitForTimeout(50);
-      expect(cmdkOpened).toBe(true);
+      // Only functional tabs should be present (Inbox, Reminders, Me).
+      await expect(bottomNav.locator("a, button")).toHaveCount(3);
 
       // Me tab opens the MobileMeSheet (Radix Dialog). aria-expanded on
       // the tab mirrors the sheet's actual open state via the
