@@ -18,7 +18,7 @@ import {
   type CopyKey,
   type StaffRole
 } from "@petcura/shared";
-import { Badge, cn } from "@petcura/ui";
+import { Badge, Toast, cn } from "@petcura/ui";
 import { createTranslator } from "@petcura/shared";
 import { AppShell } from "@/app/_components/AppShell";
 import { PendingForm } from "@/app/_components/forms/PendingForm";
@@ -189,20 +189,14 @@ export default async function SettingsPage({ searchParams }: Props) {
           </div>
 
           {statusKey ? (
-            <p
-              role="status"
-              className="mt-3 rounded-[var(--radius)] bg-[var(--primary-soft)] px-3 py-2 text-[13px] font-medium text-[var(--primary-strong)]"
-            >
+            <Toast tone="success" className="mt-3">
               {t(statusKey)}
-            </p>
+            </Toast>
           ) : null}
           {hasError ? (
-            <p
-              role="alert"
-              className="mt-3 rounded-[var(--radius)] bg-[var(--red-soft)] px-3 py-2 text-[13px] font-medium text-[var(--red)]"
-            >
+            <Toast tone="error" className="mt-3">
               {t("settings.error")}
-            </p>
+            </Toast>
           ) : null}
         </header>
 

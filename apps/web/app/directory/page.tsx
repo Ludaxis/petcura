@@ -7,7 +7,7 @@ import {
   type StaffRole,
   type SupportedLocale
 } from "@petcura/shared";
-import { Badge, Button, cn } from "@petcura/ui";
+import { Badge, Button, Toast, cn } from "@petcura/ui";
 import { AppShell } from "@/app/_components/AppShell";
 import {
   ProfileField,
@@ -181,20 +181,14 @@ export default async function DirectoryPage({ searchParams }: Props) {
           </div>
 
           {status === "saved" ? (
-            <p
-              role="status"
-              className="mt-3 rounded-[var(--radius)] bg-[var(--primary-soft)] px-3 py-2 text-[13px] font-medium text-[var(--primary-strong)]"
-            >
+            <Toast tone="success" className="mt-3">
               {t("profile.saved")}
-            </p>
+            </Toast>
           ) : null}
           {hasError ? (
-            <p
-              role="alert"
-              className="mt-3 rounded-[var(--radius)] bg-[var(--red-soft)] px-3 py-2 text-[13px] font-medium text-[var(--red)]"
-            >
+            <Toast tone="error" className="mt-3">
               {t("profile.error")}
-            </p>
+            </Toast>
           ) : null}
         </header>
 

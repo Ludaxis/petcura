@@ -156,19 +156,11 @@ export function RequestDetail({
               <span className="font-mono">{request.ownerPhone}</span> ·{" "}
               {getChannelLabel(request.channel, locale)}
             </p>
-            <p
-              className="mt-0.5 break-words text-[12px] text-[var(--muted-2)]"
-              data-current-assignee
-            >
-              {t("request.assigned")}:{" "}
-              <span className="font-medium text-[var(--ink-2)]">
-                {currentAssignee
-                  ? getStaffLabel(currentAssignee)
-                  : t("request.unassigned")}
-              </span>
-            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="flex flex-wrap items-center gap-2"
+            data-current-assignee
+          >
             <Badge
               tone={
                 request.urgency === "high"
@@ -185,6 +177,21 @@ export function RequestDetail({
             </Badge>
             <Badge tone="neutral">
               {getRequestCategoryLabel(request.category, locale)}
+            </Badge>
+            {/*
+              Assignee promoted from a separate text line to a chip in the
+              badge band — keeps the header to two lines below 1280px and
+              tightens the visual hierarchy.
+            */}
+            <Badge tone="neutral">
+              <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]">
+                {t("request.assigned")}
+              </span>
+              <span className="font-medium text-[var(--ink-2)]">
+                {currentAssignee
+                  ? getStaffLabel(currentAssignee)
+                  : t("request.unassigned")}
+              </span>
             </Badge>
             {/*
               Small ghost "X" — explicit "close this case" affordance. The
@@ -204,11 +211,12 @@ export function RequestDetail({
           </div>
         </div>
 
-        {/* Sticky action row: status / urgency / assign — inline forms on
-            `lg+`, hidden on smaller viewports where the Edit sheet handles
-            the same three forms with proper 44pt touch targets. */}
+        {/* Sticky action row: status / urgency / assign — inline forms from
+            `md+` (tablet+) so reception staff don't drop into a sheet for
+            the most common edits. The Edit sheet remains the touch-target
+            home for phones (< md) where inline selects would be cramped. */}
         <div className="flex flex-wrap items-end gap-3">
-          <div className="hidden flex-wrap items-end gap-3 lg:flex">
+          <div className="hidden flex-wrap items-end gap-3 md:flex">
             <StaffActionForms
               request={request}
               locale={locale}
@@ -219,15 +227,15 @@ export function RequestDetail({
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            {/* Mobile/tablet Edit trigger — opens a right-side Sheet that
+            {/* Phone-only Edit trigger — opens a right-side Sheet that
                 re-renders the same three forms with a stacked layout and
                 taller selects so touch targets clear 44pt. Hidden on
-                `lg+` where the inline forms are already visible. */}
+                `md+` where the inline forms are already visible. */}
             <RequestEditSheet
               triggerLabel={t("request.detail.editActions")}
               sheetTitle={t("request.detail.editSheet.title")}
               closeLabel={t("inbox.kbdSheet.close")}
-              className="lg:hidden"
+              className="md:hidden"
             >
               <StaffActionForms
                 request={request}
