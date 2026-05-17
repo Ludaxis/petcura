@@ -191,7 +191,7 @@ function ActionRow({
         className={cn(
           "flex w-full items-center gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--soft)] px-4 py-3 text-sm",
           "transition-colors hover:bg-[var(--paper)]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]",
           tone === "destructive" ? "text-[var(--red)] hover:text-[var(--red)]" : "text-[var(--ink)]"
         )}
       >

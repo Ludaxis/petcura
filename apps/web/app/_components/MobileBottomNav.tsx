@@ -97,6 +97,10 @@ export function MobileBottomNav({
   // Tabs order: Inbox · Directory · Reminders · Reports · Me. Me lives at
   // the far right because it's the identity sheet, not a route.
   const TAB_COUNT = 5;
+  // Matches the Tailwind `gap-1` class applied to the nav row (0.25rem = 4px).
+  // Pulled out into a constant so the indicator translateX math stays in sync
+  // when the gap changes.
+  const TAB_GAP = "0.25rem";
   const activeIndex = meSheetOpen
     ? 4
     : reportsActive
@@ -111,7 +115,7 @@ export function MobileBottomNav({
 
   const tabClass = (active: boolean) =>
     cn(
-      "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 text-[10.5px] font-medium",
+      "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-pill)] px-1 text-[10.5px] font-medium",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]",
       !prefersReducedMotion && "transition-colors duration-200",
       // Inactive label moved off --muted-2 (contrast ≈ 2.6:1, fails AA) onto
@@ -130,7 +134,7 @@ export function MobileBottomNav({
     cn(
       "inline-flex items-center justify-center",
       !prefersReducedMotion &&
-        "transition-transform duration-[280ms] [transition-timing-function:var(--ease-leitmotif)]",
+        "transition-transform duration-[280ms] [transition-timing-function:var(--ease-standard)]",
       active ? "scale-110" : "scale-100"
     );
 
@@ -158,19 +162,19 @@ export function MobileBottomNav({
         style={
           activeIndex < 0
             ? {
-                // Width = (100% - (TAB_COUNT - 1) * gap) / TAB_COUNT. Gap is 4px (gap-1).
-                width: `calc((100% - ${TAB_COUNT - 1} * 0.25rem) / ${TAB_COUNT})`
+                // Width = (100% - (TAB_COUNT - 1) * gap) / TAB_COUNT.
+                width: `calc((100% - ${TAB_COUNT - 1} * ${TAB_GAP}) / ${TAB_COUNT})`
               }
             : {
-                width: `calc((100% - ${TAB_COUNT - 1} * 0.25rem) / ${TAB_COUNT})`,
-                transform: `translateX(calc(${activeIndex} * (100% + 0.25rem)))`,
+                width: `calc((100% - ${TAB_COUNT - 1} * ${TAB_GAP}) / ${TAB_COUNT})`,
+                transform: `translateX(calc(${activeIndex} * (100% + ${TAB_GAP})))`,
                 transition: prefersReducedMotion
                   ? "none"
                   : "transform 320ms var(--ease-standard), opacity 200ms var(--ease-standard)"
               }
         }
       >
-        <span className="block h-full w-full rounded-[10px] bg-[var(--primary-soft)]" />
+        <span className="block h-full w-full rounded-[var(--radius-pill)] bg-[var(--primary-soft)]" />
       </span>
       <Link
         href={inboxHref}
@@ -232,11 +236,16 @@ export function MobileBottomNav({
             strokeWidth={remindersActive ? 2.25 : 1.75}
           />
           {reminderCount > 0 ? (
+            // Up to 9 shows the literal count; anything beyond renders as
+            // "9+" so the badge never overflows the icon and staff with a
+            // backlog of 12 don't read the same affordance as someone with 1.
             <span
               aria-hidden="true"
               data-bottom-nav-reminders-dot
-              className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--primary)] ring-2 ring-[var(--paper)]"
-            />
+              className="absolute -right-1.5 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--primary)] px-1 font-mono text-[9px] font-semibold leading-none text-white ring-2 ring-[var(--paper)]"
+            >
+              {reminderCount > 9 ? "9+" : reminderCount}
+            </span>
           ) : null}
         </span>
         <span className={labelClass} title={t("nav.bottom.reminders")}>

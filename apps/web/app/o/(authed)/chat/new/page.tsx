@@ -27,7 +27,7 @@ export default async function NewOwnerChatPage() {
           href="/o/chat"
           className={cn(
             "mb-4 inline-flex items-center gap-1 text-sm text-[var(--muted)]",
-            "hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+            "hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           )}
         >
           <ArrowLeft size={14} weight="bold" aria-hidden />

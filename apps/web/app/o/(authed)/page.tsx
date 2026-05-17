@@ -233,7 +233,7 @@ export default async function OwnerHomePage({
               className={cn(
                 "block rounded-[var(--radius)] border border-[var(--line)] bg-[var(--soft)] p-4",
                 "transition-colors hover:border-[var(--line-2)] hover:bg-[var(--paper)]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
               )}
             >
               <p className="flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
@@ -305,7 +305,7 @@ export default async function OwnerHomePage({
             className={cn(
               "flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--paper)] p-4",
               "transition-colors hover:border-[var(--line-2)] hover:bg-[var(--soft)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             )}
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary-strong)]">
@@ -319,7 +319,7 @@ export default async function OwnerHomePage({
             className={cn(
               "flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--paper)] p-4",
               "transition-colors hover:border-[var(--line-2)] hover:bg-[var(--soft)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             )}
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius)] bg-[var(--primary-soft)] text-[var(--primary-strong)]">

@@ -1,6 +1,8 @@
 import "server-only";
 
+import { PawPrint, Users } from "lucide-react";
 import { createTranslator, type SupportedLocale } from "@petcura/shared";
+import { EmptyState } from "@petcura/ui";
 import type { StaffContext } from "@/lib/auth/staff";
 import {
   listClinicCustomers,
@@ -86,9 +88,10 @@ export async function DirectoryListSection({
 
     if (owners.rows.length === 0) {
       return (
-        <p className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-6 text-[13px] text-[var(--muted)]">
-          {t("directory.results.emptyOwners")}
-        </p>
+        <EmptyState
+          icon={<Users aria-hidden="true" size={20} />}
+          title={t("directory.results.emptyOwners")}
+        />
       );
     }
 
@@ -130,9 +133,10 @@ export async function DirectoryListSection({
 
   if (pets.rows.length === 0) {
     return (
-      <p className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-6 text-[13px] text-[var(--muted)]">
-        {t("directory.results.emptyPets")}
-      </p>
+      <EmptyState
+        icon={<PawPrint aria-hidden="true" size={20} />}
+        title={t("directory.results.emptyPets")}
+      />
     );
   }
 

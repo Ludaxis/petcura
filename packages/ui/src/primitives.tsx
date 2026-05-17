@@ -23,7 +23,7 @@ const buttonVariants = {
 };
 
 const buttonSizes = {
-  sm: "h-7 px-2.5 text-[11.5px] rounded-[5px]",
+  sm: "h-7 px-2.5 text-[11.5px] rounded-[var(--radius-sm)]",
   md: "h-10 px-3 text-sm rounded-[var(--radius)]"
 };
 
@@ -194,6 +194,87 @@ export function Panel({ className, ...props }: PanelProps) {
       )}
       {...props}
     />
+  );
+}
+
+type ToastProps = {
+  /** "success" -> primary-soft polite live region; "error" -> red-soft assertive. */
+  tone: "success" | "error";
+  children: ReactNode;
+  className?: string;
+};
+
+const toastTones = {
+  success: "bg-[var(--primary-soft)] text-[var(--primary-strong)]",
+  error: "bg-[var(--red-soft)] text-[var(--red)]"
+} as const;
+
+/**
+ * Inline page-banner toast. Use for non-modal post-action feedback that lives
+ * inside the page flow (e.g. `?status=saved`, `?error=…` redirects). Sets
+ * the appropriate ARIA live role automatically so screen readers announce.
+ *
+ * For modal/floating toasts (realtime arrivals, drag-result confirmations)
+ * each surface still owns its own portal — those have stacking/timing
+ * concerns this primitive intentionally does not model.
+ */
+export function Toast({ tone, children, className }: ToastProps) {
+  return (
+    <p
+      role={tone === "error" ? "alert" : "status"}
+      className={cn(
+        "rounded-[var(--radius)] px-3 py-2 text-[13px] font-medium",
+        toastTones[tone],
+        className
+      )}
+    >
+      {children}
+    </p>
+  );
+}
+
+type EmptyStateProps = {
+  /** Decorative icon node, e.g. `<PawPrint aria-hidden="true" size={20} />`. */
+  icon?: ReactNode;
+  title: string;
+  description?: ReactNode;
+  /** Optional secondary action (e.g. a `<Button>` or `<Link>`). */
+  action?: ReactNode;
+  className?: string;
+};
+
+/**
+ * Shared empty-state pattern. Replaces the divergent "single muted <p>" and
+ * "icon + headline + subtext" treatments that were drifting between the
+ * inbox and directory surfaces.
+ */
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  className
+}: EmptyStateProps) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border border-dashed border-[var(--line)] bg-[var(--paper)] px-4 py-8 text-center",
+        className
+      )}
+    >
+      {icon ? (
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-soft)] text-[var(--muted)]">
+          {icon}
+        </span>
+      ) : null}
+      <p className="text-[14px] font-semibold text-[var(--ink)]">{title}</p>
+      {description ? (
+        <p className="max-w-sm text-[12.5px] leading-5 text-[var(--muted)]">
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="mt-2">{action}</div> : null}
+    </div>
   );
 }
 

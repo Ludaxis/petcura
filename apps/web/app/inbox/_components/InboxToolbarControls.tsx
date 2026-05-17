@@ -110,7 +110,7 @@ export function InboxToolbarControls({ view, density, labels }: Props) {
           data-view="list"
           onClick={() => update({ view: "list" })}
           className={cn(
-            "inline-flex h-7 items-center gap-1.5 rounded-[5px] px-2 text-[11.5px] font-medium transition-colors",
+            "inline-flex h-7 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 text-[11.5px] font-medium transition-colors",
             view === "list"
               ? "bg-[var(--ink)] text-[var(--paper)]"
               : "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -129,7 +129,7 @@ export function InboxToolbarControls({ view, density, labels }: Props) {
           data-view="board"
           onClick={() => update({ view: "board" })}
           className={cn(
-            "inline-flex h-7 items-center gap-1.5 rounded-[5px] px-2 text-[11.5px] font-medium transition-colors",
+            "inline-flex h-7 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 text-[11.5px] font-medium transition-colors",
             view === "board"
               ? "bg-[var(--ink)] text-[var(--paper)]"
               : "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -157,7 +157,7 @@ export function InboxToolbarControls({ view, density, labels }: Props) {
           data-density="comfortable"
           onClick={() => update({ density: "comfortable" })}
           className={cn(
-            "inline-flex h-7 w-7 items-center justify-center rounded-[5px] border transition-colors",
+            "inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] border transition-colors",
             density === "comfortable"
               ? "border-[var(--primary)] bg-[var(--soft)] text-[var(--ink)]"
               : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -175,7 +175,7 @@ export function InboxToolbarControls({ view, density, labels }: Props) {
           data-density="compact"
           onClick={() => update({ density: "compact" })}
           className={cn(
-            "inline-flex h-7 w-7 items-center justify-center rounded-[5px] border transition-colors",
+            "inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] border transition-colors",
             density === "compact"
               ? "border-[var(--primary)] bg-[var(--soft)] text-[var(--ink)]"
               : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"

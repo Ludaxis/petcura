@@ -167,7 +167,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
           aria-label={labels.label}
           onKeyDown={onKeyDown}
           className={cn(
-            "min-h-[56px] w-full resize-y rounded-[10px] border border-transparent bg-[var(--soft)] px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] placeholder:text-[var(--muted)]",
+            "min-h-[56px] w-full resize-y rounded-[var(--radius-pill)] border border-transparent bg-[var(--soft)] px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] placeholder:text-[var(--muted)]",
             "focus-visible:border-[var(--line)] focus-visible:bg-[var(--paper)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
           )}
         />

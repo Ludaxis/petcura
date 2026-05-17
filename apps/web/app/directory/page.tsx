@@ -7,7 +7,7 @@ import {
   type StaffRole,
   type SupportedLocale
 } from "@petcura/shared";
-import { Badge, Button, cn } from "@petcura/ui";
+import { Badge, Button, Toast, cn } from "@petcura/ui";
 import { AppShell } from "@/app/_components/AppShell";
 import {
   ProfileField,
@@ -181,26 +181,26 @@ export default async function DirectoryPage({ searchParams }: Props) {
           </div>
 
           {status === "saved" ? (
-            <p
-              role="status"
-              className="mt-3 rounded-[var(--radius)] bg-[var(--primary-soft)] px-3 py-2 text-[13px] font-medium text-[var(--primary-strong)]"
-            >
+            <Toast tone="success" className="mt-3">
               {t("profile.saved")}
-            </p>
+            </Toast>
           ) : null}
           {hasError ? (
-            <p
-              role="alert"
-              className="mt-3 rounded-[var(--radius)] bg-[var(--red-soft)] px-3 py-2 text-[13px] font-medium text-[var(--red)]"
-            >
+            <Toast tone="error" className="mt-3">
               {t("profile.error")}
-            </p>
+            </Toast>
           ) : null}
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--soft)] p-3 sm:p-4">
-          <div className="mx-auto grid max-w-6xl gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-3 shadow-sm">
+          <div className="mx-auto grid max-w-6xl gap-3">
+            {/*
+              Tabs and filter form sit directly on the --soft canvas — the
+              former cards-in-card chrome (border + shadow + paper bg) was
+              flagged in the 2026-05-16 QA pass. The list section below
+              keeps its own paper surface so rows still read as a unit.
+            */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
               {/*
                 Tabs render synchronously so clicks feel instant. The active
                 tab's count badge is rendered inside DirectoryListSection
@@ -231,7 +231,7 @@ export default async function DirectoryPage({ searchParams }: Props) {
             </div>
 
             <form
-              className="grid gap-2 rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-3 shadow-sm lg:grid-cols-[minmax(12rem,1fr)_10rem_10rem_10rem_auto_auto]"
+              className="grid gap-2 lg:grid-cols-[minmax(12rem,1fr)_10rem_10rem_10rem_auto_auto]"
               method="get"
             >
               <input name="lang" type="hidden" value={locale} />

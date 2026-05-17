@@ -39,7 +39,7 @@ export function PetTabs({ tabs, initial, ariaLabel }: Props) {
               onClick={() => setActive(tab.id)}
               className={cn(
                 "relative whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]",
                 selected
                   ? "text-[var(--ink)] after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-[var(--primary)]"
                   : "text-[var(--muted)] hover:text-[var(--ink)]"

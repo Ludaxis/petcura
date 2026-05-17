@@ -100,15 +100,20 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {petAge ? (
                       <span
-                        className="inline-flex items-center rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--ink-2)]"
+                        className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--surface-soft)] px-1.5 py-0.5 text-[11.5px]"
                         aria-label={`${t("directory.pet.ageLabel")} ${petAge}`}
                       >
-                        {t("directory.pet.ageLabel")} · {petAge}
+                        <span className="text-[var(--muted)]">
+                          {t("directory.pet.ageLabel")}
+                        </span>
+                        <span className="font-medium text-[var(--ink-2)]">
+                          {petAge}
+                        </span>
                       </span>
                     ) : null}
                     {pet.weightKg !== null ? (
                       <span
-                        className="inline-flex items-center rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--ink-2)]"
+                        className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--surface-soft)] px-1.5 py-0.5 text-[11.5px] font-medium text-[var(--ink-2)]"
                         aria-label={`${t("pets.weight")} ${pet.weightKg} kg`}
                       >
                         {pet.weightKg} kg

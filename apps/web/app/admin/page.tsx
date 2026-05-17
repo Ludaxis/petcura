@@ -9,7 +9,7 @@ import {
   UserPlus,
   X
 } from "lucide-react";
-import { Badge, Button, Panel, cn } from "@petcura/ui";
+import { Badge, Button, Panel, Toast, cn } from "@petcura/ui";
 import {
   createTranslator,
   staffRoles,
@@ -266,23 +266,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
         </div>
 
-        {statusKey ? (
-          <div
-            role="status"
-            className="rounded-[var(--radius)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3 text-sm font-medium text-[var(--primary)]"
-          >
-            {t(statusKey)}
-          </div>
-        ) : null}
+        {statusKey ? <Toast tone="success">{t(statusKey)}</Toast> : null}
 
-        {hasError ? (
-          <div
-            role="alert"
-            className="rounded-[var(--radius)] border border-[var(--red-soft)] bg-[var(--red-soft)] p-3 text-sm font-medium text-[var(--red)]"
-          >
-            {t("admin.error")}
-          </div>
-        ) : null}
+        {hasError ? <Toast tone="error">{t("admin.error")}</Toast> : null}
 
         <AdminTabs
           activeTab={activeTab}

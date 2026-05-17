@@ -215,7 +215,7 @@ export function AiMemoryPanel({
       aria-busy={sectionBusy}
       data-ai-memory-panel
       data-locale={locale}
-      className="mx-4 mt-3 shrink-0 rounded-[10px] border border-[var(--line)] bg-[var(--paper)] px-3.5 py-3 sm:mx-6"
+      className="mx-4 mt-3 shrink-0 rounded-[var(--radius-pill)] border border-[var(--line)] bg-[var(--paper)] px-3.5 py-3 sm:mx-6"
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">

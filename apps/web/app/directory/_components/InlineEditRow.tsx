@@ -90,6 +90,28 @@ export function InlineEditRow({
     if (event.key === "Escape") {
       event.stopPropagation();
       close();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    // Focus trap: without this, Tab from the last field in the form falls
+    // into the next row's cover-Link. The expanded panel is a modal-like
+    // region, so we cycle focus back to the first/last focusable element.
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      "a[href], button:not([disabled]), input:not([type='hidden']):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+    const active = document.activeElement as HTMLElement | null;
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
     }
   };
 
@@ -143,7 +165,6 @@ export function InlineEditRow({
           "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
           editing ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         )}
-        aria-hidden={!editing}
       >
         <div className="overflow-hidden">
           <div
