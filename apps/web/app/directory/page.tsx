@@ -275,6 +275,9 @@ export default async function DirectoryPage({ searchParams }: Props) {
                 label={t("directory.filter.species")}
               >
                 <select
+                  aria-describedby={
+                    tab !== "pets" ? "directory-species-hint" : undefined
+                  }
                   className={profileInputClass}
                   defaultValue={selectedSpecies ?? ""}
                   disabled={tab !== "pets"}
@@ -288,6 +291,14 @@ export default async function DirectoryPage({ searchParams }: Props) {
                     </option>
                   ))}
                 </select>
+                {tab !== "pets" ? (
+                  <p
+                    id="directory-species-hint"
+                    className="mt-1 text-[11.5px] text-[var(--muted)]"
+                  >
+                    {t("directory.filter.speciesPetsTabHint")}
+                  </p>
+                ) : null}
               </ProfileField>
               <ProfileField htmlFor="directory-sort" label={t("directory.sort.label")}>
                 <select
@@ -313,7 +324,7 @@ export default async function DirectoryPage({ searchParams }: Props) {
                 {t("directory.filter.openRequests")}
               </label>
               <Button className="self-end" type="submit" variant="secondary">
-                {t("directory.sort.label")}
+                {t("directory.filter.apply")}
               </Button>
             </form>
 

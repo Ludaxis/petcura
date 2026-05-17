@@ -722,10 +722,11 @@ export const uiCopy = {
     "intake.message": "What is happening?",
     "intake.messagePlaceholder":
       "Tell the clinic what changed, when it started, and what you have already tried.",
-    "intake.attachments": "Photo/video attachments will be enabled with Supabase Storage.",
+    "intake.ownerNamePlaceholder": "e.g. Jane Smith",
+    "intake.phonePlaceholder": "e.g. +44 7700 900000",
+    "intake.petNamePlaceholder": "e.g. Luna",
     "intake.disclaimer":
       "PetCura structures requests for clinic staff. It does not provide diagnosis or emergency medical advice.",
-    "intake.submit": "Submit request",
     "intake.aiOrganize": "Organize with AI",
     "intake.aiOrganizing": "Organizing...",
     "intake.manualSubmit": "Send without AI",
@@ -1263,6 +1264,11 @@ export const uiCopy = {
     "consent.reject": "Reject optional",
     "consent.manage": "Manage choices",
     "consent.accept": "Accept analytics",
+    "directory.filter.apply": "Apply filters",
+    "directory.filter.speciesPetsTabHint": "Switch to the Pets tab to filter by species.",
+    "marketing.aria.home": "PetCura home",
+    "marketing.aria.primaryNav": "Primary",
+    "marketing.aria.footerNav": "Footer",
     "request.detail.editActions": "Edit",
     "request.detail.editSheet.title": "Update request",
 
@@ -1901,10 +1907,11 @@ export const uiCopy = {
     "intake.message": "Mis toimub?",
     "intake.messagePlaceholder":
       "Kirjelda, mis muutus, millal see algas ja mida oled juba proovinud.",
-    "intake.attachments": "Foto/video lisamine aktiveeritakse Supabase Storage'iga.",
+    "intake.ownerNamePlaceholder": "nt Marta Tamm",
+    "intake.phonePlaceholder": "nt +372 5XX XXXX",
+    "intake.petNamePlaceholder": "nt Muki",
     "intake.disclaimer":
       "PetCura struktureerib pöördumised kliiniku töötajatele. See ei anna diagnoosi ega erakorralist meditsiinilist nõu.",
-    "intake.submit": "Saada pöördumine",
     "intake.aiOrganize": "Korrasta AI-ga",
     "intake.aiOrganizing": "Korrastan...",
     "intake.manualSubmit": "Saada ilma AI-ta",
@@ -2443,6 +2450,11 @@ export const uiCopy = {
     "consent.reject": "Keeldu valikulistest",
     "consent.manage": "Halda valikuid",
     "consent.accept": "Nõustu analüütikaga",
+    "directory.filter.apply": "Rakenda filtrid",
+    "directory.filter.speciesPetsTabHint": "Liikumiku järgi filtreerimiseks vali vahekaart Lemmikud.",
+    "marketing.aria.home": "PetCura avaleht",
+    "marketing.aria.primaryNav": "Põhinavigatsioon",
+    "marketing.aria.footerNav": "Jalus",
     "request.detail.editActions": "Muuda",
     "request.detail.editSheet.title": "Uuenda pöördumist",
 
@@ -3088,10 +3100,11 @@ export const uiCopy = {
     "intake.message": "Что происходит?",
     "intake.messagePlaceholder":
       "Опишите, что изменилось, когда началось и что вы уже пробовали.",
-    "intake.attachments": "Фото/видео вложения будут включены через Supabase Storage.",
+    "intake.ownerNamePlaceholder": "напр. Мария Иванова",
+    "intake.phonePlaceholder": "напр. +7 9XX XXX XX XX",
+    "intake.petNamePlaceholder": "напр. Барсик",
     "intake.disclaimer":
       "PetCura структурирует запросы для сотрудников клиники. Сервис не ставит диагноз и не дает экстренные медицинские советы.",
-    "intake.submit": "Отправить запрос",
     "intake.aiOrganize": "Структурировать с AI",
     "intake.aiOrganizing": "Структурируем...",
     "intake.manualSubmit": "Отправить без AI",
@@ -3631,6 +3644,11 @@ export const uiCopy = {
     "consent.reject": "Отклонить опциональные",
     "consent.manage": "Управлять выбором",
     "consent.accept": "Принять аналитику",
+    "directory.filter.apply": "Применить фильтры",
+    "directory.filter.speciesPetsTabHint": "Чтобы фильтровать по виду, перейдите на вкладку Питомцы.",
+    "marketing.aria.home": "PetCura главная",
+    "marketing.aria.primaryNav": "Основная навигация",
+    "marketing.aria.footerNav": "Нижнее меню",
     "request.detail.editActions": "Изменить",
     "request.detail.editSheet.title": "Обновить запрос",
 

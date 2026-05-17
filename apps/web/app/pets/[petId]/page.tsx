@@ -59,6 +59,7 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
 
   if (!pet) notFound();
 
+  const petAge = formatPetAge(pet.birthDate);
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short"
@@ -95,10 +96,30 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
                   {pet.breed ? ` · ${pet.breed}` : ""}
                   {pet.ownerName ? ` · ${pet.ownerName}` : ""}
                 </p>
+                {(petAge || pet.weightKg !== null) ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {petAge ? (
+                      <span
+                        className="inline-flex items-center rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--ink-2)]"
+                        aria-label={`${t("directory.pet.ageLabel")} ${petAge}`}
+                      >
+                        {t("directory.pet.ageLabel")} · {petAge}
+                      </span>
+                    ) : null}
+                    {pet.weightKg !== null ? (
+                      <span
+                        className="inline-flex items-center rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--ink-2)]"
+                        aria-label={`${t("pets.weight")} ${pet.weightKg} kg`}
+                      >
+                        {pet.weightKg} kg
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Badge tone={pet.openRequestCount > 0 ? "amber" : "neutral"}>
+              <Badge tone={pet.openRequestCount > 0 ? "teal" : "neutral"}>
                 {pet.openRequestCount} {t("directory.pet.openLabel")}
               </Badge>
               <Badge tone="neutral">{pet.requestCount} {t("pets.requests")}</Badge>
@@ -387,6 +408,21 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       </dd>
     </div>
   );
+}
+
+function formatPetAge(birthDate: string | null) {
+  if (!birthDate) return null;
+  const then = new Date(birthDate);
+  if (Number.isNaN(then.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - then.getFullYear();
+  const months = now.getMonth() - then.getMonth();
+  if (months < 0 || (months === 0 && now.getDate() < then.getDate())) years -= 1;
+  if (years >= 1) return `${years}y`;
+  const totalMonths =
+    (now.getFullYear() - then.getFullYear()) * 12 +
+    (now.getMonth() - then.getMonth());
+  return `${Math.max(0, totalMonths)}mo`;
 }
 
 function AllergyBlock({

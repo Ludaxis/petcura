@@ -199,7 +199,8 @@ export async function AppShell({
             profile: t("menu.profile"),
             help: t("menu.help"),
             helpHref: "mailto:support@petcura.app",
-            signOut: t("auth.logout")
+            signOut: t("auth.logout"),
+            back: t("nav.back")
           }
         }}
       />

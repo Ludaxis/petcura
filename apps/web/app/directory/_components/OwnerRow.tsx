@@ -175,7 +175,7 @@ export function OwnerRow({
           className={cn(
             "inline-flex items-center gap-1 rounded-[5px] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em]",
             owner.openRequestCount > 0
-              ? "bg-[var(--amber-soft)] text-[var(--amber)]"
+              ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
               : "bg-[var(--surface-soft)] text-[var(--muted)]"
           )}
           aria-label={`${owner.openRequestCount} ${t("directory.owner.openLabel")}`}

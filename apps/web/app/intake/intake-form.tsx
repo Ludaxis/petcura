@@ -321,7 +321,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
           id="owner-name"
           name="ownerName"
-          placeholder="Marta Tamm"
+          placeholder={t("intake.ownerNamePlaceholder")}
           required
         />
       </div>
@@ -334,7 +334,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
           id="phone"
           name="phone"
-          placeholder="+372 ..."
+          placeholder={t("intake.phonePlaceholder")}
           required
           type="tel"
         />
@@ -349,7 +349,7 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
             className="h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3"
             id="pet-name"
             name="petName"
-            placeholder="Luna"
+            placeholder={t("intake.petNamePlaceholder")}
             required
           />
         </div>

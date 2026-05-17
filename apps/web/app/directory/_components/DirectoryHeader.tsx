@@ -218,7 +218,20 @@ export function DirectoryHeader({
             aria-label={t("directory.search.placeholder")}
             className="h-9 w-full rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] pl-8 pr-8 text-[13px] text-[var(--ink)] placeholder:text-[var(--muted-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           />
-          {q ? (
+          {/*
+           * Right-edge stack: while a debounced search is in flight we show
+           * the spinner in the clear-button slot so the two never collide.
+           * The clear button reappears once the URL push settles.
+           */}
+          {pending ? (
+            <span
+              role="status"
+              aria-label={t("directory.search.loading")}
+              className="absolute right-2 inline-flex h-5 w-5 items-center justify-center text-[var(--primary)]"
+            >
+              <Spinner size={14} tone="primary" />
+            </span>
+          ) : q ? (
             <button
               type="button"
               onClick={() => setQ("")}
@@ -227,15 +240,6 @@ export function DirectoryHeader({
             >
               <X aria-hidden="true" size={12} />
             </button>
-          ) : null}
-          {pending ? (
-            <span
-              role="status"
-              aria-label={t("directory.search.loading")}
-              className="absolute right-7 inline-flex h-4 w-4 items-center justify-center text-[var(--primary)]"
-            >
-              <Spinner size={14} tone="primary" />
-            </span>
           ) : null}
         </div>
 

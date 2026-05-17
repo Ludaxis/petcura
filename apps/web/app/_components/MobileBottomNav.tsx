@@ -166,7 +166,7 @@ export function MobileBottomNav({
                 transform: `translateX(calc(${activeIndex} * (100% + 0.25rem)))`,
                 transition: prefersReducedMotion
                   ? "none"
-                  : "transform 320ms var(--ease-leitmotif), opacity 200ms var(--ease-standard)"
+                  : "transform 320ms var(--ease-standard), opacity 200ms var(--ease-standard)"
               }
         }
       >
@@ -222,7 +222,7 @@ export function MobileBottomNav({
           className={cn(
             "relative inline-flex h-[18px] w-[18px] items-center justify-center",
             !prefersReducedMotion &&
-              "transition-transform duration-[280ms] [transition-timing-function:var(--ease-leitmotif)]",
+              "transition-transform duration-[280ms] [transition-timing-function:var(--ease-standard)]",
             remindersActive ? "scale-110" : "scale-100"
           )}
         >
@@ -276,7 +276,7 @@ export function MobileBottomNav({
           className={cn(
             "flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-[var(--primary-soft)] text-[10px] font-semibold text-[var(--primary-strong)]",
             !prefersReducedMotion &&
-              "transition-transform duration-[280ms] [transition-timing-function:var(--ease-leitmotif)]",
+              "transition-transform duration-[280ms] [transition-timing-function:var(--ease-standard)]",
             meSheetOpen ? "scale-110" : "scale-100"
           )}
         >
