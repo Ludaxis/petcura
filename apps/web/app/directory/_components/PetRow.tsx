@@ -114,7 +114,7 @@ export function PetRow({
           {pet.breed ? (
             <span
               title={pet.breed}
-              className="hidden truncate text-[11.5px] text-[var(--muted-2)] sm:inline"
+              className="hidden truncate text-[11.5px] text-[var(--muted)] sm:inline"
             >
               {pet.breed}
             </span>
@@ -164,7 +164,7 @@ export function PetRow({
           ) : null}
         </span>
         {latestRequestLabel ? (
-          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]">
             {t("directory.owner.latestLabel")} · {latestRequestLabel}
           </span>
         ) : null}

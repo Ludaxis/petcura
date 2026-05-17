@@ -2,11 +2,13 @@
 
 import {
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useRef,
   useTransition,
   type FormEvent
 } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Send } from "lucide-react";
 import { Button, Spinner, cn } from "@petcura/ui";
 import type { SupportedLocale } from "@petcura/shared";
@@ -51,26 +53,37 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
   ) {
     const formRef = useRef<HTMLFormElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const lastSubmittedBodyRef = useRef<string>("");
     const [pending, startTransition] = useTransition();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
-    // Wrap the server action so we can flip aria-busy + disabled on the
-    // form during submission. The action itself redirects on completion, so
-    // the transition resolves on the navigation that follows.
-    //
-    // Inside the transition we:
-    //   1. Append an optimistic bubble to the thread (parent shell). This
-    //      MUST run before the server action so the bubble is mounted
-    //      before the awaited promise yields.
-    //   2. Clear the textarea so staff can keep typing without seeing
-    //      stale text in a disabled field. If the server rejects, the
-    //      redirect re-renders the page; we don't restore the text
-    //      because the page-level error toast (driven by `?action_error=`)
-    //      is the rollback channel — restoring text would silently mask
-    //      the failure for keyboard users.
+    // When the server action redirects back with ?action_error=…, restore
+    // the staff member's draft so they can fix and resend. We clear the
+    // query param after restoring so a manual refresh won't re-restore.
+    useEffect(() => {
+      const actionError = searchParams?.get("action_error");
+      if (!actionError) return;
+      const stash = lastSubmittedBodyRef.current;
+      if (stash && textareaRef.current && textareaRef.current.value === "") {
+        textareaRef.current.value = stash;
+      }
+      const next = new URLSearchParams(searchParams.toString());
+      next.delete("action_error");
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }, [searchParams, router, pathname]);
+
+    // Optimistically append a sage bubble and clear the textarea so staff
+    // can keep typing while Twilio is in flight. The body is stashed in a
+    // ref; the useEffect above restores it if the server redirects back
+    // with ?action_error= so staff don't lose their draft on failure.
     const submitAction = (formData: FormData) => {
       const body = (formData.get("body") ?? "").toString().trim();
       startTransition(async () => {
         if (body.length > 0) {
+          lastSubmittedBodyRef.current = body;
           onOptimisticAppend?.(body);
           if (textareaRef.current) {
             textareaRef.current.value = "";
@@ -154,14 +167,14 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(
           aria-label={labels.label}
           onKeyDown={onKeyDown}
           className={cn(
-            "min-h-[56px] w-full resize-y rounded-[10px] border border-transparent bg-[var(--soft)] px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] placeholder:text-[var(--muted-2)]",
+            "min-h-[56px] w-full resize-y rounded-[10px] border border-transparent bg-[var(--soft)] px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] placeholder:text-[var(--muted)]",
             "focus-visible:border-[var(--line)] focus-visible:bg-[var(--paper)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
           )}
         />
         <div className="flex items-center gap-2">
           <span
             aria-hidden="true"
-            className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-[var(--muted-2)]"
+            className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-[var(--muted)]"
           >
             {labels.shortcut}
           </span>

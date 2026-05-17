@@ -190,7 +190,7 @@ export function InboxRow({
       {/* Desktop: preview */}
       <span className="hidden min-w-0 truncate text-[13px] text-[var(--muted)] md:block">
         {row.preview}
-        <span className="ml-2 inline-flex items-center gap-1 align-middle font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+        <span className="ml-2 inline-flex items-center gap-1 align-middle font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]">
           {categoryLabel}
         </span>
       </span>
@@ -212,7 +212,7 @@ export function InboxRow({
           <StatusPill status={status} aria-label={statusAriaLabel} />
           {showTranslate ? (
             <span
-              className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted-2)]"
+              className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]"
               aria-label={t("inbox.row.sourceShort").replace(
                 "{locale}",
                 row.ownerLanguage.toUpperCase()
@@ -222,7 +222,7 @@ export function InboxRow({
               {row.ownerLanguage.toUpperCase()}
             </span>
           ) : null}
-          <span className="ml-auto font-mono text-[10.5px] text-[var(--muted-2)]">
+          <span className="ml-auto font-mono text-[10.5px] text-[var(--muted)]">
             {updatedAtLabel}
           </span>
         </span>
@@ -237,7 +237,7 @@ export function InboxRow({
           "{time}",
           updatedAtLabel
         )}
-        className="hidden whitespace-nowrap font-mono text-[11px] text-[var(--muted-2)] md:block"
+        className="hidden whitespace-nowrap font-mono text-[11px] text-[var(--muted)] md:block"
       >
         {updatedAtLabel}
       </span>

@@ -5,7 +5,8 @@ import {
   ChevronRight,
   Languages,
   MessageSquareText,
-  PawPrint
+  PawPrint,
+  Phone
 } from "lucide-react";
 import { Badge, Button, cn } from "@petcura/ui";
 import {
@@ -40,6 +41,11 @@ function whatsappHref(phone: string) {
   return digits ? `https://wa.me/${digits}` : null;
 }
 
+function telHref(phone: string) {
+  const trimmed = phone.replace(/[^0-9+]/g, "");
+  return trimmed ? `tel:${trimmed}` : null;
+}
+
 export function OwnerRow({
   owner,
   locale,
@@ -53,6 +59,7 @@ export function OwnerRow({
   const t = createTranslator(locale);
   const isCompact = density === "compact";
   const wa = whatsappHref(owner.phone);
+  const tel = telHref(owner.phone);
   const petsSummary = owner.petNames.slice(0, 3).join(", ");
   const overflowPets =
     owner.petNames.length > 3 ? ` +${owner.petNames.length - 3}` : "";
@@ -144,14 +151,14 @@ export function OwnerRow({
             />
             <span title={`${petsSummary}${overflowPets}`} className="truncate">
               {petsSummary}
-              <span className="text-[var(--muted-2)]">{overflowPets}</span>
+              <span className="text-[var(--muted)]">{overflowPets}</span>
             </span>
           </span>
         ) : (
-          <span className="text-[var(--muted-2)]">—</span>
+          <span className="text-[var(--muted)]">—</span>
         )}
         {latestRequestLabel ? (
-          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]">
             {t("directory.owner.latestLabel")} · {latestRequestLabel}
           </span>
         ) : null}
@@ -182,6 +189,16 @@ export function OwnerRow({
           Quick action stays mounted; Edit button is rendered as an absolute
           overlay by InlineEditRow so it can survive across both columns. */}
       <span className="relative z-10 hidden items-center gap-1 invisible transition-opacity group-hover:visible group-focus-within:visible md:inline-flex">
+        {tel ? (
+          <a
+            href={tel}
+            aria-label={`${t("directory.action.call")} ${owner.phone}`}
+            onClick={(event) => event.stopPropagation()}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--primary-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+          >
+            <Phone aria-hidden="true" size={13} />
+          </a>
+        ) : null}
         {wa ? (
           <a
             href={wa}

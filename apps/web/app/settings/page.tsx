@@ -340,7 +340,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                               {member.email}
                             </p>
                             {member.profile.jobTitle ? (
-                              <p className="mt-1 truncate text-[12px] text-[var(--muted-2)]">
+                              <p className="mt-1 truncate text-[12px] text-[var(--muted)]">
                                 {member.profile.jobTitle}
                               </p>
                             ) : null}
@@ -355,7 +355,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                               ? t("settings.active")
                               : t("settings.inactive")}
                           </Badge>
-                          <span className="font-mono text-[10.5px] uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                          <span className="font-mono text-[10.5px] uppercase tracking-[0.05em] text-[var(--muted)]">
                             {dateFormatter.format(new Date(member.created_at))}
                           </span>
                         </div>
@@ -637,7 +637,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                                 {member.archive_reason ?? t("settings.noArchiveReason")}
                               </p>
                               {member.archived_at ? (
-                                <p className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                                <p className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.05em] text-[var(--muted)]">
                                   {dateFormatter.format(new Date(member.archived_at))}
                                 </p>
                               ) : null}
@@ -720,7 +720,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                             {event.entityType}
                           </p>
                         </div>
-                        <time className="font-mono text-[10.5px] uppercase tracking-[0.05em] text-[var(--muted-2)]">
+                        <time className="font-mono text-[10.5px] uppercase tracking-[0.05em] text-[var(--muted)]">
                           {dateFormatter.format(new Date(event.createdAt))}
                         </time>
                       </div>

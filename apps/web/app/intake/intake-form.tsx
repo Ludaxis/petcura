@@ -12,8 +12,6 @@ import {
 import { Badge, Button } from "@petcura/ui";
 import {
   createTranslator,
-  getRequestCategoryLabel,
-  getUrgencyLabel,
   type RequestCategory,
   type RequestUrgency,
   type SupportedLocale
@@ -230,69 +228,23 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           title={t("intake.aiSubmittedTitle")}
         />
 
+        {/*
+         * Owner-facing review panel. The clinic-side fields (confidence,
+         * routing, service intent, category, urgency, riskFlags) live behind
+         * staff review and are intentionally NOT rendered here — those tokens
+         * are staff plumbing and would either confuse or worry the owner.
+         */}
         <section className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold">
-                {t("intake.aiReviewTitle")}
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-                {t("intake.aiReviewBody")}
-              </p>
-            </div>
-            <Badge tone={aiState.aiIntake.emergencySignal ? "red" : "teal"}>
-              {Math.round(aiState.aiIntake.confidence * 100)}%
-            </Badge>
-          </div>
-
-          <p className="break-words text-sm leading-6 text-[var(--ink-2)]">
-            {aiState.aiIntake.handoffSummary}
+          <h2 className="text-sm font-semibold">
+            {t("intake.aiReviewTitle")}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+            {t("intake.aiReviewBody")}
           </p>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge tone="teal">
-              {t("intake.route")}:{" "}
-              {formatToken(aiState.aiIntake.routingSuggestion)}
-            </Badge>
-            <Badge tone="neutral">
-              {t("intake.serviceIntent")}:{" "}
-              {formatToken(aiState.aiIntake.serviceIntent)}
-            </Badge>
-            <Badge tone="neutral">
-              {t("intake.categorySuggestion")}:{" "}
-              {getRequestCategoryLabel(
-                aiState.aiIntake.categorySuggestion,
-                locale
-              )}
-            </Badge>
-            {aiState.aiIntake.urgencySuggestion ? (
-              <Badge
-                tone={
-                  aiState.aiIntake.urgencySuggestion === "high"
-                    ? "red"
-                    : aiState.aiIntake.urgencySuggestion === "medium"
-                      ? "amber"
-                      : "neutral"
-                }
-              >
-                {t("intake.urgencySuggestion")}:{" "}
-                {getUrgencyLabel(aiState.aiIntake.urgencySuggestion, locale)}
-              </Badge>
-            ) : null}
-          </div>
-
-          {aiState.aiIntake.riskFlags.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {aiState.aiIntake.riskFlags.map((flag) => (
-                <span
-                  key={flag}
-                  className="rounded-full bg-[var(--red-soft)] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--red)]"
-                >
-                  {flag}
-                </span>
-              ))}
-            </div>
-          ) : null}
+          <p className="mt-3 break-words text-sm leading-6 text-[var(--ink-2)]">
+            {aiState.aiIntake.handoffSummary}
+          </p>
 
           {aiState.aiIntake.clarifyingQuestions.length > 0 ? (
             <div className="mt-4 grid gap-2">
@@ -569,6 +521,3 @@ function makeIdempotencyKey(prefix: string) {
   return `${prefix}-${random}`;
 }
 
-function formatToken(value: string) {
-  return value.replaceAll("_", " ");
-}
