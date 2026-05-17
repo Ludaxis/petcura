@@ -41,7 +41,7 @@ export default async function ServiceRequestPage({ params }: Props) {
           href="/o/services"
           className={cn(
             "mb-3 inline-flex items-center gap-1 text-sm text-[var(--muted)]",
-            "hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+            "hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           )}
         >
           <ArrowLeft size={14} weight="bold" aria-hidden />
@@ -97,7 +97,7 @@ export default async function ServiceRequestPage({ params }: Props) {
             required
             className={cn(
               "h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm text-[var(--ink)]",
-              "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+              "focus-visible:border-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             )}
           />
         </label>
@@ -109,7 +109,7 @@ export default async function ServiceRequestPage({ params }: Props) {
             rows={4}
             className={cn(
               "rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 py-2.5 text-sm leading-6 text-[var(--ink)]",
-              "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+              "focus-visible:border-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             )}
           />
         </label>

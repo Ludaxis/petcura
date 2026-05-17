@@ -21,7 +21,7 @@ export function ServiceCard({ service, locale }: Props) {
       className={cn(
         "flex h-full flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--paper)] p-4",
         "transition-colors hover:border-[var(--line-2)] hover:bg-[var(--soft)]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
       )}
     >
       <div className="flex items-start justify-between gap-3">

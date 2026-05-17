@@ -42,7 +42,7 @@ export default async function ChatThreadPage({ params }: Props) {
           className={cn(
             "flex h-9 w-9 items-center justify-center rounded-full text-[var(--muted)]",
             "hover:bg-[var(--soft)] hover:text-[var(--ink)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           )}
         >
           <ArrowLeft size={18} weight="bold" aria-hidden />

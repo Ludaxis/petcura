@@ -250,7 +250,7 @@ export function OtpForm({
           }}
           className={cn(
             "inline-flex items-center gap-1 self-start text-sm text-[var(--muted)]",
-            "hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+            "hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           )}
         >
           <ArrowLeft size={14} weight="bold" aria-hidden />
@@ -308,7 +308,7 @@ export function OtpForm({
               disabled={pending}
               className={cn(
                 "text-[var(--muted)] underline-offset-4 hover:text-[var(--ink)] hover:underline",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
               )}
             >
               {t("login.otp.resendNow")}
@@ -320,7 +320,7 @@ export function OtpForm({
             disabled={pending || cooldownSecondsLeft > 0}
             className={cn(
               "text-[var(--muted)] underline-offset-4 hover:text-[var(--ink)] hover:underline disabled:opacity-50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             )}
           >
             {alternateChannelLabel}
@@ -357,7 +357,7 @@ export function OtpForm({
             placeholder={t("login.phone.placeholder")}
             className={cn(
               "h-11 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-base text-[var(--ink)]",
-              "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+              "focus-visible:border-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             )}
           />
         </label>

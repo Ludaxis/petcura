@@ -33,7 +33,7 @@ export default async function ChatListPage() {
           className={cn(
             "inline-flex items-center gap-2 rounded-[var(--radius)] bg-[var(--primary)] px-3 py-2 text-sm font-medium text-[var(--paper)]",
             "hover:bg-[var(--primary-strong)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           )}
         >
           <ChatCircle size={14} weight="fill" aria-hidden />
@@ -54,7 +54,7 @@ export default async function ChatListPage() {
                 className={cn(
                   "flex items-start gap-3 rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--paper)] p-4",
                   "transition-colors hover:border-[var(--line-2)] hover:bg-[var(--soft)]",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
                 )}
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[var(--primary-strong)]">

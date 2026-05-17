@@ -147,18 +147,27 @@ export function PetRow({
       <span className="pointer-events-none relative z-[1] hidden min-w-0 flex-col gap-0.5 text-[12.5px] text-[var(--muted)] md:flex">
         <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
           {age ? (
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.04em]">
-              {t("directory.pet.ageLabel")} · {age}
+            <span className="inline-flex items-center gap-1 text-[11.5px]">
+              <span className="text-[var(--muted)]">
+                {t("directory.pet.ageLabel")}
+              </span>
+              <span className="font-medium text-[var(--ink-2)]">{age}</span>
             </span>
           ) : null}
           {pet.weightKg !== null ? (
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.04em]">
-              <Scale aria-hidden="true" size={10} />
-              {pet.weightKg} kg
+            <span className="inline-flex items-center gap-1 text-[11.5px]">
+              <Scale
+                aria-hidden="true"
+                size={11}
+                className="text-[var(--muted)]"
+              />
+              <span className="font-medium text-[var(--ink-2)]">
+                {pet.weightKg} kg
+              </span>
             </span>
           ) : null}
           {pet.sex ? (
-            <span className="font-mono text-[11px] uppercase tracking-[0.04em]">
+            <span className="text-[11.5px] font-medium text-[var(--ink-2)]">
               {pet.sex}
             </span>
           ) : null}

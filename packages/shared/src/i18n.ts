@@ -722,6 +722,7 @@ export const uiCopy = {
     "intake.message": "What is happening?",
     "intake.messagePlaceholder":
       "Tell the clinic what changed, when it started, and what you have already tried.",
+    "intake.privacyLink": "Read our privacy notice",
     "intake.ownerNamePlaceholder": "e.g. Jane Smith",
     "intake.phonePlaceholder": "e.g. +44 7700 900000",
     "intake.petNamePlaceholder": "e.g. Luna",
@@ -1907,6 +1908,7 @@ export const uiCopy = {
     "intake.message": "Mis toimub?",
     "intake.messagePlaceholder":
       "Kirjelda, mis muutus, millal see algas ja mida oled juba proovinud.",
+    "intake.privacyLink": "Loe meie privaatsusteadet",
     "intake.ownerNamePlaceholder": "nt Marta Tamm",
     "intake.phonePlaceholder": "nt +372 5XX XXXX",
     "intake.petNamePlaceholder": "nt Muki",
@@ -3100,6 +3102,7 @@ export const uiCopy = {
     "intake.message": "Что происходит?",
     "intake.messagePlaceholder":
       "Опишите, что изменилось, когда началось и что вы уже пробовали.",
+    "intake.privacyLink": "Прочитайте уведомление о конфиденциальности",
     "intake.ownerNamePlaceholder": "напр. Мария Иванова",
     "intake.phonePlaceholder": "напр. +7 9XX XXX XX XX",
     "intake.petNamePlaceholder": "напр. Барсик",

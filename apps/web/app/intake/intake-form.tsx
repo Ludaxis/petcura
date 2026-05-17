@@ -406,7 +406,17 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
           required
           type="checkbox"
         />
-        <span>{t("intake.consent")}</span>
+        <span>
+          {t("intake.consent")}{" "}
+          <a
+            href={`/privacy?lang=${locale}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-[var(--primary-strong)] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+          >
+            {t("intake.privacyLink")}
+          </a>
+        </span>
       </label>
 
       <FieldError errors={apiError?.fieldErrors ?? state.fieldErrors} />

@@ -171,7 +171,7 @@ export function OtpCellsInput({
           data-state={state}
           className={cn(
             "pc-otp-cell h-14 w-12 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] text-center text-2xl font-semibold leading-none text-[var(--ink)] sm:w-14",
-            "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2",
+            "focus-visible:border-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]",
             "disabled:opacity-50"
           )}
           style={{ caretColor: cell ? "transparent" : undefined }}

@@ -37,7 +37,7 @@ export function PetCard({ pet, locale, status }: Props) {
       className={cn(
         "group block overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--paper)]",
         "transition-all hover:border-[var(--line-2)] hover:shadow-sm",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]"
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
       )}
     >
       <div className="relative aspect-[5/3] w-full bg-[var(--primary-soft)]">

@@ -42,7 +42,7 @@ export function OwnerComposer({ placeholder, sendLabel, attachLabel, onSubmitTex
         className={cn(
           "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--muted)]",
           "hover:bg-[var(--soft)] hover:text-[var(--ink)]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
         )}
       >
         <Paperclip size={18} weight="regular" aria-hidden />
@@ -62,7 +62,7 @@ export function OwnerComposer({ placeholder, sendLabel, attachLabel, onSubmitTex
         className={cn(
           "min-h-11 max-h-40 flex-1 resize-none rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 py-2.5 text-sm leading-6 text-[var(--ink)]",
           "placeholder:text-[var(--muted-2)]",
-          "focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+          "focus-visible:border-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
         )}
       />
       <button
@@ -72,7 +72,7 @@ export function OwnerComposer({ placeholder, sendLabel, attachLabel, onSubmitTex
         className={cn(
           "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--paper)]",
           "transition-colors hover:bg-[var(--primary-strong)] disabled:opacity-40",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
         )}
       >
         <PaperPlaneTilt size={16} weight="fill" aria-hidden />
