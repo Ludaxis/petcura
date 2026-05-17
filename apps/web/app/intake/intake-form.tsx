@@ -295,6 +295,30 @@ export function IntakeForm({ categories, clinicSlug, locale }: IntakeFormProps) 
             </Button>
           </div>
         </section>
+
+        {/*
+         * "Send another request" path — most clinics serve multi-pet
+         * households, and forcing the owner to reload the page to file a
+         * second case felt like a dead end. Resetting the aiState back to
+         * null returns to the form; the AI session key is regenerated on
+         * next start so the next case gets a fresh idempotency id.
+         */}
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setAiState(null);
+              setApiError(null);
+              setFollowUp("");
+              startKeyRef.current = "";
+              formRef.current?.reset();
+            }}
+          >
+            <MessageSquarePlus aria-hidden="true" size={16} />
+            {t("intake.submitAnother")}
+          </Button>
+        </div>
       </div>
     );
   }

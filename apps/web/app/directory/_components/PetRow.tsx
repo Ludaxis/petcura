@@ -187,10 +187,15 @@ export function PetRow({
               ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
               : "bg-[var(--surface-soft)] text-[var(--muted)]"
           )}
-          aria-label={`${pet.openRequestCount} ${t("directory.pet.openLabel")}`}
+          aria-label={t("directory.openTotal")
+            .replace("{open}", String(pet.openRequestCount))
+            .replace("{total}", String(pet.requestCount))}
+          title={t("directory.openTotal")
+            .replace("{open}", String(pet.openRequestCount))
+            .replace("{total}", String(pet.requestCount))}
         >
           <ClipboardList aria-hidden="true" size={10} />
-          {pet.openRequestCount}/{pet.requestCount}
+          {pet.openRequestCount} · {pet.requestCount}
         </span>
       </span>
 

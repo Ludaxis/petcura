@@ -178,10 +178,15 @@ export function OwnerRow({
               ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
               : "bg-[var(--surface-soft)] text-[var(--muted)]"
           )}
-          aria-label={`${owner.openRequestCount} ${t("directory.owner.openLabel")}`}
+          aria-label={t("directory.openTotal")
+            .replace("{open}", String(owner.openRequestCount))
+            .replace("{total}", String(owner.requestCount))}
+          title={t("directory.openTotal")
+            .replace("{open}", String(owner.openRequestCount))
+            .replace("{total}", String(owner.requestCount))}
         >
           <MessageSquareText aria-hidden="true" size={10} />
-          {owner.openRequestCount}/{owner.requestCount}
+          {owner.openRequestCount} · {owner.requestCount}
         </span>
       </span>
 
