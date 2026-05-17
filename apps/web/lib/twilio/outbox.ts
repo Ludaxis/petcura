@@ -33,6 +33,7 @@ export type OutboundMessageSource =
   | "sms_fallback";
 
 type SendEvent = (event: PetCuraInngestEventUnion) => Promise<unknown>;
+type SendQueued = (options: SendQueuedOutboundMessageOptions) => Promise<unknown>;
 
 export type EnqueueOutboundMessageInput = {
   supabase: AdminClient;
@@ -51,6 +52,7 @@ export type EnqueueOutboundMessageInput = {
   metadata?: Json;
   maxAttempts?: number;
   sendEvent?: SendEvent | false;
+  sendQueued?: SendQueued;
 };
 
 export type SendQueuedOutboundMessageOptions = {
@@ -101,7 +103,8 @@ function errorCode(error: unknown) {
 async function dispatchQueuedEvent({
   supabase,
   outbound,
-  sendEvent
+  sendEvent,
+  sendQueued
 }: {
   supabase: AdminClient;
   outbound: Pick<
@@ -109,8 +112,19 @@ async function dispatchQueuedEvent({
     "id" | "clinic_id" | "request_id" | "message_id" | "channel" | "created_at"
   >;
   sendEvent: SendEvent | false | undefined;
+  sendQueued: SendQueued | undefined;
 }) {
   if (sendEvent === false) return;
+
+  if (!process.env.INNGEST_EVENT_KEY && sendEvent === undefined) {
+    await sendQueuedInlineFallback({
+      supabase,
+      outbound,
+      sendQueued,
+      reason: "inngest_event_key_missing"
+    });
+    return;
+  }
 
   try {
     const data = {
@@ -133,6 +147,43 @@ async function dispatchQueuedEvent({
       .update({ last_error: `inngest_event_failed:${errorCode(error)}` })
       .eq("clinic_id", outbound.clinic_id)
       .eq("id", outbound.id);
+
+    if (
+      sendEvent === undefined &&
+      process.env.PETCURA_OUTBOUND_INLINE_FALLBACK === "true"
+    ) {
+      await sendQueuedInlineFallback({
+        supabase,
+        outbound,
+        sendQueued,
+        reason: "inngest_event_failed"
+      });
+    }
+  }
+}
+
+async function sendQueuedInlineFallback({
+  supabase,
+  outbound,
+  sendQueued,
+  reason
+}: {
+  supabase: AdminClient;
+  outbound: Pick<OutboundMessageRow, "id" | "clinic_id">;
+  sendQueued: SendQueued | undefined;
+  reason: string;
+}) {
+  try {
+    await (sendQueued ?? sendQueuedOutboundMessage)({
+      outboundMessageId: outbound.id,
+      supabase
+    });
+  } catch (error) {
+    await supabase
+      .from("outbound_messages")
+      .update({ last_error: `${reason}:${errorCode(error)}` })
+      .eq("clinic_id", outbound.clinic_id)
+      .eq("id", outbound.id);
   }
 }
 
@@ -152,7 +203,8 @@ export async function enqueueOutboundMessage({
   idempotencyKey,
   metadata,
   maxAttempts,
-  sendEvent
+  sendEvent,
+  sendQueued
 }: EnqueueOutboundMessageInput) {
   const { data: outbound, error } = await supabase
     .from("outbound_messages")
@@ -194,7 +246,12 @@ export async function enqueueOutboundMessage({
         );
       }
 
-      await dispatchQueuedEvent({ supabase, outbound: existing, sendEvent });
+      await dispatchQueuedEvent({
+        supabase,
+        outbound: existing,
+        sendEvent,
+        sendQueued
+      });
       return existing;
     }
 
@@ -227,7 +284,7 @@ export async function enqueueOutboundMessage({
     }
   }
 
-  await dispatchQueuedEvent({ supabase, outbound, sendEvent });
+  await dispatchQueuedEvent({ supabase, outbound, sendEvent, sendQueued });
   return outbound;
 }
 

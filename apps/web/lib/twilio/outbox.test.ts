@@ -222,6 +222,35 @@ describe("outbound message outbox", () => {
     );
   });
 
+  it("falls back to inline delivery when Inngest is not configured", async () => {
+    const fakeSupabase = makeOutboxSupabase();
+    const sendQueued = vi.fn(async () => ({ status: "sent" as const }));
+
+    await enqueueOutboundMessage({
+      supabase: fakeSupabase as never,
+      clinicId: "clinic-1",
+      requestId: "request-1",
+      messageId: "message-1",
+      ownerId: "owner-1",
+      createdBy: "staff-1",
+      source: "staff_reply",
+      channel: "whatsapp",
+      toPhone: "+37258046666",
+      body: "We can help.",
+      idempotencyKey: "staff-reply:message-1",
+      sendQueued
+    });
+
+    expect(sendQueued).toHaveBeenCalledWith({
+      outboundMessageId: "outbound-1",
+      supabase: fakeSupabase
+    });
+    expect(fakeSupabase.rows.outbound_messages[0]).toMatchObject({
+      id: "outbound-1",
+      status: "queued"
+    });
+  });
+
   it("records Twilio callbacks by delivery attempt SID", async () => {
     const fakeSupabase = makeStatusSupabase();
 
