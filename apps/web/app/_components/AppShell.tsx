@@ -199,7 +199,8 @@ export async function AppShell({
             profile: t("menu.profile"),
             help: t("menu.help"),
             helpHref: "mailto:support@petcura.app",
-            signOut: t("auth.logout")
+            signOut: t("auth.logout"),
+            back: t("nav.back")
           }
         }}
       />
@@ -243,7 +244,11 @@ export async function AppShell({
         */}
         <div
           id="main-content"
-          className="flex min-h-0 flex-1 flex-col overflow-hidden pb-16 md:pb-0"
+          tabIndex={-1}
+          // scroll-margin-top matches the h-12 (48px) sticky MobileShellHeader
+          // so that when the user activates the skip-link the focused content
+          // doesn't land behind the bar on mobile.
+          className="flex min-h-0 flex-1 flex-col overflow-hidden pb-16 scroll-mt-12 focus-visible:outline-none md:pb-0 md:scroll-mt-0"
         >
           {children}
         </div>

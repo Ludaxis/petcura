@@ -11,7 +11,8 @@ import {
   Settings,
   Shield,
   Sun,
-  UserRound
+  UserRound,
+  X
 } from "lucide-react";
 import { localeOptions, withLocale } from "@petcura/shared";
 import { cn } from "@petcura/ui";
@@ -131,9 +132,7 @@ export function MobileMeSheet({
             aria-label={labels.close}
             className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] transition hover:bg-[var(--soft)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           >
-            <span aria-hidden="true" className="text-[18px] leading-none">
-              x
-            </span>
+            <X aria-hidden="true" size={18} />
           </SheetClose>
         </SheetHeader>
 
@@ -187,10 +186,14 @@ export function MobileMeSheet({
               aria-label={labels.theme}
               className="grid grid-cols-3 gap-1 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--soft)] p-1"
             >
-              {THEME_OPTIONS.map((option) => {
+              {THEME_OPTIONS.map((option, index) => {
                 const Icon = option.icon;
                 const selected = theme === option.value;
                 const optionLabel = labels[option.labelKey];
+                // Roving tabindex: only the selected radio (or the first
+                // when none selected) participates in the tab sequence;
+                // arrow keys move focus between siblings within the group.
+                const focusable = selected || (!THEME_OPTIONS.some((o) => theme === o.value) && index === 0);
                 return (
                   <button
                     key={option.value}
@@ -198,7 +201,32 @@ export function MobileMeSheet({
                     role="radio"
                     aria-checked={selected}
                     aria-label={optionLabel}
+                    tabIndex={focusable ? 0 : -1}
                     onClick={() => handleThemeChange(option.value)}
+                    onKeyDown={(event) => {
+                      const key = event.key;
+                      if (
+                        key !== "ArrowRight" &&
+                        key !== "ArrowLeft" &&
+                        key !== "ArrowDown" &&
+                        key !== "ArrowUp"
+                      ) {
+                        return;
+                      }
+                      event.preventDefault();
+                      const direction =
+                        key === "ArrowRight" || key === "ArrowDown" ? 1 : -1;
+                      const nextIndex =
+                        (index + direction + THEME_OPTIONS.length) %
+                        THEME_OPTIONS.length;
+                      const next = THEME_OPTIONS[nextIndex];
+                      if (!next) return;
+                      handleThemeChange(next.value);
+                      const group = event.currentTarget.parentElement;
+                      const targets =
+                        group?.querySelectorAll<HTMLButtonElement>("[role='radio']");
+                      targets?.[nextIndex]?.focus();
+                    }}
                     className={cn(
                       "inline-flex h-11 min-h-[44px] items-center justify-center gap-1.5 rounded-[6px] px-2 text-[11.5px] font-medium transition",
                       selected

@@ -150,10 +150,10 @@ export function LegalPageShell({
       </section>
 
       {callouts.length > 0 ? (
-        <section
-          aria-label="Trust notes"
-          className="border-b border-[var(--line)] bg-[var(--surface-soft)]"
-        >
+        // Decorative trust-notes strip; the page already exposes h1/h2
+        // landmarks, so we don't need to coin a translated section name
+        // here — leaving aria-label off keeps this presentational.
+        <section className="border-b border-[var(--line)] bg-[var(--surface-soft)]">
           <div className="mx-auto grid w-full max-w-7xl gap-3 px-4 py-6 sm:px-6 md:grid-cols-2 lg:grid-cols-3 lg:px-8">
             {callouts.map((callout) => {
               const tone = callout.tone ?? "notice";

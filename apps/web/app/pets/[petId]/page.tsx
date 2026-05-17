@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, PawPrint, UserRound } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  MessageSquareText,
+  PawPrint,
+  Phone,
+  UserRound
+} from "lucide-react";
 import {
   createTranslator,
   hasClinicPermission,
@@ -52,6 +59,7 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
 
   if (!pet) notFound();
 
+  const petAge = formatPetAge(pet.birthDate);
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short"
@@ -88,10 +96,30 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
                   {pet.breed ? ` · ${pet.breed}` : ""}
                   {pet.ownerName ? ` · ${pet.ownerName}` : ""}
                 </p>
+                {(petAge || pet.weightKg !== null) ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {petAge ? (
+                      <span
+                        className="inline-flex items-center rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--ink-2)]"
+                        aria-label={`${t("directory.pet.ageLabel")} ${petAge}`}
+                      >
+                        {t("directory.pet.ageLabel")} · {petAge}
+                      </span>
+                    ) : null}
+                    {pet.weightKg !== null ? (
+                      <span
+                        className="inline-flex items-center rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--ink-2)]"
+                        aria-label={`${t("pets.weight")} ${pet.weightKg} kg`}
+                      >
+                        {pet.weightKg} kg
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Badge tone={pet.openRequestCount > 0 ? "amber" : "neutral"}>
+              <Badge tone={pet.openRequestCount > 0 ? "teal" : "neutral"}>
                 {pet.openRequestCount} {t("directory.pet.openLabel")}
               </Badge>
               <Badge tone="neutral">{pet.requestCount} {t("pets.requests")}</Badge>
@@ -113,6 +141,11 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
                     {t("directory.detail.medical")}
                   </h2>
                 </div>
+                <AllergyBlock
+                  label={t("pets.allergies")}
+                  emptyLabel={t("pets.noKnownAllergies")}
+                  value={pet.allergies}
+                />
                 <dl className="mt-4 grid gap-2 sm:grid-cols-2">
                   <InfoItem label={t("pets.species")} value={pet.species} />
                   <InfoItem label={t("pets.breed")} value={pet.breed ?? "—"} />
@@ -131,7 +164,6 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
                   />
                 </dl>
                 <div className="mt-3 grid gap-2">
-                  <TextBlock label={t("pets.allergies")} value={pet.allergies} />
                   <TextBlock label={t("pets.notes")} value={pet.medicalNotes} />
                 </div>
               </section>
@@ -148,14 +180,14 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
                       {t("pets.owner")}
                     </h2>
                   </div>
-                  <Link
-                    className={cn(
-                      "mt-4 flex items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3",
-                      "transition hover:bg-[var(--paper)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-                    )}
-                    href={`/customers/${pet.owner.id}?lang=${locale}`}
-                  >
-                    <span className="flex min-w-0 items-center gap-3">
+                  <div className="mt-4 grid gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                    <Link
+                      className={cn(
+                        "flex min-w-0 items-center gap-3 rounded-[var(--radius)]",
+                        "transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                      )}
+                      href={`/customers/${pet.owner.id}?lang=${locale}`}
+                    >
                       <ProfileAvatar
                         className="h-10 w-10"
                         imageUrl={pet.owner.photoUrl}
@@ -169,9 +201,45 @@ export default async function PetCenterPage({ params, searchParams }: Props) {
                           {pet.owner.phone}
                         </span>
                       </span>
-                    </span>
-                    <Badge tone="neutral">{pet.owner.preferredLanguage.toUpperCase()}</Badge>
-                  </Link>
+                      <Badge tone="neutral">
+                        {pet.owner.preferredLanguage.toUpperCase()}
+                      </Badge>
+                    </Link>
+                    {(() => {
+                      const digits = pet.owner.phone.replace(/[^0-9]/g, "");
+                      const trimmed = pet.owner.phone.replace(/[^0-9+]/g, "");
+                      const tel = trimmed ? `tel:${trimmed}` : null;
+                      const wa = digits ? `https://wa.me/${digits}` : null;
+                      const ownerName = pet.owner.name;
+                      const ownerPhone = pet.owner.phone;
+                      return (
+                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                          {tel ? (
+                            <a
+                              href={tel}
+                              aria-label={`${t("directory.action.call")} ${ownerName}, ${ownerPhone}`}
+                              className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-[12.5px] font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--primary-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                            >
+                              <Phone aria-hidden="true" size={14} />
+                              {t("directory.action.call")}
+                            </a>
+                          ) : null}
+                          {wa ? (
+                            <a
+                              href={wa}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={`${t("directory.action.message")}, ${ownerName}`}
+                              className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius)] border border-transparent bg-[var(--primary)] px-3 text-[12.5px] font-semibold text-white transition hover:bg-[var(--primary-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                            >
+                              <MessageSquareText aria-hidden="true" size={14} />
+                              WhatsApp
+                            </a>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </section>
               ) : null}
 
@@ -338,6 +406,65 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 break-words text-sm font-semibold text-[var(--ink)]">
         {value}
       </dd>
+    </div>
+  );
+}
+
+function formatPetAge(birthDate: string | null) {
+  if (!birthDate) return null;
+  const then = new Date(birthDate);
+  if (Number.isNaN(then.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - then.getFullYear();
+  const months = now.getMonth() - then.getMonth();
+  if (months < 0 || (months === 0 && now.getDate() < then.getDate())) years -= 1;
+  if (years >= 1) return `${years}y`;
+  const totalMonths =
+    (now.getFullYear() - then.getFullYear()) * 12 +
+    (now.getMonth() - then.getMonth());
+  return `${Math.max(0, totalMonths)}mo`;
+}
+
+function AllergyBlock({
+  label,
+  emptyLabel,
+  value
+}: {
+  label: string;
+  emptyLabel: string;
+  value: string | null;
+}) {
+  const hasAllergies = Boolean(value && value.trim().length > 0);
+  return (
+    <div
+      role="note"
+      aria-label={label}
+      className={cn(
+        "mt-4 rounded-[var(--radius)] border p-3",
+        hasAllergies
+          ? "border-[var(--red)] bg-[var(--red-soft)]"
+          : "border-[var(--line)] bg-[var(--surface-soft)]"
+      )}
+    >
+      <p
+        className={cn(
+          "flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.06em]",
+          hasAllergies ? "text-[var(--red)]" : "text-[var(--muted)]"
+        )}
+      >
+        <AlertTriangle aria-hidden="true" size={12} />
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-1.5 whitespace-pre-wrap text-sm leading-6",
+          hasAllergies
+            ? "font-semibold text-[var(--ink)]"
+            : "text-[var(--muted)]"
+        )}
+      >
+        {hasAllergies ? value : emptyLabel}
+      </p>
     </div>
   );
 }

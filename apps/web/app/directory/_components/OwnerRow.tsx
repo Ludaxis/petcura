@@ -5,7 +5,8 @@ import {
   ChevronRight,
   Languages,
   MessageSquareText,
-  PawPrint
+  PawPrint,
+  Phone
 } from "lucide-react";
 import { Badge, Button, cn } from "@petcura/ui";
 import {
@@ -40,6 +41,11 @@ function whatsappHref(phone: string) {
   return digits ? `https://wa.me/${digits}` : null;
 }
 
+function telHref(phone: string) {
+  const trimmed = phone.replace(/[^0-9+]/g, "");
+  return trimmed ? `tel:${trimmed}` : null;
+}
+
 export function OwnerRow({
   owner,
   locale,
@@ -53,6 +59,7 @@ export function OwnerRow({
   const t = createTranslator(locale);
   const isCompact = density === "compact";
   const wa = whatsappHref(owner.phone);
+  const tel = telHref(owner.phone);
   const petsSummary = owner.petNames.slice(0, 3).join(", ");
   const overflowPets =
     owner.petNames.length > 3 ? ` +${owner.petNames.length - 3}` : "";
@@ -87,7 +94,9 @@ export function OwnerRow({
       <Link
         href={href}
         aria-label={`${owner.name}, ${owner.phone}${
-          owner.petCount > 0 ? `, ${owner.petCount} pets` : ""
+          owner.petCount > 0
+            ? `, ${owner.petCount} ${t("directory.owner.petsLabel").toLowerCase()}`
+            : ""
         }`}
         tabIndex={0}
         className="absolute inset-0 z-0 rounded-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--primary)]"
@@ -104,7 +113,10 @@ export function OwnerRow({
 
       <span className="pointer-events-none relative z-[1] min-w-0">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-[13.5px] font-semibold text-[var(--ink)]">
+          <span
+            title={owner.name}
+            className="truncate text-[13.5px] font-semibold text-[var(--ink)]"
+          >
             {owner.name}
           </span>
           <Badge tone="neutral">
@@ -120,7 +132,9 @@ export function OwnerRow({
                 <span aria-hidden="true" className="text-[var(--muted-2)]">
                   ·
                 </span>
-                <span className="truncate">{owner.email}</span>
+                <span title={owner.email} className="truncate">
+                  {owner.email}
+                </span>
               </>
             ) : null}
           </span>
@@ -135,16 +149,16 @@ export function OwnerRow({
               size={11}
               className="text-[var(--muted-2)]"
             />
-            <span className="truncate">
+            <span title={`${petsSummary}${overflowPets}`} className="truncate">
               {petsSummary}
-              <span className="text-[var(--muted-2)]">{overflowPets}</span>
+              <span className="text-[var(--muted)]">{overflowPets}</span>
             </span>
           </span>
         ) : (
-          <span className="text-[var(--muted-2)]">—</span>
+          <span className="text-[var(--muted)]">—</span>
         )}
         {latestRequestLabel ? (
-          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]">
             {t("directory.owner.latestLabel")} · {latestRequestLabel}
           </span>
         ) : null}
@@ -161,7 +175,7 @@ export function OwnerRow({
           className={cn(
             "inline-flex items-center gap-1 rounded-[5px] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em]",
             owner.openRequestCount > 0
-              ? "bg-[var(--amber-soft)] text-[var(--amber)]"
+              ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
               : "bg-[var(--surface-soft)] text-[var(--muted)]"
           )}
           aria-label={`${owner.openRequestCount} ${t("directory.owner.openLabel")}`}
@@ -174,7 +188,17 @@ export function OwnerRow({
       {/* Quick actions — relative + z-10 so they sit above the cover Link.
           Quick action stays mounted; Edit button is rendered as an absolute
           overlay by InlineEditRow so it can survive across both columns. */}
-      <span className="relative z-10 hidden items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 md:inline-flex">
+      <span className="relative z-10 hidden items-center gap-1 invisible transition-opacity group-hover:visible group-focus-within:visible md:inline-flex">
+        {tel ? (
+          <a
+            href={tel}
+            aria-label={`${t("directory.action.call")} ${owner.phone}`}
+            onClick={(event) => event.stopPropagation()}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--primary-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+          >
+            <Phone aria-hidden="true" size={13} />
+          </a>
+        ) : null}
         {wa ? (
           <a
             href={wa}
@@ -197,11 +221,16 @@ export function OwnerRow({
 
       <span className="pointer-events-none relative z-[1] col-span-2 mt-1 flex min-w-0 flex-col gap-0.5 md:hidden">
         <span className="flex min-w-0 items-center gap-1.5 text-[12px] text-[var(--muted)]">
-          <span className="truncate font-mono">{owner.phone}</span>
+          <span title={owner.phone} className="truncate font-mono">
+            {owner.phone}
+          </span>
           {petsSummary ? (
             <>
               <span aria-hidden="true">·</span>
-              <span className="truncate">
+              <span
+                title={`${petsSummary}${overflowPets}`}
+                className="truncate"
+              >
                 {petsSummary}
                 {overflowPets}
               </span>

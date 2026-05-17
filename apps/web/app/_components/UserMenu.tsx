@@ -45,6 +45,7 @@ export type UserMenuLabels = {
   help: string;
   helpHref: string;
   signOut: string;
+  back: string;
 };
 
 type UserMenuVariant = "floating" | "sidebar-card";
@@ -313,7 +314,11 @@ export function UserMenu({
             ) : null}
 
             {panel === "theme" ? (
-              <SubPanel onBack={() => setPanel("root")} title={labels.theme}>
+              <SubPanel
+                backLabel={labels.back}
+                onBack={() => setPanel("root")}
+                title={labels.theme}
+              >
                 {THEME_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
                   const selected = theme === opt.value;
@@ -358,7 +363,11 @@ export function UserMenu({
             ) : null}
 
             {panel === "language" ? (
-              <SubPanel onBack={() => setPanel("root")} title={labels.language}>
+              <SubPanel
+                backLabel={labels.back}
+                onBack={() => setPanel("root")}
+                title={labels.language}
+              >
                 {localeOptions.map((option) => {
                   const selected = option.value === locale;
                   const href = withLocale(currentPath, option.value);
@@ -544,10 +553,12 @@ function SignOutForm({
 
 function SubPanel({
   title,
+  backLabel,
   onBack,
   children
 }: {
   title: string;
+  backLabel: string;
   onBack: () => void;
   children: ReactNode;
 }) {
@@ -557,7 +568,7 @@ function SubPanel({
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back"
+          aria-label={backLabel}
           className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[var(--muted)] transition hover:bg-[var(--soft)] hover:text-[var(--ink)]"
         >
           <ChevronRight

@@ -88,7 +88,7 @@ export function PetRow({
     >
       <Link
         href={href}
-        aria-label={`${pet.name}, ${pet.species}, owner ${pet.ownerName}`}
+        aria-label={`${pet.name}, ${pet.species}, ${t("directory.pet.ownerPrefix")} ${pet.ownerName}`}
         tabIndex={0}
         className="absolute inset-0 z-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--primary)]"
       />
@@ -104,12 +104,18 @@ export function PetRow({
 
       <span className="pointer-events-none relative z-[1] min-w-0">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-[13.5px] font-semibold text-[var(--ink)]">
+          <span
+            title={pet.name}
+            className="truncate text-[13.5px] font-semibold text-[var(--ink)]"
+          >
             {pet.name}
           </span>
           <Badge tone="neutral">{pet.species}</Badge>
           {pet.breed ? (
-            <span className="hidden truncate text-[11.5px] text-[var(--muted-2)] sm:inline">
+            <span
+              title={pet.breed}
+              className="hidden truncate text-[11.5px] text-[var(--muted)] sm:inline"
+            >
               {pet.breed}
             </span>
           ) : null}
@@ -121,13 +127,17 @@ export function PetRow({
               size={11}
               className="text-[var(--muted-2)]"
             />
-            <span className="truncate">{pet.ownerName}</span>
+            <span title={pet.ownerName} className="truncate">
+              {pet.ownerName}
+            </span>
             {pet.ownerPhone ? (
               <>
                 <span aria-hidden="true" className="text-[var(--muted-2)]">
                   ·
                 </span>
-                <span className="truncate font-mono">{pet.ownerPhone}</span>
+                <span title={pet.ownerPhone} className="truncate font-mono">
+                  {pet.ownerPhone}
+                </span>
               </>
             ) : null}
           </span>
@@ -154,7 +164,7 @@ export function PetRow({
           ) : null}
         </span>
         {latestRequestLabel ? (
-          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted-2)]">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]">
             {t("directory.owner.latestLabel")} · {latestRequestLabel}
           </span>
         ) : null}
@@ -165,7 +175,7 @@ export function PetRow({
           className={cn(
             "inline-flex items-center gap-1 rounded-[5px] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em]",
             pet.openRequestCount > 0
-              ? "bg-[var(--amber-soft)] text-[var(--amber)]"
+              ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
               : "bg-[var(--surface-soft)] text-[var(--muted)]"
           )}
           aria-label={`${pet.openRequestCount} ${t("directory.pet.openLabel")}`}
@@ -184,7 +194,9 @@ export function PetRow({
       <span className="pointer-events-none relative z-[1] col-span-2 mt-1 flex min-w-0 flex-col gap-0.5 md:hidden">
         <span className="flex min-w-0 items-center gap-1.5 text-[12px] text-[var(--muted)]">
           <User aria-hidden="true" size={11} className="text-[var(--muted-2)]" />
-          <span className="truncate">{pet.ownerName}</span>
+          <span title={pet.ownerName} className="truncate">
+            {pet.ownerName}
+          </span>
         </span>
       </span>
     </div>
@@ -250,7 +262,7 @@ export function PetRow({
                 required
               />
             </ProfileField>
-            <ProfileField htmlFor={`pet-breed-${pet.id}`} label="Breed">
+            <ProfileField htmlFor={`pet-breed-${pet.id}`} label={t("profile.breed")}>
               <input
                 className={profileInputClass}
                 defaultValue={pet.breed ?? ""}
@@ -258,7 +270,7 @@ export function PetRow({
                 name="breed"
               />
             </ProfileField>
-            <ProfileField htmlFor={`pet-sex-${pet.id}`} label="Sex">
+            <ProfileField htmlFor={`pet-sex-${pet.id}`} label={t("profile.sex")}>
               <input
                 className={profileInputClass}
                 defaultValue={pet.sex ?? ""}

@@ -346,7 +346,7 @@ function TopNav({
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[color-mix(in_oklch,var(--paper)_88%,transparent)] backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklch,var(--paper)_72%,transparent)]">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link
-          aria-label="PetCura home"
+          aria-label={t("marketing.aria.home")}
           className="inline-flex items-center gap-2 font-semibold text-[var(--foreground)]"
           href="/"
         >
@@ -356,7 +356,10 @@ function TopNav({
           <span className="text-sm tracking-[0.04em]">PetCura</span>
         </Link>
 
-        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+        <nav
+          aria-label={t("marketing.aria.primaryNav")}
+          className="hidden items-center gap-1 lg:flex"
+        >
           {[
             { href: "#how-it-works", key: "landing.nav.howItWorks" as const },
             { href: "#safety", key: "landing.nav.safety" as const },
@@ -504,7 +507,7 @@ function Footer({
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_2fr] lg:px-8">
         <div className="flex flex-col gap-3">
           <Link
-            aria-label="PetCura home"
+            aria-label={t("marketing.aria.home")}
             className="inline-flex items-center gap-2"
             href="/"
           >
@@ -519,7 +522,10 @@ function Footer({
             {t("landing.hero.eyebrow")}
           </p>
         </div>
-        <nav aria-label="Footer" className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <nav
+          aria-label={t("marketing.aria.footerNav")}
+          className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4"
+        >
           {columns.map((column) => (
             <div className="flex flex-col gap-3" key={column.heading}>
               <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">

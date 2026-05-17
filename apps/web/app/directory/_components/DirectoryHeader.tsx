@@ -218,24 +218,28 @@ export function DirectoryHeader({
             aria-label={t("directory.search.placeholder")}
             className="h-9 w-full rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] pl-8 pr-8 text-[13px] text-[var(--ink)] placeholder:text-[var(--muted-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           />
-          {q ? (
+          {/*
+           * Right-edge stack: while a debounced search is in flight we show
+           * the spinner in the clear-button slot so the two never collide.
+           * The clear button reappears once the URL push settles.
+           */}
+          {pending ? (
+            <span
+              role="status"
+              aria-label={t("directory.search.loading")}
+              className="absolute right-2 inline-flex h-5 w-5 items-center justify-center text-[var(--primary)]"
+            >
+              <Spinner size={14} tone="primary" />
+            </span>
+          ) : q ? (
             <button
               type="button"
               onClick={() => setQ("")}
               aria-label={t("directory.search.clear")}
-              className="absolute right-2 inline-flex h-5 w-5 items-center justify-center rounded text-[var(--muted-2)] hover:text-[var(--ink)]"
+              className="absolute right-2 inline-flex h-5 w-5 items-center justify-center rounded text-[var(--muted)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             >
               <X aria-hidden="true" size={12} />
             </button>
-          ) : null}
-          {pending ? (
-            <span
-              role="status"
-              aria-label={t("directory.search.placeholder")}
-              className="absolute right-7 inline-flex h-4 w-4 items-center justify-center text-[var(--primary)]"
-            >
-              <Spinner size={14} tone="primary" />
-            </span>
           ) : null}
         </div>
 
@@ -304,19 +308,23 @@ export function DirectoryHeader({
             ]}
           />
 
-          <nav
+          <div
+            role="group"
             aria-label={t("directory.density.label")}
             className="inline-flex h-9 items-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-0.5"
           >
             {(["comfortable", "compact"] as const).map((option) => {
               const active = density === option;
               return (
-                <Link
+                <button
                   key={option}
-                  href={buildHref({
-                    density: option === "comfortable" ? null : "compact"
-                  })}
-                  aria-current={active ? "page" : undefined}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() =>
+                    pushParams({
+                      density: option === "comfortable" ? null : "compact"
+                    })
+                  }
                   className={cn(
                     "inline-flex h-8 items-center justify-center rounded-[5px] px-2 text-[11.5px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]",
                     active
@@ -329,10 +337,10 @@ export function DirectoryHeader({
                       ? "directory.density.comfortable"
                       : "directory.density.compact"
                   )}
-                </Link>
+                </button>
               );
             })}
-          </nav>
+          </div>
 
           {hasActiveFilters || q ? (
             <Link

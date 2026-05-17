@@ -50,7 +50,7 @@ export default async function RootLayout({
       </head>
       <body>
         <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
-        <AnalyticsConsent />
+        <AnalyticsConsent locale={locale} />
       </body>
     </html>
   );
