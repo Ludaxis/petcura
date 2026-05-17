@@ -54,8 +54,8 @@ export function DirectoryListSkeleton({
 
           {/* Status pill cluster */}
           <span className="hidden items-center gap-2 md:inline-flex">
-            <Shimmer className="h-4 w-10 rounded-[5px]" />
-            <Shimmer className="h-4 w-12 rounded-[5px]" />
+            <Shimmer className="h-4 w-10 rounded-[var(--radius-sm)]" />
+            <Shimmer className="h-4 w-12 rounded-[var(--radius-sm)]" />
           </span>
 
           {/* Chevron */}

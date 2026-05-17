@@ -146,7 +146,7 @@ export function ThemeToggle({
               setTheme(option.value);
             }}
             className={cn(
-                "inline-flex h-7 items-center justify-center gap-1.5 rounded-[5px] px-2 text-[11.5px] font-medium transition",
+                "inline-flex h-7 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] px-2 text-[11.5px] font-medium transition",
                 active
                   ? "bg-[var(--primary)] text-[var(--paper)]"
                   : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]",

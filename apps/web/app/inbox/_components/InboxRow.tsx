@@ -192,12 +192,12 @@ export function InboxRow({
         <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--muted)]">
           {row.preview}
         </span>
-        <span className="inline-flex shrink-0 items-center rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--ink-2)]">
+        <span className="inline-flex shrink-0 items-center rounded-[var(--radius-sm)] bg-[var(--surface-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--ink-2)]">
           {categoryLabel}
         </span>
         {showTranslate ? (
           <span
-            className="inline-flex shrink-0 items-center gap-1 rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]"
+            className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em] text-[var(--muted)]"
             aria-label={t("inbox.row.sourceShort").replace(
               "{locale}",
               row.ownerLanguage.toUpperCase()

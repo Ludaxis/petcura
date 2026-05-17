@@ -204,7 +204,7 @@ function ProductLoopVisual({
         <span className="pc-loop-trail block h-full w-full origin-top bg-[var(--primary)]" />
       </span>
 
-      <div className="pc-loop-step pc-loop-step-1 rounded-[10px] border border-[var(--line)] bg-[var(--surface-soft)] p-3">
+      <div className="pc-loop-step pc-loop-step-1 rounded-[var(--radius-pill)] border border-[var(--line)] bg-[var(--surface-soft)] p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--primary-strong)]">
             <MessageCircle aria-hidden="true" size={12} />
@@ -225,7 +225,7 @@ function ProductLoopVisual({
         </p>
       </div>
 
-      <div className="pc-loop-step pc-loop-step-2 rounded-[10px] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3">
+      <div className="pc-loop-step pc-loop-step-2 rounded-[var(--radius-pill)] border border-[var(--primary-soft)] bg-[var(--primary-soft)] p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--primary-strong)]">
             <Sparkles aria-hidden="true" size={12} />
@@ -251,7 +251,7 @@ function ProductLoopVisual({
         </p>
       </div>
 
-      <div className="pc-loop-step pc-loop-step-3 rounded-[10px] border border-[var(--line)] bg-[var(--paper)] p-3">
+      <div className="pc-loop-step pc-loop-step-3 rounded-[var(--radius-pill)] border border-[var(--line)] bg-[var(--paper)] p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
             <CheckCircle2 aria-hidden="true" size={12} />
@@ -267,7 +267,7 @@ function ProductLoopVisual({
       </div>
 
       <div
-        className="pc-loop-step pc-loop-step-4 flex items-center justify-between gap-3 rounded-[10px] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-3"
+        className="pc-loop-step pc-loop-step-4 flex items-center justify-between gap-3 rounded-[var(--radius-pill)] border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-3"
         style={{ fontFamily: "var(--font-mono)" }}
       >
         <span className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">

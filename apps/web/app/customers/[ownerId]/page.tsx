@@ -151,7 +151,7 @@ export default async function CustomerCenterPage({
                     <Link
                       className={cn(
                         "flex items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3",
-                        "transition hover:bg-[var(--paper)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                        "transition hover:bg-[var(--paper)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
                       )}
                       href={`/pets/${pet.id}?lang=${locale}`}
                       key={pet.id}

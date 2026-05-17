@@ -303,7 +303,7 @@ export function AiDraftCard({
       data-ai-draft-card
       aria-busy={pending}
       className={cn(
-        "mx-4 mt-3 rounded-[10px] border border-[var(--line)] border-l-2 border-l-[var(--primary)] bg-[var(--paper)] px-3.5 py-3 transition-colors sm:mx-6",
+        "mx-4 mt-3 rounded-[var(--radius-pill)] border border-[var(--line)] border-l-2 border-l-[var(--primary)] bg-[var(--paper)] px-3.5 py-3 transition-colors sm:mx-6",
         // Optimistic tint while a server action is in flight — the card
         // settles into the accepted/rejected state on resolve. Sage on
         // accept/save, neutral on reject, no flash on first paint.

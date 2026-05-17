@@ -222,7 +222,7 @@ export function Thread({
                     : ""
                 }`}
                 className={cn(
-                  "max-w-[480px] rounded-[10px] border px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] transition-opacity",
+                  "max-w-[480px] rounded-[var(--radius-pill)] border px-3 py-2 text-[13.5px] leading-[1.5] text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] transition-opacity",
                   isStaff
                     ? "border-transparent bg-[var(--primary-soft)]"
                     : "border-[var(--line-2)] bg-[var(--soft)]",
@@ -296,7 +296,7 @@ export function Thread({
                       }
                       onClick={() => toggleTranslation(msg)}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-[5px] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em] transition-colors",
+                        "inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em] transition-colors",
                         isRevealed
                           ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
                           : "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--ink)]"

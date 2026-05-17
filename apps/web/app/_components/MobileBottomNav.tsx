@@ -111,7 +111,7 @@ export function MobileBottomNav({
 
   const tabClass = (active: boolean) =>
     cn(
-      "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 text-[10.5px] font-medium",
+      "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-pill)] px-1 text-[10.5px] font-medium",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]",
       !prefersReducedMotion && "transition-colors duration-200",
       // Inactive label moved off --muted-2 (contrast ≈ 2.6:1, fails AA) onto
@@ -170,7 +170,7 @@ export function MobileBottomNav({
               }
         }
       >
-        <span className="block h-full w-full rounded-[10px] bg-[var(--primary-soft)]" />
+        <span className="block h-full w-full rounded-[var(--radius-pill)] bg-[var(--primary-soft)]" />
       </span>
       <Link
         href={inboxHref}

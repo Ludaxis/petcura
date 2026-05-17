@@ -51,6 +51,10 @@
   --radius-md: 7px;
   --radius-lg: 8px;
   --radius-xl: 12px;
+  /* Pill-shaped chrome (bottom-nav indicator, chips on rows). Bigger than
+   * --radius-lg so it reads as a soft pill rather than a rounded card.
+   * Adopted 2026-05-17 to retire ad-hoc `rounded-[10px]` call sites. */
+  --radius-pill: 10px;
 }
 
 :root {

@@ -496,7 +496,10 @@ function BoardCard({
   formatDateTime,
   asOverlay
 }: BoardCardProps) {
-  const className = `group block rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-3 transition hover:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)] ${
+  // Drag-overlay keeps its solid `ring-2` (visual emphasis for the lifted
+  // card during drag — not a focus state). Idle keyboard focus uses the
+  // canonical outline pattern so it lines up with the rest of the clinic app.
+  const className = `group block rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-3 transition hover:border-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] ${
     asOverlay ? "scale-[1.02] shadow-lg ring-2 ring-[var(--primary)] cursor-grabbing" : "cursor-grab"
   }`;
 

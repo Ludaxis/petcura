@@ -170,7 +170,7 @@ test.describe("Slice C screenshots", () => {
         host.dataset.realtimeToast = "true";
         host.setAttribute("role", "status");
         host.className =
-          "fixed bottom-4 right-4 z-50 max-w-[320px] rounded-[10px] border border-[var(--line)] bg-[var(--primary-soft)] px-4 py-2.5 text-[13px] font-medium text-[var(--primary-strong)] shadow-md";
+          "fixed bottom-4 right-4 z-50 max-w-[320px] rounded-[var(--radius-pill)] border border-[var(--line)] bg-[var(--primary-soft)] px-4 py-2.5 text-[13px] font-medium text-[var(--primary-strong)] shadow-md";
         host.textContent = "New request from Marie";
         document.body.appendChild(host);
       });

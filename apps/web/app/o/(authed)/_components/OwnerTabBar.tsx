@@ -39,7 +39,7 @@ export function OwnerTabBar({ locale, unreadCount = 0 }: Props) {
           href={href}
           aria-current={active ? "page" : undefined}
           className={cn(
-            "relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 text-[11px] font-medium transition-colors",
+            "relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-pill)] px-1 text-[11px] font-medium transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]",
             active
               ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"

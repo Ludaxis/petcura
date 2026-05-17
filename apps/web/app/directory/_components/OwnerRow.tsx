@@ -166,14 +166,14 @@ export function OwnerRow({
 
       <span className="pointer-events-none relative z-[1] hidden whitespace-nowrap items-center gap-2 md:inline-flex">
         <span
-          className="inline-flex items-center gap-1 rounded-[5px] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]"
+          className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--surface-soft)] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em] text-[var(--muted)]"
           aria-label={`${owner.petCount} ${t("directory.owner.petsLabel")}`}
         >
           <PawPrint aria-hidden="true" size={10} /> {owner.petCount}
         </span>
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded-[5px] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em]",
+            "inline-flex items-center gap-1 rounded-[var(--radius-sm)] px-1.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.04em]",
             owner.openRequestCount > 0
               ? "bg-[var(--primary-soft)] text-[var(--primary-strong)]"
               : "bg-[var(--surface-soft)] text-[var(--muted)]"
