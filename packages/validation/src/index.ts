@@ -264,11 +264,91 @@ export const requestAssignmentSchema = z.object({
   staffMemberId: z.union([uuidSchema, z.literal("unassigned")])
 });
 
+const timeOfDaySchema = trimmedString.regex(
+  /^([01]\d|2[0-3]):[0-5]\d$/,
+  "Use HH:mm in 24-hour time."
+);
+
+export const appointmentStatusSchema = z.enum([
+  "requested",
+  "confirmed",
+  "rescheduled",
+  "completed",
+  "cancelled",
+  "no_show"
+]);
+
+export const availabilityRuleInputSchema = z
+  .object({
+    staffId: uuidSchema,
+    weekday: z.coerce.number().int().min(0).max(6),
+    startTime: timeOfDaySchema,
+    endTime: timeOfDaySchema,
+    serviceIds: z.array(uuidSchema).max(30).default([]),
+    isActive: z.coerce.boolean().default(true)
+  })
+  .refine((value) => value.startTime < value.endTime, {
+    message: "End time must be after start time.",
+    path: ["endTime"]
+  });
+
+export const timeOffInputSchema = z
+  .object({
+    staffId: uuidSchema,
+    startsAt: z.iso.datetime({ offset: true }),
+    endsAt: z.iso.datetime({ offset: true }),
+    reason: trimmedString.max(240).optional()
+  })
+  .refine((value) => new Date(value.startsAt) < new Date(value.endsAt), {
+    message: "End time must be after start time.",
+    path: ["endsAt"]
+  });
+
+export const slotLookupSchema = z.object({
+  appointmentId: uuidSchema,
+  from: z.iso.datetime({ offset: true }).optional(),
+  horizonDays: z.coerce.number().int().min(1).max(60).default(14),
+  limit: z.coerce.number().int().min(1).max(12).default(3)
+});
+
+export const appointmentSlotSchema = z
+  .object({
+    staffId: uuidSchema,
+    staffLabel: trimmedString.min(1).max(160),
+    startsAt: z.iso.datetime({ offset: true }),
+    endsAt: z.iso.datetime({ offset: true }),
+    durationMinutes: z.coerce.number().int().min(5).max(480),
+    serviceId: z.union([uuidSchema, z.null()]).optional()
+  })
+  .refine((value) => new Date(value.startsAt) < new Date(value.endsAt), {
+    message: "End time must be after start time.",
+    path: ["endsAt"]
+  });
+
+export const slotOfferCreationSchema = z.object({
+  requestId: uuidSchema,
+  appointmentId: uuidSchema,
+  slots: z.array(appointmentSlotSchema).min(1).max(3),
+  messageBody: trimmedString.max(2000).optional()
+});
+
+export const ownerSlotConfirmationSchema = z.object({
+  requestId: uuidSchema,
+  offerId: uuidSchema,
+  slotIndex: z.coerce.number().int().min(0).max(2)
+});
+
+export const appointmentCancellationSchema = z.object({
+  appointmentId: uuidSchema,
+  reason: trimmedString.max(500).optional()
+});
+
 export const reminderTypeSchema = z.enum([
   "follow_up",
   "recheck",
   "vaccination",
-  "refill"
+  "refill",
+  "appointment"
 ]);
 
 export const reminderStatusSchema = z.enum([

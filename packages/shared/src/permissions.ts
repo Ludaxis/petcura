@@ -21,6 +21,9 @@ export type ClinicPermission =
   | "requests:view"
   | "requests:reply"
   | "requests:manage"
+  | "appointments:view"
+  | "appointments:manage"
+  | "availability:manage"
   | "reminders:view"
   | "reminders:manage"
   | "reports:view"
@@ -38,6 +41,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "requests:view",
     "requests:reply",
     "requests:manage",
+    "appointments:view",
+    "appointments:manage",
+    "availability:manage",
     "reminders:view",
     "reminders:manage",
     "reports:view",
@@ -54,6 +60,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "requests:view",
     "requests:reply",
     "requests:manage",
+    "appointments:view",
+    "appointments:manage",
+    "availability:manage",
     "reminders:view",
     "reminders:manage",
     "reports:view",
@@ -69,6 +78,8 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "requests:view",
     "requests:reply",
     "requests:manage",
+    "appointments:view",
+    "appointments:manage",
     "reminders:view",
     "reminders:manage",
     "reports:view",
@@ -83,6 +94,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "requests:view",
     "requests:reply",
     "requests:manage",
+    "appointments:view",
     "reminders:view",
     "reminders:manage",
     "reports:view",
@@ -97,6 +109,8 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "requests:view",
     "requests:reply",
     "requests:manage",
+    "appointments:view",
+    "appointments:manage",
     "reminders:view",
     "reminders:manage",
     "reports:view",
@@ -107,6 +121,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly ClinicPermission[]> = {
     "customers:view",
     "pets:view",
     "requests:view",
+    "appointments:view",
     "reminders:view",
     "reports:view",
     "settings:view"

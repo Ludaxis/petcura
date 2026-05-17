@@ -21,6 +21,10 @@ import {
   type MessageDeliveryStatus
 } from "@/lib/delivery";
 import { listRequestReminders, type ReminderListItem } from "@/lib/reminders";
+import {
+  getAppointmentContextForRequest,
+  type AppointmentContext
+} from "@/lib/appointments/calendar";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -160,6 +164,7 @@ export type RequestDetail = InboxRequest & {
   aiIntake: AiIntakeHandoff | null;
   aiMemoryContext: AiMemoryContextItem[];
   aiMemoryCandidates: AiMemoryCandidateItem[];
+  appointmentContext: AppointmentContext | null;
 };
 
 function pickDraftText(output: unknown): string {
@@ -243,7 +248,8 @@ export async function getRequestDetail(
   supabase: ServerSupabaseClient,
   clinicId: string,
   requestId: string,
-  locale: SupportedLocale
+  locale: SupportedLocale,
+  timeZone = "Europe/Tallinn"
 ): Promise<RequestDetail | null> {
   const { data: requestData, error: requestError } = await supabase
     .from("requests")
@@ -272,7 +278,8 @@ export async function getRequestDetail(
     draftResult,
     intakeResult,
     contextResult,
-    reminders
+    reminders,
+    appointmentContext
   ] = await Promise.all([
       supabase
         .from("messages")
@@ -331,7 +338,15 @@ export async function getRequestDetail(
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      listRequestReminders(supabase, clinicId, requestId)
+      listRequestReminders(supabase, clinicId, requestId),
+      request.category === "appointment"
+        ? getAppointmentContextForRequest({
+            clinicId,
+            requestId,
+            locale,
+            timeZone
+          })
+        : Promise.resolve(null)
     ]);
 
   if (messagesResult.error) {
@@ -581,7 +596,8 @@ export async function getRequestDetail(
       confidence: row.confidence,
       createdAt: row.created_at,
       sourceCount: candidateSourceCounts.get(row.id) ?? 0
-    }))
+    })),
+    appointmentContext
   };
 }
 

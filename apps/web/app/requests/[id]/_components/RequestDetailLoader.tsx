@@ -23,7 +23,7 @@ type ServerSupabaseClient = Awaited<
 
 type StaffContext = {
   supabase: ServerSupabaseClient;
-  clinic: { id: string };
+  clinic: { id: string; timezone: string };
   user: { id: string };
   membership: { id: string };
 };
@@ -88,7 +88,8 @@ export async function RequestDetailLoader({
       staffContext.supabase,
       staffContext.clinic.id,
       requestId,
-      locale
+      locale,
+      staffContext.clinic.timezone
     ),
     loadInboxRows(staffContext.supabase, staffContext.clinic.id, {
       stream: "all",

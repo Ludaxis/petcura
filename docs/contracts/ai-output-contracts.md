@@ -54,7 +54,8 @@ Failure rows use `review_status = not_reviewable`.
 
 `ai_output_sources` stores source row references for each accountable output:
 `request`, `message`, `internal_note`, `ai_output`, `ai_memory_item`, `owner`,
-`pet`, or `web_intake_session`.
+`pet`, `appointment`, `appointment_slot_offer`, `service`, or
+`web_intake_session`.
 
 ## Rules
 
@@ -185,9 +186,9 @@ Failure rows use `review_status = not_reviewable`.
   - Owner-facing medical content that uses retrieved context still requires staff approval.
   - Translation prompts intentionally do not use memory so source wording stays faithful.
 
-## Reply Draft V1
+## Reply Draft V2
 
-- Prompt version: `reply_draft.v1.2026-05-12`
+- Prompt version: `reply_draft.v2.2026-05-17`
 - Default model: `PETCURA_AI_REPLY_DRAFT_MODEL` or `anthropic/claude-haiku-4.5`
 - Trigger: staff clicks generate or regenerate draft on request detail
 - Storage:
@@ -197,12 +198,17 @@ Failure rows use `review_status = not_reviewable`.
   - `input_json.target_locale`
   - `input_json.context_retrieval_ai_output_id`
   - `input_json.memory_ids`
+  - `input_json.appointment_context` when request category is `appointment`
   - `output_json.text`
   - `output_json.usedMemoryIds[]`
   - `output_json.safetyNotes[]`
 - Safety:
   - Drafts are never sent automatically.
   - Drafts can use accepted memory only as prior context, not as current symptoms.
+  - Appointment drafts may only mention slots from the current appointment context
+    or active staff-sent offers.
+  - Appointment drafts must never invent availability or say a booking is confirmed
+    unless the appointment row is already `confirmed` or `rescheduled`.
   - Staff accept, edit-and-accept, or reject remains the human approval path.
   - Draft stream endpoints only stream the exact persisted `ai_outputs.id`
     requested by the client; missing `draftId` disables streaming and falls

@@ -29,6 +29,7 @@ type MessageDeliveryStatus =
 
 export type OutboundMessageSource =
   | "staff_reply"
+  | "appointment_offer"
   | "reminder"
   | "sms_fallback";
 

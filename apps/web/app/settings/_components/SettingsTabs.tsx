@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Activity, Archive, Building2, Users } from "lucide-react";
+import { Activity, Archive, Building2, CalendarClock, Users } from "lucide-react";
 import { Spinner, TopProgressBar, cn } from "@petcura/ui";
 
-type SettingsTab = "team" | "archived" | "activity" | "clinic";
+type SettingsTab = "team" | "archived" | "activity" | "availability" | "clinic";
 
 type SettingsTabsProps = {
   activeTab: SettingsTab;
@@ -23,6 +23,7 @@ const TAB_ICONS = {
   team: Users,
   archived: Archive,
   activity: Activity,
+  availability: CalendarClock,
   clinic: Building2
 } satisfies Record<SettingsTab, typeof Users>;
 

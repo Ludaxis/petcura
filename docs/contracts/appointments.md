@@ -1,121 +1,116 @@
 # Appointments Contract
 
-Owner-proposed clinic visits. Request-based in v1.5 (no live slot reservation).
+Availability-aware V2 for the Alex pilot.
 
 ## Goal
 
-Let owners propose a time window for a clinic service. The clinic confirms via the existing inbox workflow.
+PetCura owns a lightweight internal clinic calendar: staff availability, time off, slot suggestions, staff-approved offers, owner confirmation, and an auditable appointment timeline. The clinic PMS remains the medical record; PetCura owns communication and scheduling workflow.
 
-## Owner
+## Scope
 
-Codex (schema, RLS, RPC). Claude (UI).
+In V2 PetCura supports:
 
-## Schema
+- Owner appointment requests with preferred window and notes.
+- Staff availability rules per clinic member.
+- Staff time-off blocks.
+- Earliest valid slot lookup over a 14-day horizon.
+- Staff-sent slot offers with three options.
+- 10-minute holds for offered slots.
+- Staff direct confirmation when booking by phone.
+- Owner confirmation from `/o/chat/[requestId]`.
+- Appointment-aware AI reply drafts that can only mention trusted slots.
 
-```sql
-create type appointment_status as enum (
-  'requested', 'confirmed', 'rescheduled', 'completed', 'cancelled', 'no_show'
-);
+Out of scope: Google Calendar sync, PMS sync, drag/drop rescheduling, recurring appointments, rooms/equipment, payments/deposits, autonomous booking.
 
-create table appointments (
-  id                 uuid primary key default gen_random_uuid(),
-  clinic_id          uuid not null references clinics(id) on delete cascade,
-  owner_id           uuid not null,
-  pet_id             uuid not null,
-  service_id         uuid,
-  request_id         uuid,
-  proposed_window    tstzrange not null,
-  scheduled_at       timestamptz,
-  duration_minutes   int,
-  staff_id           uuid references clinic_staff(id),
-  status             appointment_status not null default 'requested',
-  notes              text,
-  cancelled_reason   text,
-  idempotency_key    text,
-  created_at         timestamptz not null default now(),
-  updated_at         timestamptz not null default now(),
-  foreign key (clinic_id, owner_id) references owners(clinic_id, id),
-  foreign key (clinic_id, pet_id)   references pets(clinic_id, id),
-  foreign key (clinic_id, service_id) references services(clinic_id, id),
-  foreign key (clinic_id, request_id) references requests(clinic_id, id)
-);
+## Schema Additions
 
-create unique index appointments_idem
-  on appointments(clinic_id, owner_id, idempotency_key)
-  where idempotency_key is not null;
-```
+- `staff_availability_rules`: weekly working windows by `clinic_id`, `staff_id`, `weekday`, `start_time`, `end_time`, optional `service_ids`.
+- `staff_time_off`: unavailable date-time ranges per staff member.
+- `appointment_slot_offers`: staff-sent offer groups with `slots_json`, status, expiry, and accepted slot.
+- `appointment_holds`: temporary holds backing each offered slot.
+- `appointment_events`: appointment-specific timeline in addition to `request_events`.
 
-## Creation RPC
+Every table has `clinic_id`; every table has RLS. Staff writes are constrained to appointment/availability permissions. Owners may only read/confirm offers tied to their own appointment.
 
-Owners do not insert directly. They call:
-
-```sql
-public.request_appointment(
-  p_pet_id uuid,
-  p_service_id uuid,
-  p_proposed_window tstzrange,
-  p_notes text,
-  p_idempotency_key text
-) returns uuid
-```
-
-The RPC validates owner membership, service activity, species applicability, and the 5/day rate limit. In one transaction it creates:
-
-- `requests(category='appointment', status='new', urgency='low', channel='web')`
-- `appointments(status='requested')`
-- first system `messages` summary ("Bruno – Annual checkup. Proposed: Tue 12 May, 14:00–16:00.")
-- `request_events`
-- `audit_logs`
-
-## Status machine
+## Status Machine
 
 | From → To | Trigger |
 |---|---|
-| `requested → confirmed` | Staff confirms with `scheduled_at` |
-| `requested → rescheduled` | Staff proposes alternative |
-| `rescheduled → confirmed` | Owner accepts |
-| `* → cancelled` | Either side, before `scheduled_at` |
-| `confirmed → completed` | Staff marks done |
-| `confirmed → no_show` | Cron, 24h after `scheduled_at` |
+| `requested → confirmed` | Staff confirms directly or owner accepts offered slot |
+| `requested → rescheduled` | Staff replaces offer after owner asks for another time |
+| `rescheduled → confirmed` | Owner accepts new offer |
+| `requested/rescheduled/confirmed → cancelled` | Staff or owner cancels |
+| `confirmed → completed` | Staff marks visit complete |
+| `confirmed → no_show` | Clinic marks no-show |
 
-`confirmed/completed/no_show` require non-null `scheduled_at`. Terminal statuses don't reopen in v1.
+Confirmed appointments require `scheduled_at`, `duration_minutes`, and `staff_id`. Database-level overlap protection blocks double-booking confirmed/rescheduled appointments for the same staff member.
 
-Every transition writes `request_events(event_type='appointment_status_changed')`. Cancellations within 2h of `scheduled_at` also write `late_cancel`.
+## Slot Rules
 
-## Reminders
+- Clinic timezone is source of truth for display.
+- Storage uses `timestamptz`.
+- Granularity: 15 minutes.
+- Default horizon: 14 days.
+- Default offer count: 3 slots.
+- Default hold TTL: 10 minutes.
+- Slot is valid only when it fits an active availability rule, staff is eligible for the service, no time-off overlaps, no confirmed appointment overlaps, and no active hold overlaps.
 
-On `confirmed`, schedule reminders with deterministic `source_key`:
-- `T-24h`
-- `T-2h`
-- `T+1h` arrival check
+## Staff UX Contract
 
-`reminders.type='appointment'`, dedupe on `(clinic_id, type, source_key)`.
+`/calendar` shows:
 
-## UX acceptance
+- Desktop: responsive multi-day agenda with staff lanes.
+- Mobile: date chips + agenda cards.
+- Filters: date range, staff member, status.
+- Next free slots panel.
 
-- Owner home/pet detail shows: `Pending review` / `Confirmed Tue 14:00` / `Rescheduled — please confirm`.
-- Owner can cancel only when status ∈ {requested, confirmed, rescheduled}.
-- Owner-side rescheduling NOT supported in v1.5.
-- Copy localized EN/ET/RU.
+Request detail shows an appointment panel when `request.category='appointment'`:
 
-## Test plan
+- Owner/pet/service context.
+- Preferred owner window.
+- Earliest three valid slots.
+- Actions: offer slots, confirm first slot, generate appointment-aware draft.
 
-- Status machine: valid transitions allowed, invalid blocked.
-- Concurrent confirm: advisory lock; only one staff wins.
-- Reminders fire via existing `/api/cron/reminders`.
-- Isolation: owner A cannot read or cancel owner B's appointment.
-- Idempotency: duplicate submissions with same key return existing id.
+Settings → Availability shows:
 
-## Out of scope
+- Working-day/hour rules per staff member.
+- Service eligibility chips.
+- Time-off blocks.
+- Clinic timezone.
 
-- Live calendar / slot availability.
-- Multi-pet appointments.
-- Recurring appointments.
-- Payment / deposit.
+## Owner UX Contract
 
-## Done when
+Owner service request:
 
-- Owner can submit, view, cancel.
-- Staff inbox surfaces appointment requests without inbox code changes.
-- Reminders fire T-24h and T-2h.
-- Isolation matrix green.
+- Owner chooses pet, preferred date/time, and notes.
+- If availability exists, show earliest likely options as guidance only. They are not booked.
+
+Owner chat:
+
+- Staff-offered slots render as a confirmation card.
+- Owner can confirm one slot or ask for another time.
+- WhatsApp replies `1`, `2`, `3` or localized equivalents may confirm only an active staff-sent offer. Free text never auto-books.
+
+## AI Contract
+
+`reply_draft.v2` receives:
+
+- Current request messages.
+- Owner, pet, service, and appointment fields.
+- Active slot offers and current valid slot suggestions.
+- Accepted memory context.
+
+AI must:
+
+- Mention only slots in the provided availability snapshot or active offer.
+- Never invent availability.
+- Never say “booked” unless appointment status is already `confirmed`.
+- Ask staff to check availability if no trusted slot exists.
+- Persist sources in `ai_outputs` / `ai_output_sources`.
+
+## Tests
+
+- Slot generation: timezone display, duration alignment, lead time, no overlaps.
+- RLS: clinic isolation, owner isolation, viewer cannot mutate, direct table writes do not bypass staff role checks.
+- Playwright: owner request → staff offer → owner confirm → calendar updates.
+- AI eval: appointment draft uses offered slots and prior conversation without invented bookings.

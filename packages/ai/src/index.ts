@@ -79,9 +79,9 @@ export const aiPromptRegistry = {
     ownerFacing: false
   },
   replyDraft: {
-    key: "reply_draft.v1",
+    key: "reply_draft.v2",
     kind: "reply_draft",
-    version: "reply_draft.v1.2026-05-12",
+    version: "reply_draft.v2.2026-05-17",
     ownerFacing: true
   }
 } as const satisfies Record<

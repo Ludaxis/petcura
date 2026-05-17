@@ -24,9 +24,9 @@ describe("AI output contracts", () => {
       "provider_error",
       "blocked"
     ]);
-    expect(findAiPromptRegistryEntry("reply_draft.v1")).toMatchObject({
+    expect(findAiPromptRegistryEntry("reply_draft.v2")).toMatchObject({
       kind: "reply_draft",
-      version: "reply_draft.v1.2026-05-12"
+      version: "reply_draft.v2.2026-05-17"
     });
     expect(aiPromptRegistry.intakeQuestion.ownerFacing).toBe(true);
   });

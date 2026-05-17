@@ -136,6 +136,13 @@ export const SIDEBAR_NAV: NavItem[] = [
     requiredPermissionMode: "any"
   },
   {
+    id: "calendar",
+    labelKey: "nav.calendar",
+    href: "/calendar",
+    icon: CalendarClock,
+    requiredPermissions: ["appointments:view"]
+  },
+  {
     id: "reminders",
     labelKey: "nav.reminders",
     href: "/reminders",

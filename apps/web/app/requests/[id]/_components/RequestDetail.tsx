@@ -27,6 +27,11 @@ import {
   updateRequestStatus,
   updateRequestUrgency
 } from "../actions";
+import {
+  cancelAppointment,
+  confirmAppointmentFirstSlot,
+  offerAppointmentSlots
+} from "@/app/calendar/actions";
 import type { AiMemoryPanelProps } from "./AiMemoryPanel";
 import { CreateReminderDialog } from "./CreateReminderDialog";
 import { DetailsSheet } from "./DetailsSheet";
@@ -562,6 +567,137 @@ function SideBlocks({
                 </form>
               </details>
             </div>
+          </div>
+        </details>
+      ) : null}
+
+      {request.appointmentContext ? (
+        <details
+          open
+          data-appointment-panel
+          className="border-b border-[var(--line-2)] px-4 py-3 [&[open]>summary>svg]:rotate-180"
+        >
+          <summary className="flex cursor-pointer items-center justify-between">
+            <h2 className={headingClass}>Appointment</h2>
+            <ChevronDown aria-hidden="true" size={12} />
+          </summary>
+          <div className="mt-2.5 grid gap-3">
+            <div className="rounded-[var(--radius)] border border-[var(--line-2)] bg-[var(--soft)] p-3">
+              <p className="text-[13px] font-semibold text-[var(--ink)]">
+                {request.appointmentContext.appointment.serviceName}
+              </p>
+              <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
+                Status: {request.appointmentContext.appointment.status}
+                {request.appointmentContext.appointment.scheduledAt
+                  ? ` · ${formatDateTime(request.appointmentContext.appointment.scheduledAt)}`
+                  : ""}
+              </p>
+              {request.appointmentContext.appointment.notes ? (
+                <p className="mt-2 text-[12px] leading-5 text-[var(--ink-2)]">
+                  {request.appointmentContext.appointment.notes}
+                </p>
+              ) : null}
+            </div>
+
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
+                Earliest valid slots
+              </p>
+              <ol className="mt-2 grid gap-2">
+                {request.appointmentContext.suggestedSlots.length > 0 ? (
+                  request.appointmentContext.suggestedSlots.map((slot, index) => (
+                    <li
+                      key={`${slot.staffId}-${slot.startsAt}`}
+                      className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-2"
+                    >
+                      <p className="text-[12.5px] font-semibold text-[var(--ink)]">
+                        {index + 1}. {formatDateTime(slot.startsAt)}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-[var(--muted)]">
+                        {slot.staffLabel} · {slot.durationMinutes}m
+                      </p>
+                    </li>
+                  ))
+                ) : (
+                  <li className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-3 text-[12px] text-[var(--muted)]">
+                    No valid slots yet. Add availability in Settings.
+                  </li>
+                )}
+              </ol>
+            </div>
+
+            {request.appointmentContext.suggestedSlots.length > 0 ? (
+              <form action={offerAppointmentSlots} className="grid gap-2">
+                <input name="lang" type="hidden" value={locale} />
+                <input name="requestId" type="hidden" value={request.id} />
+                <input
+                  name="appointmentId"
+                  type="hidden"
+                  value={request.appointmentContext.appointment.id}
+                />
+                <input
+                  name="slotsJson"
+                  type="hidden"
+                  value={JSON.stringify(
+                    request.appointmentContext.suggestedSlots.slice(0, 3)
+                  )}
+                />
+                <textarea
+                  name="messageBody"
+                  defaultValue={`We found these appointment options:\n${request.appointmentContext.suggestedSlots
+                    .slice(0, 3)
+                    .map((slot, index) => `${index + 1}. ${formatDateTime(slot.startsAt)} with ${slot.staffLabel}`)
+                    .join("\n")}\n\nReply with 1, 2, or 3 to confirm, or tell us another preferred time.`}
+                  className="min-h-28 resize-y rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-2 py-2 text-[12px] leading-5 text-[var(--ink)]"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button size="sm" type="submit">
+                    Offer slots
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    formAction={confirmAppointmentFirstSlot}
+                    type="submit"
+                  >
+                    Confirm first
+                  </Button>
+                </div>
+              </form>
+            ) : null}
+
+            {request.appointmentContext.offers.length > 0 ? (
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted-2)]">
+                  Active offers
+                </p>
+                <ol className="mt-2 grid gap-2">
+                  {request.appointmentContext.offers.slice(0, 2).map((offer) => (
+                    <li
+                      key={offer.id}
+                      className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] p-2 text-[12px] text-[var(--muted)]"
+                    >
+                      {offer.status} · expires {formatDateTime(offer.expiresAt)}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
+
+            {request.appointmentContext.appointment.status !== "cancelled" ? (
+              <form action={cancelAppointment}>
+                <input name="lang" type="hidden" value={locale} />
+                <input name="requestId" type="hidden" value={request.id} />
+                <input
+                  name="appointmentId"
+                  type="hidden"
+                  value={request.appointmentContext.appointment.id}
+                />
+                <Button size="sm" variant="ghost" type="submit">
+                  Cancel appointment
+                </Button>
+              </form>
+            ) : null}
           </div>
         </details>
       ) : null}

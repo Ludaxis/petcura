@@ -219,6 +219,30 @@ export function RequestPaneShell({
           {
             table: "ai_outputs",
             filter: eqFilter("request_id", requestId)
+          },
+          {
+            table: "appointments",
+            filter: eqFilter("request_id", requestId)
+          },
+          {
+            table: "appointment_slot_offers",
+            filter: eqFilter("request_id", requestId)
+          },
+          {
+            table: "appointment_holds",
+            filter: eqFilter("clinic_id", clinicId)
+          },
+          {
+            table: "appointment_events",
+            filter: eqFilter("request_id", requestId)
+          },
+          {
+            table: "staff_availability_rules",
+            filter: eqFilter("clinic_id", clinicId)
+          },
+          {
+            table: "staff_time_off",
+            filter: eqFilter("clinic_id", clinicId)
           }
         ]}
         pollMs={5_000}

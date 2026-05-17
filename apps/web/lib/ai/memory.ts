@@ -15,6 +15,10 @@ import {
   type Database,
   type SupportedLocale
 } from "@petcura/shared";
+import {
+  getAppointmentContextForRequest,
+  type AppointmentContext
+} from "@/lib/appointments/calendar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   generateAccountedJson,
@@ -47,7 +51,7 @@ export type RequestMemoryContext = Pick<
 > & {
   clinics: Pick<
     Database["public"]["Tables"]["clinics"]["Row"],
-    "name" | "locale"
+    "name" | "locale" | "timezone"
   > | null;
   owners: Pick<
     Database["public"]["Tables"]["owners"]["Row"],
@@ -490,18 +494,29 @@ function buildReplyDraftPrompt({
   request,
   messages,
   memoryItems,
-  targetLocale
+  targetLocale,
+  appointmentContext
 }: {
   request: RequestMemoryContext;
   messages: MessageForAi[];
   memoryItems: MemoryContextItem[];
   targetLocale: SupportedLocale;
+  appointmentContext?: AppointmentContext | null;
 }) {
   return JSON.stringify(
     {
       task:
-        "Draft a concise staff-reviewed reply to the owner. The draft is never sent automatically. Use prior memory only as background context and label uncertainty. Do not diagnose, prescribe, set final urgency, or provide autonomous medical advice.",
+        "Draft a concise staff-reviewed reply to the owner. The draft is never sent automatically. Use prior memory only as background context and label uncertainty. Do not diagnose, prescribe, set final urgency, provide autonomous medical advice, or confirm an appointment unless appointment status is already confirmed.",
       target_locale: targetLocale,
+      appointment_rules:
+        request.category === "appointment"
+          ? [
+              "Use only current appointment slots listed in appointment_context.current_available_slots or appointment_context.active_offers.",
+              "Never invent availability, staff names, appointment times, or booking status.",
+              "If no trusted slots are present, ask staff to check availability or ask the owner for a preferred window.",
+              "Say a time is offered/proposed unless appointment_context.appointment.status is confirmed or rescheduled."
+            ]
+          : [],
       prior_context_not_current_symptoms: memoryItems.map((item) => ({
         id: item.id,
         scope_type: item.scopeType,
@@ -530,6 +545,41 @@ function buildReplyDraftPrompt({
         created_at: message.created_at,
         body: message.body
       })),
+      appointment_context: appointmentContext
+        ? {
+            appointment: {
+              id: appointmentContext.appointment.id,
+              status: appointmentContext.appointment.status,
+              service_name: appointmentContext.appointment.serviceName,
+              scheduled_at: appointmentContext.appointment.scheduledAt,
+              duration_minutes: appointmentContext.appointment.durationMinutes,
+              notes: appointmentContext.appointment.notes
+            },
+            active_offers: appointmentContext.offers
+              .filter((offer) => offer.status === "sent")
+              .slice(0, 3)
+              .map((offer) => ({
+                id: offer.id,
+                expires_at: offer.expiresAt,
+                slots: offer.slots.map((slot, index) => ({
+                  index: index + 1,
+                  staff: slot.staffLabel,
+                  starts_at: slot.startsAt,
+                  ends_at: slot.endsAt,
+                  duration_minutes: slot.durationMinutes
+                }))
+              })),
+            current_available_slots: appointmentContext.suggestedSlots.map(
+              (slot, index) => ({
+                index: index + 1,
+                staff: slot.staffLabel,
+                starts_at: slot.startsAt,
+                ends_at: slot.endsAt,
+                duration_minutes: slot.durationMinutes
+              })
+            )
+          }
+        : null,
       output_shape: {
         text: "draft reply text only",
         confidence: "0..1",
@@ -561,23 +611,34 @@ export async function generateReplyDraftForRequest({
     return { ok: false as const, error: "not_found" };
   }
 
-  const context = await retrieveAcceptedMemoryContext({
-    admin,
-    request,
-    taskKind: "reply_draft"
-  });
   const model = getReplyDraftModel();
   const sourceLocale = resolveReplyDraftSourceLocale({ request, messages });
   const targetLocale = normalizeLocale(
     locale ?? request.owners?.preferred_language ?? request.clinics?.locale
   );
+  const [context, appointmentContext] = await Promise.all([
+    retrieveAcceptedMemoryContext({
+      admin,
+      request,
+      taskKind: "reply_draft"
+    }),
+    request.category === "appointment"
+      ? getAppointmentContextForRequest({
+          clinicId,
+          requestId,
+          locale: targetLocale,
+          timeZone: request.clinics?.timezone ?? "Europe/Tallinn"
+        })
+      : Promise.resolve(null)
+  ]);
   const system =
-    "You are PetCura's veterinary clinic operations assistant. You draft staff-reviewed replies only. You never diagnose, prescribe, set final urgency, or send messages.";
+    "You are PetCura's veterinary clinic operations assistant. You draft staff-reviewed replies only. You never diagnose, prescribe, set final urgency, send messages, invent appointment availability, or autonomously book appointments.";
   const prompt = buildReplyDraftPrompt({
     request,
     messages,
     memoryItems: context.items,
-    targetLocale
+    targetLocale,
+    appointmentContext
   });
   const accounted = await generateAccountedJson({
     db: admin,
@@ -596,6 +657,14 @@ export async function generateReplyDraftForRequest({
       target_locale: targetLocale,
       context_retrieval_ai_output_id: context.aiOutputId,
       memory_ids: context.items.map((item) => item.id),
+      appointment_context: appointmentContext
+        ? {
+            appointment_id: appointmentContext.appointment.id,
+            service_id: appointmentContext.appointment.serviceId,
+            offer_ids: appointmentContext.offers.map((offer) => offer.id),
+            suggested_slots: appointmentContext.suggestedSlots
+          }
+        : null,
       messages: messages.map((message) => ({
         id: message.id,
         sender_type: message.sender_type,
@@ -613,7 +682,27 @@ export async function generateReplyDraftForRequest({
       ...context.items.map((item) => ({
         sourceType: "ai_memory_item" as const,
         sourceId: item.id
-      }))
+      })),
+      ...(appointmentContext
+        ? [
+            {
+              sourceType: "appointment" as const,
+              sourceId: appointmentContext.appointment.id
+            },
+            ...(appointmentContext.appointment.serviceId
+              ? [
+                  {
+                    sourceType: "service" as const,
+                    sourceId: appointmentContext.appointment.serviceId
+                  }
+                ]
+              : []),
+            ...appointmentContext.offers.map((offer) => ({
+              sourceType: "appointment_slot_offer" as const,
+              sourceId: offer.id
+            }))
+          ]
+        : [])
     ],
     transformOutput: (output) => ({
       ...output,
@@ -659,6 +748,7 @@ export async function generateReplyDraftForRequest({
       source_locale: sourceLocale,
       target_locale: targetLocale,
       context_retrieval_ai_output_id: context.aiOutputId,
+      appointment_context_loaded: Boolean(appointmentContext),
       memory_ids: output.usedMemoryIds
     }
   });
@@ -678,7 +768,7 @@ export async function loadRequestMemoryContext(
   const { data, error } = await admin
     .from("requests")
     .select(
-      "id, clinic_id, owner_id, pet_id, category, urgency, status, clinics(name, locale), owners(id, name, preferred_language), pets(id, name, species, breed, allergies, medical_notes)"
+      "id, clinic_id, owner_id, pet_id, category, urgency, status, clinics(name, locale, timezone), owners(id, name, preferred_language), pets(id, name, species, breed, allergies, medical_notes)"
     )
     .eq("clinic_id", clinicId)
     .eq("id", requestId)

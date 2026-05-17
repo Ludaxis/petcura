@@ -8,10 +8,14 @@ import {
   type Database,
   type SupportedLocale
 } from "@petcura/shared";
-import { requestCategorySchema } from "@petcura/validation";
+import {
+  ownerSlotConfirmationSchema,
+  requestCategorySchema
+} from "@petcura/validation";
 import { getRequestLocale } from "@/lib/locale";
 import { requireOwnerContext } from "@/lib/owner/auth";
 import { getOwnerRequest, listOwnerPets } from "@/lib/owner/data";
+import { parseAppointmentSlots } from "@/lib/appointments/calendar";
 import {
   hasUsableProfileImage,
   uploadProfileImage
@@ -24,6 +28,33 @@ type RequestEventInsert =
   Database["public"]["Tables"]["request_events"]["Insert"];
 type PetWeightInsert =
   Database["public"]["Tables"]["pet_weight_entries"]["Insert"];
+
+type DynamicQuery = {
+  select: (columns?: string) => DynamicQuery;
+  insert: (values: unknown) => DynamicQuery;
+  update: (values: unknown) => DynamicQuery;
+  eq: (column: string, value: unknown) => DynamicQuery;
+  maybeSingle: () => DynamicQuery;
+  then: PromiseLike<{ data: unknown; error: { message: string } | null }>["then"];
+};
+
+type DynamicDb = {
+  from: (table: string) => DynamicQuery;
+};
+
+type OwnerAppointmentOfferRow = {
+  id: string;
+  appointment_id: string;
+  request_id: string | null;
+  status: "draft" | "sent" | "accepted" | "expired" | "cancelled";
+  slots_json: unknown;
+  expires_at: string;
+};
+
+type OwnerAppointmentRow = Pick<
+  Database["public"]["Tables"]["appointments"]["Row"],
+  "id" | "owner_id" | "request_id" | "status"
+>;
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -38,6 +69,10 @@ function getPhoto(formData: FormData) {
 function nullable(value: string | undefined) {
   const next = value?.trim();
   return next ? next : null;
+}
+
+function dynamicDb(admin: ReturnType<typeof createAdminClient>): DynamicDb {
+  return admin as unknown as DynamicDb;
 }
 
 function ownerRedirect(
@@ -208,6 +243,211 @@ export async function requestOwnerAppointment(formData: FormData) {
   revalidatePath("/o");
 
   redirect(appointment?.request_id ? `/o/chat/${appointment.request_id}` : "/o");
+}
+
+export async function confirmOwnerAppointmentSlot(formData: FormData) {
+  const locale = await getRequestLocale();
+  const parsed = ownerSlotConfirmationSchema.safeParse({
+    requestId: getString(formData, "requestId"),
+    offerId: getString(formData, "offerId"),
+    slotIndex: getString(formData, "slotIndex")
+  });
+
+  if (!parsed.success) {
+    ownerRedirect(locale, "/o/chat", { chat_error: "invalid_appointment" });
+  }
+
+  const { requestId, offerId, slotIndex } = parsed.data;
+  const context = await requireOwnerContext(locale, `/o/chat/${requestId}`);
+  const request = await getOwnerRequest(context, requestId);
+  if (!request || request.category !== "appointment") {
+    ownerRedirect(locale, "/o/chat", { chat_error: "invalid_appointment" });
+  }
+
+  const admin = createAdminClient();
+  const dynamic = dynamicDb(admin);
+  const { data: offerRow, error: offerError } = await dynamic
+    .from("appointment_slot_offers")
+    .select("id, appointment_id, request_id, status, slots_json, expires_at")
+    .eq("clinic_id", context.clinic.id)
+    .eq("request_id", requestId)
+    .eq("id", offerId)
+    .maybeSingle();
+
+  if (offerError) {
+    throw new Error(`Could not load slot offer: ${offerError.message}`);
+  }
+
+  const offer = offerRow as OwnerAppointmentOfferRow | null;
+  if (!offer || offer.status !== "sent" || new Date(offer.expires_at) <= new Date()) {
+    ownerRedirect(locale, `/o/chat/${requestId}`, {
+      chat_error: "appointment_offer_expired"
+    });
+  }
+
+  const slots = parseAppointmentSlots(offer.slots_json);
+  const slot = slots[slotIndex];
+  if (!slot) {
+    ownerRedirect(locale, `/o/chat/${requestId}`, {
+      chat_error: "invalid_appointment"
+    });
+  }
+
+  const { data: appointmentRow, error: appointmentError } = await admin
+    .from("appointments")
+    .select("id, owner_id, request_id, status")
+    .eq("clinic_id", context.clinic.id)
+    .eq("id", offer.appointment_id)
+    .maybeSingle();
+
+  if (appointmentError) {
+    throw new Error(`Could not load appointment: ${appointmentError.message}`);
+  }
+
+  const appointment = appointmentRow as OwnerAppointmentRow | null;
+  if (
+    !appointment ||
+    appointment.owner_id !== context.owner.id ||
+    appointment.request_id !== requestId ||
+    appointment.status === "cancelled" ||
+    appointment.status === "completed" ||
+    appointment.status === "no_show"
+  ) {
+    ownerRedirect(locale, `/o/chat/${requestId}`, {
+      chat_error: "invalid_appointment"
+    });
+  }
+
+  const nextAppointmentStatus =
+    appointment.status === "confirmed" ? "rescheduled" : "confirmed";
+  const { error: updateError } = await admin
+    .from("appointments")
+    .update({
+      scheduled_at: slot.startsAt,
+      duration_minutes: slot.durationMinutes,
+      staff_id: slot.staffId,
+      status: nextAppointmentStatus
+    })
+    .eq("clinic_id", context.clinic.id)
+    .eq("id", appointment.id);
+
+  if (updateError) {
+    throw new Error(`Could not confirm appointment: ${updateError.message}`);
+  }
+
+  await dynamic
+    .from("appointment_slot_offers")
+    .update({
+      status: "accepted",
+      accepted_slot_index: slotIndex,
+      accepted_at: new Date().toISOString()
+    })
+    .eq("clinic_id", context.clinic.id)
+    .eq("id", offerId);
+
+  await dynamic
+    .from("appointment_holds")
+    .update({ status: "cancelled" })
+    .eq("clinic_id", context.clinic.id)
+    .eq("offer_id", offerId);
+  await dynamic
+    .from("appointment_holds")
+    .update({ status: "accepted" })
+    .eq("clinic_id", context.clinic.id)
+    .eq("offer_id", offerId)
+    .eq("staff_id", slot.staffId)
+    .eq("starts_at", slot.startsAt);
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: context.clinic.timezone
+  });
+  const confirmationBody = `Appointment confirmed for ${formatter.format(
+    new Date(slot.startsAt)
+  )}.`;
+  const { data: message } = await admin
+    .from("messages")
+    .insert({
+      request_id: requestId,
+      clinic_id: context.clinic.id,
+      sender_type: "system",
+      sender_id: context.owner.id,
+      body: confirmationBody,
+      source_locale: locale
+    })
+    .select("id")
+    .maybeSingle();
+
+  await admin
+    .from("requests")
+    .update({ status: "waiting_staff", resolved_at: null })
+    .eq("clinic_id", context.clinic.id)
+    .eq("id", requestId);
+
+  await dynamic.from("appointment_events").insert({
+    clinic_id: context.clinic.id,
+    appointment_id: appointment.id,
+    request_id: requestId,
+    actor_type: "owner",
+    actor_id: context.owner.id,
+    event_type: "slot_confirmed",
+    payload_json: {
+      offer_id: offerId,
+      slot_index: slotIndex,
+      slot
+    }
+  });
+
+  await admin.from("request_events").insert([
+    {
+      request_id: requestId,
+      clinic_id: context.clinic.id,
+      actor_type: "owner",
+      actor_id: context.owner.id,
+      event_type: "appointment_slot_confirmed",
+      payload_json: {
+        appointment_id: appointment.id,
+        offer_id: offerId,
+        slot_index: slotIndex,
+        message_id: message?.id ?? null
+      }
+    },
+    {
+      request_id: requestId,
+      clinic_id: context.clinic.id,
+      actor_type: "system",
+      actor_id: context.owner.id,
+      event_type: "status_changed",
+      payload_json: {
+        from: request.status,
+        to: "waiting_staff",
+        reason: "owner_confirmed_appointment"
+      }
+    }
+  ] satisfies RequestEventInsert[]);
+
+  await admin.from("audit_logs").insert({
+    clinic_id: context.clinic.id,
+    actor_id: context.user.id,
+    action: "owner_appointment_slot_confirmed",
+    entity_type: "appointments",
+    entity_id: appointment.id,
+    payload_json: {
+      request_id: requestId,
+      offer_id: offerId,
+      slot_index: slotIndex
+    }
+  });
+
+  revalidatePath(`/o/chat/${requestId}`);
+  revalidatePath("/o/chat");
+  revalidatePath("/o");
+  revalidatePath(`/requests/${requestId}`);
+  revalidatePath("/calendar");
+  ownerRedirect(locale, `/o/chat/${requestId}`, {
+    chat_status: "appointment_confirmed"
+  });
 }
 
 export async function updateOwnerSelfProfile(formData: FormData) {

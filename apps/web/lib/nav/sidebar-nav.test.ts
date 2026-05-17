@@ -21,6 +21,7 @@ describe("sidebar-nav", () => {
     expect(ids).toEqual([
       "inbox",
       "directory",
+      "calendar",
       "reminders",
       "reports",
       "settings",
@@ -51,6 +52,7 @@ describe("sidebar-nav", () => {
 
   it("gates staff surfaces by clinic permissions", () => {
     const directory = SIDEBAR_NAV.find((item) => item.id === "directory")!;
+    const calendar = SIDEBAR_NAV.find((item) => item.id === "calendar")!;
     const reports = SIDEBAR_NAV.find((item) => item.id === "reports")!;
     const settings = SIDEBAR_NAV.find((item) => item.id === "settings")!;
     const admin = SIDEBAR_NAV.find((item) => item.id === "admin")!;
@@ -75,6 +77,18 @@ describe("sidebar-nav", () => {
     ).toBe(true);
     expect(
       canShowNavItem(reports, {
+        isSuperAdmin: false,
+        permissions: ["requests:view"]
+      })
+    ).toBe(false);
+    expect(
+      canShowNavItem(calendar, {
+        isSuperAdmin: false,
+        permissions: ["appointments:view"]
+      })
+    ).toBe(true);
+    expect(
+      canShowNavItem(calendar, {
         isSuperAdmin: false,
         permissions: ["requests:view"]
       })

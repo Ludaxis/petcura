@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   clinicSlugSchema,
+  appointmentSlotSchema,
+  availabilityRuleInputSchema,
   createClinicSchema,
   createClinicStaffSchema,
   createReminderSchema,
@@ -14,13 +16,16 @@ import {
   marketingLeadStatusSchema,
   marketingLeadStatusUpdateSchema,
   ownerProfileSchema,
+  ownerSlotConfirmationSchema,
   petProfileSchema,
   reminderStatusActionSchema,
   requestAssignmentSchema,
   requestStatusSchema,
   requestStatusUpdateSchema,
   requestUrgencyUpdateSchema,
+  slotOfferCreationSchema,
   staffReplySchema,
+  timeOffInputSchema,
   userProfileSchema,
   webIntakeMessageSchema,
   webIntakeStartSchema
@@ -29,6 +34,8 @@ import {
 const requestId = "11111111-1111-4111-8111-111111111111";
 const staffMemberId = "22222222-2222-4222-8222-222222222222";
 const leadId = "33333333-3333-4333-8333-333333333333";
+const appointmentId = "44444444-4444-4444-8444-444444444444";
+const offerId = "55555555-5555-4555-8555-555555555555";
 
 describe("intakeRequestSchema", () => {
   it("accepts a complete multilingual owner intake", () => {
@@ -272,6 +279,58 @@ describe("staff action schemas", () => {
         staffMemberId: "unassigned"
       })
     ).toMatchObject({ staffMemberId: "unassigned" });
+  });
+
+  it("accepts appointment availability, slot offers, and owner confirmation", () => {
+    expect(
+      availabilityRuleInputSchema.parse({
+        staffId: staffMemberId,
+        weekday: "1",
+        startTime: "09:00",
+        endTime: "17:00",
+        serviceIds: [],
+        isActive: "true"
+      })
+    ).toMatchObject({ weekday: 1, isActive: true });
+
+    expect(
+      timeOffInputSchema.parse({
+        staffId: staffMemberId,
+        startsAt: "2026-05-18T09:00:00.000+03:00",
+        endsAt: "2026-05-18T12:00:00.000+03:00",
+        reason: "Surgery"
+      })
+    ).toMatchObject({ staffId: staffMemberId });
+
+    const slot = appointmentSlotSchema.parse({
+      staffId: staffMemberId,
+      staffLabel: "Dr Marta",
+      startsAt: "2026-05-18T09:00:00.000+03:00",
+      endsAt: "2026-05-18T09:30:00.000+03:00",
+      durationMinutes: "30",
+      serviceId: null
+    });
+
+    expect(slot).toMatchObject({
+      staffLabel: "Dr Marta",
+      durationMinutes: 30,
+      serviceId: null
+    });
+    expect(
+      slotOfferCreationSchema.parse({
+        requestId,
+        appointmentId,
+        slots: [slot],
+        messageBody: "We can offer Monday morning."
+      })
+    ).toMatchObject({ appointmentId });
+    expect(
+      ownerSlotConfirmationSchema.parse({
+        requestId,
+        offerId,
+        slotIndex: "0"
+      })
+    ).toMatchObject({ slotIndex: 0 });
   });
 
   it("accepts reminder creation and status actions", () => {

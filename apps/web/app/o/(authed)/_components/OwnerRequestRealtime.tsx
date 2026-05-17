@@ -13,21 +13,30 @@ export function OwnerRequestRealtime({ requestId }: Props) {
 
   useEffect(() => {
     const supabase = createOwnerBrowserClient();
-    const channel = supabase
-      .channel(`owner-request-${requestId}`)
-      .on(
+    const refresh = () => {
+      router.refresh();
+    };
+    const channel = supabase.channel(`owner-request-${requestId}`);
+
+    for (const table of [
+      "messages",
+      "requests",
+      "appointments",
+      "appointment_slot_offers"
+    ]) {
+      channel.on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
-          table: "messages",
+          table,
           filter: `request_id=eq.${requestId}`
         },
-        () => {
-          router.refresh();
-        }
-      )
-      .subscribe();
+        refresh
+      );
+    }
+
+    channel.subscribe();
 
     return () => {
       void supabase.removeChannel(channel);

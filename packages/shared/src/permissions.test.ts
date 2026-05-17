@@ -44,4 +44,15 @@ describe("clinic role permissions", () => {
     expect(hasClinicPermission("admin", "reports:financial")).toBe(true);
     expect(hasClinicPermission("owner", "reports:financial")).toBe(true);
   });
+
+  it("keeps appointment booking operational but availability admin-only", () => {
+    expect(hasClinicPermission("owner", "appointments:manage")).toBe(true);
+    expect(hasClinicPermission("admin", "availability:manage")).toBe(true);
+    expect(hasClinicPermission("vet", "appointments:manage")).toBe(true);
+    expect(hasClinicPermission("reception", "appointments:manage")).toBe(true);
+    expect(hasClinicPermission("tech", "appointments:manage")).toBe(false);
+    expect(hasClinicPermission("vet", "availability:manage")).toBe(false);
+    expect(hasClinicPermission("viewer", "appointments:view")).toBe(true);
+    expect(hasClinicPermission("viewer", "appointments:manage")).toBe(false);
+  });
 });

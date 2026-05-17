@@ -27,6 +27,9 @@ export type AiOutputSourceInput = {
     | "ai_memory_item"
     | "owner"
     | "pet"
+    | "appointment"
+    | "appointment_slot_offer"
+    | "service"
     | "web_intake_session";
   sourceId: string;
   sourceLabel?: string | null;

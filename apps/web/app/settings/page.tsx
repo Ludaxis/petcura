@@ -2,6 +2,7 @@ import {
   Activity,
   Archive,
   Building2,
+  CalendarClock,
   LockKeyhole,
   RotateCcw,
   ShieldCheck,
@@ -31,6 +32,11 @@ import {
 } from "@/app/_components/profile/ProfileEditor";
 import { requireStaffContext } from "@/lib/auth/staff";
 import { listClinicTeam, listClinicTeamActivity } from "@/lib/clinic/team";
+import {
+  listAvailabilityRules,
+  listCalendarStaff,
+  listStaffTimeOff
+} from "@/lib/appointments/calendar";
 import { getRequestLocale } from "@/lib/locale";
 import {
   addClinicTeamMember,
@@ -38,6 +44,11 @@ import {
   updateClinicTeamMemberRole,
   updateClinicTeamMemberStatus
 } from "./actions";
+import {
+  addTimeOff,
+  deleteAvailabilityRule,
+  saveAvailabilityRule
+} from "@/app/calendar/actions";
 import { SettingsTabs } from "./_components/SettingsTabs";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +63,7 @@ type Props = {
   }>;
 };
 
-type SettingsTab = "team" | "archived" | "activity" | "clinic";
+type SettingsTab = "team" | "archived" | "activity" | "clinic" | "availability";
 
 const roleCopyKeys: Record<StaffRole, CopyKey> = {
   owner: "role.owner",
@@ -72,6 +83,7 @@ function getStatusCopy(status: string | undefined): CopyKey | null {
   if (status === "role_updated") return "settings.status.roleUpdated";
   if (status === "staff_updated") return "settings.status.staffUpdated";
   if (status === "profile_saved") return "profile.saved";
+  if (status === "availability_saved") return "settings.status.availabilitySaved";
   return null;
 }
 
@@ -79,7 +91,8 @@ function getSettingsTab(value: string | undefined): SettingsTab {
   if (
     value === "archived" ||
     value === "activity" ||
-    value === "clinic"
+    value === "clinic" ||
+    value === "availability"
   ) {
     return value;
   }
@@ -133,9 +146,18 @@ export default async function SettingsPage({ searchParams }: Props) {
   const actorRole = staffContext.membership.role as StaffRole;
   const canManageTeam = hasClinicPermission(actorRole, "team:manage");
   const activeTab = getSettingsTab(getSearchParam(sp.tab));
-  const [team, activity] = await Promise.all([
+  const canManageAvailability = hasClinicPermission(actorRole, "availability:manage");
+  const now = new Date();
+  const [team, activity, calendarStaff, availabilityRules, timeOff] = await Promise.all([
     listClinicTeam(staffContext.clinic.id, staffContext.user.id),
-    listClinicTeamActivity(staffContext.clinic.id)
+    listClinicTeamActivity(staffContext.clinic.id),
+    listCalendarStaff(staffContext.clinic.id),
+    listAvailabilityRules(staffContext.clinic.id),
+    listStaffTimeOff(
+      staffContext.clinic.id,
+      now,
+      new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    )
   ]);
   const activeTeam = team.filter((member) => member.is_active);
   const archivedTeam = team.filter((member) => !member.is_active);
@@ -143,6 +165,11 @@ export default async function SettingsPage({ searchParams }: Props) {
   const hasError = Boolean(getSearchParam(sp.settings_error));
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium"
+  });
+  const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: staffContext.clinic.timezone
   });
   const roleLabels = Object.fromEntries(
     staffRoles.map((role) => [role, roleLabel(t, role)])
@@ -159,6 +186,7 @@ export default async function SettingsPage({ searchParams }: Props) {
       count: archivedTeam.length
     },
     { id: "activity", label: t("settings.tabs.activity") },
+    { id: "availability", label: t("settings.tabs.availability") },
     { id: "clinic", label: t("settings.tabs.clinic") }
   ];
 
@@ -726,6 +754,227 @@ export default async function SettingsPage({ searchParams }: Props) {
                     </li>
                   ) : null}
                 </ol>
+              </section>
+            ) : null}
+
+            {activeTab === "availability" ? (
+              <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+                <div className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-4 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <CalendarClock
+                          aria-hidden="true"
+                          className="text-[var(--primary)]"
+                          size={18}
+                        />
+                        <h2 className="text-[16px] font-semibold text-[var(--ink)]">
+                          Availability
+                        </h2>
+                      </div>
+                      <p className="mt-1 text-[13px] leading-5 text-[var(--muted)]">
+                        Rules feed the calendar and AI appointment drafts. Times display in {staffContext.clinic.timezone}.
+                      </p>
+                    </div>
+                    <Badge tone={canManageAvailability ? "teal" : "neutral"}>
+                      {canManageAvailability ? "Editable" : "Read-only"}
+                    </Badge>
+                  </div>
+
+                  {canManageAvailability ? (
+                    <PendingForm
+                      action={saveAvailabilityRule}
+                      className="mt-4 grid gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_auto]"
+                    >
+                      <input name="lang" type="hidden" value={locale} />
+                      <label className="grid gap-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+                          Staff
+                        </span>
+                        <select
+                          name="staffId"
+                          required
+                          className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                        >
+                          {calendarStaff.map((member) => (
+                            <option key={member.id} value={member.id}>
+                              {member.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+                          Day
+                        </span>
+                        <select
+                          name="weekday"
+                          className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                        >
+                          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                            (day, index) => (
+                              <option key={day} value={index}>
+                                {day}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+                          Start
+                        </span>
+                        <input
+                          name="startTime"
+                          type="time"
+                          defaultValue="09:00"
+                          required
+                          className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+                          End
+                        </span>
+                        <input
+                          name="endTime"
+                          type="time"
+                          defaultValue="17:00"
+                          required
+                          className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                        />
+                      </label>
+                      <PendingSubmitButton className="self-end" size="sm">
+                        Add
+                      </PendingSubmitButton>
+                    </PendingForm>
+                  ) : null}
+
+                  <ol className="mt-4 grid gap-2">
+                    {availabilityRules.length > 0 ? (
+                      availabilityRules.map((rule) => {
+                        const staffMember = calendarStaff.find(
+                          (member) => member.id === rule.staffId
+                        );
+                        return (
+                          <li
+                            key={rule.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-[var(--ink)]">
+                                {staffMember?.label ?? "Staff"} ·{" "}
+                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][rule.weekday]}
+                              </p>
+                              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--muted)]">
+                                {rule.startTime}–{rule.endTime}
+                              </p>
+                            </div>
+                            {canManageAvailability ? (
+                              <PendingForm action={deleteAvailabilityRule}>
+                                <input name="lang" type="hidden" value={locale} />
+                                <input name="ruleId" type="hidden" value={rule.id} />
+                                <PendingSubmitButton variant="ghost" size="sm">
+                                  Remove
+                                </PendingSubmitButton>
+                              </PendingForm>
+                            ) : null}
+                          </li>
+                        );
+                      })
+                    ) : (
+                      <li className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-6 text-sm text-[var(--muted)]">
+                        No availability rules yet. Add working hours before asking AI to suggest appointment times.
+                      </li>
+                    )}
+                  </ol>
+                </div>
+
+                <aside className="rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--paper)] p-4 shadow-sm">
+                  <h2 className="text-[16px] font-semibold text-[var(--ink)]">
+                    Time off
+                  </h2>
+                  {canManageAvailability ? (
+                    <PendingForm action={addTimeOff} className="mt-3 grid gap-3">
+                      <input name="lang" type="hidden" value={locale} />
+                      <label className="grid gap-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+                          Staff
+                        </span>
+                        <select
+                          name="staffId"
+                          className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                        >
+                          {calendarStaff.map((member) => (
+                            <option key={member.id} value={member.id}>
+                              {member.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+                          Starts
+                        </span>
+                        <input
+                          name="startsAt"
+                          type="datetime-local"
+                          required
+                          className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+                          Ends
+                        </span>
+                        <input
+                          name="endsAt"
+                          type="datetime-local"
+                          required
+                          className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                        />
+                      </label>
+                      <input
+                        name="reason"
+                        placeholder="Reason"
+                        className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--paper)] px-3 text-sm"
+                      />
+                      <PendingSubmitButton size="sm">Block time</PendingSubmitButton>
+                    </PendingForm>
+                  ) : null}
+                  <ol className="mt-4 grid gap-2">
+                    {timeOff.length > 0 ? (
+                      timeOff.map((block) => {
+                        const staffMember = calendarStaff.find(
+                          (member) => member.id === block.staffId
+                        );
+                        return (
+                          <li
+                            key={block.id}
+                            className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-soft)] p-3"
+                          >
+                            <p className="text-sm font-semibold text-[var(--ink)]">
+                              {staffMember?.label ?? "Staff"}
+                            </p>
+                            <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
+                              {dateTimeFormatter.format(new Date(block.startsAt))} →{" "}
+                              {dateTimeFormatter.format(new Date(block.endsAt))}
+                            </p>
+                            {block.reason ? (
+                              <p className="mt-1 text-[12px] text-[var(--muted)]">
+                                {block.reason}
+                              </p>
+                            ) : null}
+                          </li>
+                        );
+                      })
+                    ) : (
+                      <li className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-4 text-sm text-[var(--muted)]">
+                        No time off in the next 30 days.
+                      </li>
+                    )}
+                  </ol>
+                </aside>
               </section>
             ) : null}
 
