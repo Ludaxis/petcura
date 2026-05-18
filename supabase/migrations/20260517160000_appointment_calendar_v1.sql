@@ -59,6 +59,22 @@ alter table public.ai_output_sources
     )
   );
 
+do $$
+begin
+  alter table public.appointments
+    add constraint appointments_clinic_id_id_unique unique (clinic_id, id);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.requests
+    add constraint requests_clinic_id_id_unique unique (clinic_id, id);
+exception
+  when duplicate_object then null;
+end $$;
+
 create table if not exists public.staff_availability_rules (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
