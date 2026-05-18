@@ -59,6 +59,68 @@ alter table public.ai_output_sources
     )
   );
 
+do $$
+begin
+  alter table public.appointments
+    add constraint appointments_clinic_id_id_unique unique (clinic_id, id);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.requests
+    add constraint requests_clinic_id_id_unique unique (clinic_id, id);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table public.appointments
+    add constraint appointments_duration_minutes_positive
+    check (duration_minutes is null or duration_minutes > 0);
+exception
+  when duplicate_object then null;
+end $$;
+
+alter table public.appointments
+  add column if not exists scheduled_ends_at timestamptz;
+
+create or replace function public.set_appointment_scheduled_ends_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.scheduled_at is null then
+    new.scheduled_ends_at = null;
+  else
+    new.scheduled_ends_at =
+      new.scheduled_at + make_interval(mins => coalesce(new.duration_minutes, 30));
+  end if;
+
+  return new;
+end;
+$$;
+
+update public.appointments
+set scheduled_ends_at =
+  case
+    when scheduled_at is null then null
+    else scheduled_at + make_interval(mins => coalesce(duration_minutes, 30))
+  end
+where scheduled_ends_at is distinct from
+  case
+    when scheduled_at is null then null
+    else scheduled_at + make_interval(mins => coalesce(duration_minutes, 30))
+  end;
+
+drop trigger if exists set_appointment_scheduled_ends_at on public.appointments;
+create trigger set_appointment_scheduled_ends_at
+before insert or update of scheduled_at, duration_minutes on public.appointments
+for each row
+execute function public.set_appointment_scheduled_ends_at();
+
 create table if not exists public.staff_availability_rules (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics(id) on delete cascade,
@@ -185,15 +247,12 @@ begin
     exclude using gist (
       clinic_id with =,
       staff_id with =,
-      tstzrange(
-        scheduled_at,
-        scheduled_at + make_interval(mins => coalesce(duration_minutes, 30)),
-        '[)'
-      ) with &&
+      tstzrange(scheduled_at, scheduled_ends_at, '[)') with &&
     )
     where (
       status in ('confirmed', 'rescheduled')
       and scheduled_at is not null
+      and scheduled_ends_at is not null
       and staff_id is not null
     );
 exception
